@@ -337,8 +337,8 @@ img,svg{display:block;max-width:100%}
 .gcard .meta .nm{margin:2px 0 0;font-size:11px;font-weight:800;line-height:1.28;color:#fff6e8;letter-spacing:.2px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:14px}
 .gcard .rb{
-  position:absolute;left:6px;top:6px;z-index:3;min-width:46px;height:32px;padding:0 9px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;letter-spacing:.8px;
+  position:absolute;left:6px;top:6px;z-index:3;min-width:46px;height:36px;padding:0 4px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;letter-spacing:.8px;
   background:var(--tag-bg);color:var(--tag-ink);box-shadow:0 3px 10px rgba(0,0,0,.3)
 }
 .gcard .badge-new{
@@ -494,7 +494,7 @@ img,svg{display:block;max-width:100%}
 .face.front .fc-meta{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:5px 5px 6px;background:rgba(21,10,29,.63);border-top:1px solid rgba(255,255,255,.08)}
 .face.front .fc-mem{font-size:7px;color:#d7b6c7;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .face.front .fc-nm{font-size:9px;font-weight:800;color:#fff5e7;line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.face.front .fc-r{position:absolute;left:4px;top:4px;z-index:4;height:30px;min-width:42px;padding:0 8px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;background:var(--tag-bg);color:var(--tag-ink);box-shadow:0 3px 10px rgba(10,4,18,.34)}
+.face.front .fc-r{position:absolute;left:4px;top:4px;z-index:4;height:32px;min-width:46px;padding:0 4px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;background:var(--tag-bg);color:var(--tag-ink);box-shadow:0 3px 10px rgba(10,4,18,.34)}
 .face.front .fc-new{position:absolute;right:4px;left:auto;top:4px;z-index:4;height:20px;padding:0 5px;border-radius:6px;background:linear-gradient(135deg,#ffe8a9,#ffb65c);color:#5a2c22;font-size:9px;font-weight:900;display:flex;align-items:center}
 .face.front .fc-dup{position:absolute;right:4px;left:auto;top:4px;z-index:4;height:20px;padding:0 5px;border-radius:6px;background:linear-gradient(135deg,#d8b7ff,#9a6ad9);color:#2b123f;font-size:9px;font-weight:900;display:flex;align-items:center}
 .face.front .fc-spark{position:absolute;width:5px;height:5px;background:radial-gradient(circle,#fff6cf,#ffd277 55%,transparent 60%);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);opacity:.9;animation:sparkle 2.6s infinite}
@@ -2068,7 +2068,7 @@ function nextSSR() {
   sfx('ssr');
   try { if (navigator.vibrate) navigator.vibrate([18, 40, 26]); } catch (e) {}
   if (ssrTimer) clearTimeout(ssrTimer);
-  ssrTimer = setTimeout(() => { ssrTimer = null; closeSSR(); }, 1800);
+  ssrTimer = setTimeout(() => { ssrTimer = null; closeSSR(); }, 1600);
 }
 function closeSSR() {
   if (ssrTimer) { clearTimeout(ssrTimer); ssrTimer = null; }
