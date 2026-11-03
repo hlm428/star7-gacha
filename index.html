@@ -1,0 +1,2802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a0f26">
+<title>拆小卡模拟器 · STAR7 星轨回响</title>
+<style>
+:root{
+  --sans:"PingFang SC","HarmonyOS Sans SC","Noto Sans SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  --serif:"Songti SC","STSong","Noto Serif SC","Source Han Serif SC","SimSun",serif;
+  --bg0:#140c20; --bg1:#24112f; --bg2:#4b1e45;
+  --pink:#ff87bb; --pink2:#ff5f9e; --rose:#ff6aa6; --peach:#ffc4ac;
+  --gold:#f4d79b; --gold2:#d8a85f; --gold3:#fff1c9;
+  --cream:#fff9f3; --cream2:#ffeef5; --ink:#3c2540; --ink2:#6b4a63;
+  --muted:#ac8fa9; --line:rgba(255,255,255,.14);
+  --glass:rgba(255,255,255,.09); --glass2:rgba(255,255,255,.16);
+  --shadow:0 16px 40px rgba(18,6,28,.42);
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:#120b1c;color:#fff;font-family:var(--sans);overflow:hidden;overscroll-behavior:none}
+body{min-height:100vh;touch-action:manipulation}
+button,input,textarea{font-family:inherit;color:inherit}
+button{border:0;background:none;cursor:pointer;touch-action:manipulation}
+button:active{transform:scale(.965)}
+img,svg{display:block;max-width:100%}
+.hidden{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.app{
+  position:relative;width:100%;max-width:430px;margin:0 auto;height:100vh;height:100dvh;
+  display:flex;flex-direction:column;overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(120% 70% at 50% -8%, rgba(255,156,199,.28) 0%, transparent 55%),
+    radial-gradient(95% 62% at 8% 28%, rgba(173,119,255,.20) 0%, transparent 60%),
+    linear-gradient(180deg,#1a0f28 0%,#25102f 42%,#3b1738 74%,#190e21 100%);
+}
+.app::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(255,216,161,.18), transparent 22%),
+    radial-gradient(circle at 10% 66%, rgba(255,143,190,.14), transparent 30%),
+    repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 1px, transparent 1px 72px);
+}
+.app::after{
+  content:"";position:absolute;left:-30%;right:-30%;top:-34%;height:52%;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 50%, rgba(255,188,222,.18), transparent 62%);
+  filter:blur(18px);
+}
+.stars-bg{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.9}
+.stars-bg i{position:absolute;width:3px;height:3px;border-radius:50%;background:#ffe4f1;box-shadow:0 0 7px #ffb4d8;opacity:.55;animation:twinkle 4s ease-in-out infinite}
+.stars-bg i:nth-child(1){left:12%;top:16%;animation-delay:.2s}
+.stars-bg i:nth-child(2){left:31%;top:9%;animation-delay:1.4s;width:2px;height:2px}
+.stars-bg i:nth-child(3){left:68%;top:22%;animation-delay:2.2s}
+.stars-bg i:nth-child(4){left:86%;top:38%;animation-delay:.9s;width:2px;height:2px}
+.stars-bg i:nth-child(5){left:20%;top:52%;animation-delay:2.8s}
+.stars-bg i:nth-child(6){left:74%;top:62%;animation-delay:1.2s;width:2px;height:2px}
+.stars-bg i:nth-child(7){left:47%;top:78%;animation-delay:3.1s}
+@keyframes twinkle{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:.9;transform:scale(1.25)}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes sheen{0%{transform:translateX(-120%) rotate(18deg)}100%{transform:translateX(220%) rotate(18deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{0%{opacity:0;transform:scale(.84)}60%{transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+@keyframes glowPulse{0%,100%{opacity:.5;transform:scale(.96)}50%{opacity:1;transform:scale(1.05)}}
+@keyframes sparkle{0%,100%{opacity:0;transform:scale(.4) rotate(0)}45%{opacity:1;transform:scale(1.15) rotate(40deg)}70%{opacity:.4;transform:scale(.8) rotate(70deg)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(34px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ============ top bar ============ */
+.topbar{
+  position:relative;z-index:12;flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  padding:calc(10px + var(--safe-t)) 14px 10px;
+}
+.day-btn{
+  display:flex;align-items:center;gap:8px;min-height:46px;padding:5px 12px 5px 10px;border-radius:16px;
+  background:linear-gradient(135deg,rgba(255,255,255,.17),rgba(255,255,255,.06));
+  border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 16px rgba(14,4,22,.25);text-align:left;
+}
+.day-btn .cal{width:26px;height:26px;flex:0 0 26px;opacity:.92}
+.day-btn .dt{display:flex;flex-direction:column;line-height:1.05}
+.day-btn .dt b{font-size:12px;font-weight:800;letter-spacing:.4px;color:#ffe9f4;white-space:nowrap}
+.day-btn .dt b em{font-style:normal;font-size:10px;color:#e6b9d4;font-weight:600}
+.day-btn .dt span{font-size:10px;color:#ffd9aa;margin-top:3px;white-space:nowrap}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:7px}
+.money-pill{
+  display:flex;align-items:baseline;gap:2px;height:40px;padding:0 11px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(255,229,177,.22),rgba(255,255,255,.07));
+  border:1px solid rgba(255,222,163,.42);box-shadow:0 5px 14px rgba(14,4,22,.25);white-space:nowrap;
+}
+.money-pill small{font-size:11px;color:#ffdca5;font-weight:700}
+.money-pill b{font-size:16px;font-family:var(--serif);color:#fff3d6;letter-spacing:.3px}
+.money-pill.flash{animation:moneyFlash .5s ease}
+@keyframes moneyFlash{0%,100%{transform:scale(1)}35%{transform:scale(1.08);box-shadow:0 0 0 3px rgba(255,215,140,.22)}}
+.icon-btn{
+  width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);position:relative;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#ffeaf5;
+}
+.icon-btn svg{width:20px;height:20px;opacity:.92}
+.icon-btn .dot-badge{
+  position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:9px;padding:0 4px;
+  background:linear-gradient(135deg,#ffd98e,#ff9d6d);color:#4b2540;font-size:9px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.5)
+}
+.topbar .icon-btn:active{background:rgba(255,255,255,.18)}
+
+/* ============ home ============ */
+.home-main{
+  position:relative;z-index:2;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  padding:2px 16px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.home-main::-webkit-scrollbar{display:none}
+.poster{
+  position:relative;height:clamp(322px,44dvh,420px);border-radius:26px;overflow:hidden;
+  border:1px solid rgba(255,226,182,.28);box-shadow:0 22px 52px rgba(10,3,18,.5), inset 0 0 0 1px rgba(255,255,255,.06);
+  background:
+    radial-gradient(120% 100% at 78% 8%, rgba(255,231,186,.35), transparent 45%),
+    radial-gradient(90% 80% at 16% 84%, rgba(255,126,182,.35), transparent 55%),
+    linear-gradient(150deg,#3a1a4d 0%,#5a2355 46%,#8d3f63 78%,#3c183e 100%);
+  animation:fadeUp .6s ease both;
+}
+.poster::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 58%,rgba(255,255,255,.10) 64%,transparent 70%),
+            linear-gradient(180deg,rgba(17,8,28,.06),rgba(17,8,28,.44) 100%);
+}
+.poster-sky{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.9}
+.poster-art{
+  position:absolute;right:-4px;bottom:-2px;width:74%;height:102%;pointer-events:none;
+  filter:drop-shadow(0 20px 28px rgba(20,5,30,.45));z-index:2;
+}
+.poster::before{
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(22,9,32,.62) 0%,rgba(24,10,34,.38) 34%,rgba(26,11,36,.08) 56%,transparent 72%);
+}
+.poster-art svg{width:100%;height:100%}
+.poster-halo{
+  position:absolute;right:8%;bottom:8%;width:66%;aspect-ratio:1;border-radius:50%;pointer-events:none;
+  border:1px solid rgba(255,224,169,.4);
+  box-shadow:0 0 0 14px rgba(255,196,146,.06), inset 0 0 60px rgba(255,210,160,.22);
+  background:radial-gradient(circle,rgba(255,224,182,.24),transparent 62%);
+  animation:glowPulse 5s ease-in-out infinite;z-index:1;
+}
+.poster-halo.two{right:16%;bottom:22%;width:46%;border-color:rgba(255,255,255,.2);animation-delay:1.6s}
+.poster-info{position:absolute;left:16px;top:16px;z-index:4;max-width:47%;text-shadow:0 2px 12px rgba(37,10,38,.55)}
+.pool-tag{
+  display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(255,236,193,.96),rgba(255,199,152,.92));color:#6e3b3e;
+  font-size:10px;font-weight:900;letter-spacing:.6px;box-shadow:0 4px 12px rgba(74,26,44,.28)
+}
+.pool-tag i{width:5px;height:5px;border-radius:50%;background:#b05863;display:block}
+.poster-info h1{
+  margin:9px 0 3px;font-family:var(--serif);font-size:33px;line-height:1.08;letter-spacing:1px;
+  color:#fff6e8;font-weight:900;text-shadow:0 3px 18px rgba(50,12,44,.55),0 0 30px rgba(255,205,170,.18)
+}
+.poster-info .pool-sub{font-size:9.5px;letter-spacing:.5px;line-height:1.5;color:#f6d8d1;margin:0;white-space:nowrap}
+.up-chip{
+  display:inline-flex;align-items:center;gap:5px;margin-top:11px;height:28px;padding:0 9px 0 4px;border-radius:14px;
+  background:rgba(32,13,41,.55);border:1px solid rgba(255,224,181,.4);backdrop-filter:blur(10px);
+  font-size:10px;color:#ffe9d1;font-weight:700;max-width:100%;white-space:nowrap
+}
+.up-chip b{
+  display:flex;align-items:center;justify-content:center;height:19px;padding:0 6px;border-radius:10px;
+  background:linear-gradient(135deg,#ffb1cd,#ff7fb4);font-size:9px;color:#62203f;letter-spacing:.5px;flex:0 0 auto
+}
+.up-chip span{overflow:hidden;text-overflow:ellipsis}
+.poster-foot{
+  position:absolute;left:16px;bottom:14px;z-index:4;display:flex;gap:6px;flex-wrap:wrap;
+}
+.poster-foot span{
+  padding:5px 9px;border-radius:10px;background:rgba(27,11,35,.5);border:1px solid rgba(255,255,255,.16);
+  font-size:10px;color:#ffe9dc;backdrop-filter:blur(6px);white-space:nowrap
+}
+.poster-deco{position:absolute;z-index:3;pointer-events:none}
+.poster-deco.star{left:48%;top:20%;width:26px;height:26px;opacity:.8;animation:floaty 4.6s ease-in-out infinite}
+.poster-deco.crown{right:12%;top:15%;width:34px;height:34px;opacity:.6;animation:floaty 5.4s ease-in-out infinite reverse}
+
+.home-panels{display:flex;flex-direction:column;gap:10px;margin-top:12px;animation:fadeUp .7s .08s ease both}
+.glass-card{
+  position:relative;border-radius:20px;background:linear-gradient(150deg,rgba(255,255,255,.12),rgba(255,255,255,.055));
+  border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 12px 28px rgba(12,4,20,.22);overflow:hidden
+}
+.glass-card::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 80% at 100% 0,rgba(255,214,170,.10),transparent 55%)
+}
+.pool-card{padding:13px 15px 14px}
+.pool-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pool-head h2{margin:0;font-size:14px;font-weight:900;letter-spacing:.5px;color:#fff1e3}
+.pool-head .line{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,222,181,.5),transparent)}
+.pool-head .more{font-size:10px;color:#ffd6a7;white-space:nowrap}
+.pool-copy{margin:0;font-size:12px;line-height:1.72;color:#e4c9d7;letter-spacing:.2px}
+.prob-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.prob-chip{
+  display:flex;align-items:baseline;gap:4px;padding:5px 8px;border-radius:10px;font-size:10px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#ffe9f1
+}
+.prob-chip b{font-size:11px;font-weight:900}
+.prob-chip.N b{color:#efe9ee}.prob-chip.R b{color:#9cc9ff}.prob-chip.SR b{color:#d6aaff}.prob-chip.SSR b{color:#ffdb8e}
+.link-btn{
+  display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:0 10px;border-radius:10px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);font-size:11px;color:#ffe6d5
+}
+.link-btn:active{background:rgba(255,255,255,.16)}
+.gold-link{color:#ffdca3;border-color:rgba(255,218,163,.36);background:rgba(255,213,150,.09)}
+.collect-strip{display:flex;align-items:center;gap:10px;padding:12px 15px}
+.collect-strip .num{font-family:var(--serif);font-size:26px;font-weight:900;color:#ffe8bf;line-height:1}
+.collect-strip .num em{font-style:normal;font-size:12px;color:#bb9bac;font-family:var(--sans);font-weight:600}
+.collect-strip .bar{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
+.collect-strip .bar i{display:block;height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,#ffa0c8,#ffd596);transition:width .5s ease}
+.collect-strip .go{font-size:11px;color:#ffd4a3;white-space:nowrap}
+.mini-row{display:none;gap:8px}
+.mini-box{flex:1;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.mini-box label{display:block;font-size:10px;color:#b99aae;margin-bottom:3px}
+.mini-box b{font-size:15px;color:#ffe4c4;font-weight:900}
+.mini-box b em{font-style:normal;font-size:10px;color:#b99aae;font-weight:500}
+
+/* bottom dock */
+.bottom-dock{
+  position:relative;z-index:14;flex:0 0 auto;padding:8px 14px calc(10px + var(--safe-b));
+  background:linear-gradient(180deg,rgba(24,10,34,.72) 0%,rgba(18,8,28,.95) 55%,#120a1b 100%);
+  border-top:1px solid rgba(255,255,255,.10);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:0 -12px 30px rgba(8,3,14,.35)
+}
+.pity-row{display:flex;align-items:center;gap:7px;padding:0 4px 8px;font-size:11px;color:#d9bcd0}
+.pity-row .gem{width:14px;height:14px;flex:0 0 14px}
+.pity-row b{color:#ffdda9;font-size:12px}
+.pity-row .pity-bar{flex:1;height:4px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;margin:0 2px}
+.pity-row .pity-bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#ffd18b,#ff8fbe);transition:width .4s}
+.pity-row .mini-link{color:#ffcf9e;font-size:10px;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;background:none;padding:0}
+.pull-row{display:flex;gap:9px}
+.pull-btn{
+  position:relative;flex:1;min-height:58px;border-radius:18px;padding:7px 8px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;gap:7px;font-weight:900;letter-spacing:.5px;
+  background:linear-gradient(135deg,#ffe8c2,#f2c582 55%,#e1a75e);color:#562b36;
+  border:1px solid rgba(255,244,214,.85);box-shadow:0 10px 26px rgba(70,25,42,.35),inset 0 1px 0 rgba(255,255,255,.8)
+}
+.pull-btn.ten{flex:1.28;background:linear-gradient(135deg,#ffb3d0,#ff7bb4 52%,#e74f92);color:#fff6fb;border-color:rgba(255,224,239,.8);
+  box-shadow:0 10px 30px rgba(231,62,132,.36),inset 0 1px 0 rgba(255,255,255,.55)}
+.pull-btn::after{
+  content:"";position:absolute;top:-40%;bottom:-40%;left:-30%;width:35%;transform:rotate(18deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sheen 4.5s ease-in-out infinite;
+  opacity:.55;pointer-events:none
+}
+.pull-btn .lb{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
+.pull-btn .lb span{font-size:15px;white-space:nowrap}
+.pull-btn .lb small{font-size:9px;font-weight:600;opacity:.72;margin-top:2px;white-space:nowrap}
+.pull-btn .price{font-family:var(--serif);font-size:18px;font-weight:900;letter-spacing:0;white-space:nowrap}
+.pull-btn .price small{font-size:10px;font-family:var(--sans);font-weight:700}
+.pull-btn.dim{filter:grayscale(.35) brightness(.72);box-shadow:none}
+.pull-btn.dim::after{display:none}
+.pull-btn:active{filter:brightness(1.06)}
+.pull-btn .pulse{
+  position:absolute;right:10px;top:8px;width:5px;height:5px;border-radius:50%;background:#fff4d5;
+  box-shadow:0 0 8px #ffe7b1;animation:twinkle 2.2s infinite
+}
+
+/* ============ pages ============ */
+.screen{position:fixed;inset:0;z-index:22;display:none;justify-content:center;background:#150d20}
+.screen.show{display:flex}
+.screen::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(100% 60% at 50% 0,rgba(255,150,196,.18),transparent 60%),
+            radial-gradient(80% 50% at 0 100%,rgba(151,96,255,.14),transparent 62%)
+}
+.album-inner{position:relative;z-index:1;width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;min-height:0}
+.page-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:calc(10px + var(--safe-t)) 14px 8px
+}
+.round-back{
+  width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.17);color:#ffe8f4
+}
+.round-back svg{width:20px;height:20px}
+.page-title{display:flex;flex-direction:column;line-height:1.1}
+.page-title b{font-family:var(--serif);font-size:21px;letter-spacing:1px;color:#fff1e4}
+.page-title span{font-size:10px;color:#b997ad;margin-top:3px;letter-spacing:1px}
+.page-head .right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.chip{
+  display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 9px;border-radius:10px;font-size:10px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#ffe8d2;white-space:nowrap
+}
+.chip b{font-size:12px;color:#ffd99f}
+.album-tabs-wrap{flex:0 0 auto;padding:2px 0 8px}
+.member-tabs{display:flex;gap:7px;padding:0 14px 2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none}
+.member-tabs::-webkit-scrollbar{display:none}
+.mtab{
+  flex:0 0 78px;height:76px;border-radius:16px;padding:6px 4px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.11);color:#dbc0d3;position:relative
+}
+.mtab .av{width:42px;height:42px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.mtab .av svg{width:100%;height:100%}
+.mtab b{font-size:10px;color:#ffe9db;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+.mtab span{font-size:9px;color:#b997ae}
+.mtab.on{background:linear-gradient(150deg,rgba(255,190,220,.22),rgba(255,255,255,.06));border-color:rgba(255,203,155,.5);box-shadow:0 0 0 1px rgba(255,211,162,.22),0 8px 20px rgba(20,6,30,.25)}
+.mtab.on b{color:#ffe2ab}
+.album-progress{display:flex;align-items:center;gap:8px;padding:0 16px 8px;flex:0 0 auto}
+.album-progress .bar{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+.album-progress .bar i{display:block;height:100%;background:linear-gradient(90deg,#ffa8ca,#ffd38d);border-radius:3px;transition:width .4s}
+.album-progress span{font-size:10px;color:#d9b6c6}
+.album-progress b{color:#ffdfae;font-size:11px}
+.album-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding:2px 14px calc(18px + var(--safe-b));}
+.album-scroll::-webkit-scrollbar{display:none}
+.album-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px}
+.album-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 2px 4px;color:#cbaebf;font-size:10px}
+.album-foot .link-btn{height:36px}
+
+/* ============ card ============ */
+.gcard{
+  position:relative;border-radius:15px;overflow:hidden;display:flex;flex-direction:column;aspect-ratio:.68;
+  background:#24142e;border:1.5px solid var(--rc, rgba(255,255,255,.35));
+  box-shadow:0 8px 20px rgba(9,3,15,.35);isolation:isolate;min-width:0;
+  transition:transform .18s ease;
+}
+.gcard:active{transform:scale(.975)}
+.gcard.N{--rc:rgba(232,226,236,.72);--rglow:rgba(255,255,255,.16);--tag-bg:linear-gradient(135deg,#f2eef2,#cfc5d6);--tag-ink:#54455e}
+.gcard.R{--rc:#8fc2ff;--rglow:rgba(96,162,255,.35);--tag-bg:linear-gradient(135deg,#b8dcff,#6aa8ff);--tag-ink:#14345f}
+.gcard.SR{--rc:#c495ff;--rglow:rgba(185,121,255,.45);--tag-bg:linear-gradient(135deg,#e2c4ff,#a86cff);--tag-ink:#37145d}
+.gcard.SSR{--rc:#ffd98b;--rglow:rgba(255,202,104,.62);--tag-bg:linear-gradient(135deg,#fff0bf,#e8b45e);--tag-ink:#5e3813}
+.gcard.SR{box-shadow:0 8px 20px rgba(9,3,15,.35),0 0 16px rgba(180,112,255,.28)}
+.gcard.SSR{box-shadow:0 8px 22px rgba(9,3,15,.35),0 0 24px rgba(255,197,95,.34),inset 0 0 0 1px rgba(255,246,211,.6)}
+.gcard .art{position:relative;flex:1 1 auto;min-height:0;overflow:hidden;background:#2b1837}
+.gcard .art>svg{position:absolute;inset:0;width:100%;height:100%}
+.gcard .art::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,transparent 52%,rgba(20,8,28,.42) 86%,rgba(20,8,28,.75) 100%)
+}
+.gcard .meta{
+  position:relative;z-index:2;flex:0 0 auto;padding:6px 7px 7px;
+  background:linear-gradient(180deg,rgba(24,10,32,.28),rgba(20,9,28,.9));
+  border-top:1px solid rgba(255,255,255,.08)
+}
+.gcard .meta .mem{display:flex;align-items:center;gap:3px;font-size:8px;line-height:1.2;color:#d9b9c9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gcard .meta .mem i{display:block;width:4px;height:4px;border-radius:50%;background:var(--mc,#ff9ec5);flex:0 0 4px}
+.gcard .meta .nm{margin:2px 0 0;font-size:11px;font-weight:800;line-height:1.28;color:#fff6e8;letter-spacing:.2px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:14px}
+.gcard .rb{
+  position:absolute;right:6px;top:6px;z-index:3;min-width:26px;height:18px;padding:0 6px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;letter-spacing:.5px;
+  background:var(--tag-bg);color:var(--tag-ink);box-shadow:0 2px 8px rgba(0,0,0,.28)
+}
+.gcard .badge-new{
+  position:absolute;left:6px;top:6px;z-index:3;height:17px;padding:0 6px;border-radius:6px;
+  background:linear-gradient(135deg,#ffe8a9,#ffb65c);color:#5a2c22;font-size:8px;font-weight:900;letter-spacing:.5px;
+  display:flex;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.24)
+}
+.gcard .badge-dup{
+  position:absolute;left:6px;top:6px;z-index:3;height:17px;padding:0 6px;border-radius:6px;
+  background:linear-gradient(135deg,#cba5f8,#8e63cf);color:#25103c;font-size:8px;font-weight:900;letter-spacing:.4px;
+  display:flex;align-items:center
+}
+.gcard .shine{
+  position:absolute;inset:-20% -60%;z-index:2;pointer-events:none;opacity:0;
+  background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.42) 50%,transparent 65%);
+  transform:rotate(18deg)
+}
+.gcard.SSR .shine,.gcard.SR .shine{opacity:.75;animation:sheen 3.6s ease-in-out infinite}
+.gcard.SR .shine{animation-duration:5s;opacity:.42}
+.gcard .spark{position:absolute;z-index:3;width:7px;height:7px;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,#fff9dc 0 24%,#ffd37f 26% 58%,transparent 60%);
+  clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);
+}
+.gcard.SSR .spark{animation:sparkle 2.8s ease-in-out infinite}
+.gcard.SSR .spark:nth-child(2){left:12%;top:16%;animation-delay:.2s}
+.gcard.SSR .spark:nth-child(3){right:14%;top:38%;animation-delay:1.1s;width:5px;height:5px}
+.gcard.SSR .spark:nth-child(4){left:22%;bottom:24%;animation-delay:2.1s;width:4px;height:4px}
+.gcard.locked .art{filter:grayscale(1) brightness(.42) contrast(.9)}
+.gcard.locked .meta .nm{color:#9a8091}
+.gcard.locked .rb{filter:grayscale(.7);opacity:.7}
+.gcard.locked::after{
+  content:"";position:absolute;inset:0;z-index:4;background:rgba(18,10,24,.32);pointer-events:none
+}
+.lock-mark{
+  position:absolute;left:50%;top:38%;z-index:5;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:5px;color:#e7d2dc
+}
+.lock-mark .lc{width:34px;height:34px;border-radius:50%;background:rgba(25,13,33,.7);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center}
+.lock-mark .lc svg{width:16px;height:16px}
+.lock-mark span{font-size:8px;letter-spacing:1px;color:#c9acba}
+
+/* pack overlay */
+.pack-overlay{position:fixed;inset:0;z-index:30;display:none;justify-content:center;
+  background:
+    radial-gradient(90% 65% at 50% 18%,rgba(255,184,208,.18),transparent 62%),
+    radial-gradient(80% 60% at 50% 100%,rgba(168,126,255,.14),transparent 64%),
+    linear-gradient(180deg,#1b0e26 0%,#2d122f 55%,#190c22 100%);
+}
+.pack-overlay.show{display:flex}
+.pack-inner{width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;position:relative;z-index:1}
+.pack-top{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(12px + var(--safe-t)) 16px 8px}
+.pack-top .pt{display:flex;flex-direction:column;line-height:1.15}
+.pack-top .pt b{font-family:var(--serif);font-size:19px;color:#fff0df;letter-spacing:1px}
+.pack-top .pt span{font-size:10px;color:#bd9bb0;margin-top:3px}
+.pack-actions{display:flex;gap:6px}
+.skip-btn{
+  display:flex;align-items:center;justify-content:center;min-height:36px;padding:0 11px;border-radius:11px;
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);font-size:11px;color:#ffe2ca;white-space:nowrap
+}
+.skip-btn:active{background:rgba(255,255,255,.18)}
+.pack-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;align-items:center;padding:0 14px calc(14px + var(--safe-b));scrollbar-width:none}
+.pack-body::-webkit-scrollbar{display:none}
+.tear-stage{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:0}
+.pack-wrap{position:relative;width:min(64vw,228px);aspect-ratio:.72;perspective:900px;touch-action:none;user-select:none}
+.pack-half{
+  position:absolute;left:0;right:0;height:50%;background:
+    linear-gradient(135deg,#b24d7e 0%,#ff97bd 26%,#ffd6b1 48%,#b25788 74%,#6b2754 100%);
+  overflow:hidden;transition:transform .62s cubic-bezier(.2,.7,.25,1),opacity .6s ease .1s;
+  box-shadow:0 18px 50px rgba(10,3,16,.36)
+}
+.pack-half.top{top:0;border-radius:22px 22px 5px 5px;clip-path:polygon(0 0,100% 0,100% 78%,66% 82%,42% 74%,20% 84%,0 76%)}
+.pack-half.bot{bottom:0;border-radius:5px 5px 22px 22px;clip-path:polygon(0 22%,22% 16%,44% 26%,68% 18%,100% 22%,100% 100%,0 100%)}
+.pack-half::before{
+  content:"";position:absolute;inset:0;background:
+    repeating-linear-gradient(115deg,transparent 0 26px,rgba(255,255,255,.16) 27px,transparent 30px 56px),
+    radial-gradient(80% 60% at 28% 24%,rgba(255,245,220,.55),transparent 48%);
+  mix-blend-mode:screen;opacity:.8
+}
+.pack-half.top .foil-star{position:absolute;left:50%;top:34%;width:52px;height:52px;transform:translate(-50%,-50%);opacity:.9}
+.pack-half.top .brand{position:absolute;left:0;right:0;top:57%;text-align:center;font-family:var(--serif);font-size:20px;letter-spacing:4px;color:#5b2142;font-weight:900;text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.pack-half.bot .mini{position:absolute;left:0;right:0;top:18%;text-align:center;font-size:8px;letter-spacing:2px;color:#7c3456;font-weight:700}
+.pack-wrap .tear-line{
+  position:absolute;left:5%;right:5%;top:50%;z-index:3;height:2px;transform:translateY(-1px);
+  background:linear-gradient(90deg,transparent,rgba(255,250,229,.85) 18%,rgba(255,255,255,.95) 50%,rgba(255,250,229,.85) 82%,transparent);
+  box-shadow:0 0 14px rgba(255,238,200,.8);opacity:.85;transition:opacity .2s
+}
+.pack-wrap .tear-glow{
+  position:absolute;left:50%;top:50%;z-index:2;width:130%;height:34%;transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse,rgba(255,239,199,.55),transparent 65%);filter:blur(9px);opacity:0;transition:opacity .2s
+}
+.pack-wrap .rip{
+  position:absolute;left:4%;right:4%;top:50%;z-index:4;height:0;transform:translateY(-50%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);border-radius:50%;opacity:0;transition:opacity .2s
+}
+.pack-wrap.dragging .tear-glow,.pack-wrap.dragging .rip{opacity:1}
+.pack-wrap.open .pack-half.top{transform:translateY(-118%) rotate(-7deg) scale(.96);opacity:0}
+.pack-wrap.open .pack-half.bot{transform:translateY(118%) rotate(6deg) scale(.96);opacity:0}
+.pack-wrap.open .tear-line{opacity:0}
+.pack-wrap.open .tear-glow{opacity:1;transform:translate(-50%,-50%) scale(1.25)}
+.pack-wrap.open .rip{opacity:1;height:70%}
+.tear-hint{text-align:center;font-size:11px;color:#e5c6d8;letter-spacing:1px}
+.tear-hint b{display:block;font-size:14px;color:#ffe6bd;margin-bottom:4px;letter-spacing:2px}
+.tear-cta{display:flex;gap:8px}
+
+.cards-stage{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;animation:fadeUp .35s ease both}
+.cards-stage.ten-mode{justify-content:space-evenly;gap:0;padding:6px 0 8px}
+.cards-hint{font-size:11px;color:#d6b5c8;letter-spacing:.5px;text-align:center}
+.cards-hint b{color:#ffddb0}
+.pack-tally{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;min-height:0}
+.pack-tally:empty{display:none}
+.tchip{height:24px;padding:0 9px;border-radius:12px;display:flex;align-items:center;font-size:10px;font-weight:800;letter-spacing:.5px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#f4dcea}
+.tchip.N{color:#f2e9f4;background:rgba(240,232,244,.16)}
+.tchip.R{color:#bfe0ff;background:rgba(102,168,255,.18);border-color:rgba(143,194,255,.4)}
+.tchip.SR{color:#e3c9ff;background:rgba(168,108,255,.22);border-color:rgba(196,149,255,.45)}
+.tchip.SSR{color:#ffe5a6;background:rgba(232,180,94,.22);border-color:rgba(255,217,139,.5)}
+.tchip.new{color:#ffe9c2;background:rgba(255,190,120,.16)}
+.tchip.dup{color:#d9c2e8;background:rgba(160,110,190,.16)}
+.pack-grid{width:100%;display:grid;justify-content:center}
+.pack-grid.n1{grid-template-columns:minmax(0,186px);gap:0}
+.pack-grid.n10{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px 5px}
+.flip{
+  position:relative;aspect-ratio:.68;perspective:900px;cursor:pointer;min-width:0;
+  animation:cardIn .5s ease both
+}
+.flip .flipper{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.7,.25,1)}
+.flip.flipped .flipper{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:12px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.back{
+  background:
+    radial-gradient(90% 70% at 50% 24%,rgba(255,205,236,.3),transparent 62%),
+    linear-gradient(155deg,#6e2e62 0%,#3d1b49 52%,#2a1236 100%);
+  border:1.5px solid rgba(255,220,190,.4);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 8px 18px rgba(6,2,12,.35);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px
+}
+.face.back::after{
+  content:"";position:absolute;inset:8%;border:1px solid rgba(255,226,180,.28);border-radius:8px;pointer-events:none
+}
+.face.back .logo{width:46%;max-height:46%;opacity:.95}
+.face.back .bn{font-family:var(--serif);font-size:10px;letter-spacing:2px;color:#ffe3c6;font-weight:700}
+.face.front{transform:rotateY(180deg);border:1.5px solid var(--rc);background:#2b1837}
+.face.front .art{position:absolute;inset:0}
+.face.front .art svg{width:100%;height:100%}
+.face.front .art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 48%,rgba(21,9,29,.45) 82%,rgba(21,9,29,.8))}
+.face.front .fc-meta{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:5px 5px 6px;background:rgba(21,10,29,.63);border-top:1px solid rgba(255,255,255,.08)}
+.face.front .fc-mem{font-size:7px;color:#d7b6c7;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.face.front .fc-nm{font-size:9px;font-weight:800;color:#fff5e7;line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.face.front .fc-r{position:absolute;right:4px;top:4px;z-index:4;height:16px;min-width:23px;padding:0 5px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;background:var(--tag-bg);color:var(--tag-ink)}
+.face.front .fc-new{position:absolute;left:4px;top:4px;z-index:4;height:15px;padding:0 4px;border-radius:5px;background:linear-gradient(135deg,#ffe8a9,#ffb65c);color:#5a2c22;font-size:7px;font-weight:900;display:flex;align-items:center}
+.face.front .fc-dup{position:absolute;left:4px;top:4px;z-index:4;height:15px;padding:0 4px;border-radius:5px;background:linear-gradient(135deg,#d8b7ff,#9a6ad9);color:#2b123f;font-size:7px;font-weight:900;display:flex;align-items:center}
+.face.front .fc-spark{position:absolute;width:5px;height:5px;background:radial-gradient(circle,#fff6cf,#ffd277 55%,transparent 60%);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);opacity:.9;animation:sparkle 2.6s infinite}
+.pack-grid.n10 .face .bn{font-size:7px;letter-spacing:1px}
+.pack-grid.n10 .face.back .logo{width:56%}
+.pack-grid.n10 .face.back::after{inset:5%}
+.pack-collect{
+  width:100%;max-width:330px;margin-top:2px;min-height:52px;border-radius:16px;
+  background:linear-gradient(135deg,#ffe7bf,#f3c27e 55%,#e1a85e);color:#5c2e35;font-weight:900;font-size:15px;letter-spacing:1px;
+  box-shadow:0 10px 24px rgba(70,25,42,.3),inset 0 1px 0 rgba(255,255,255,.8)
+}
+.pack-collect:disabled{filter:grayscale(.4) brightness(.7);box-shadow:none}
+
+.ssr-overlay{
+  position:fixed;inset:0;z-index:33;display:none;justify-content:center;align-items:center;
+  background:radial-gradient(circle at 50% 46%,rgba(39,16,48,.72) 0%,rgba(9,4,15,.96) 62%);
+  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);overflow:hidden
+}
+.ssr-overlay.show{display:flex}
+.ssr-rays{position:absolute;left:50%;top:46%;width:160vmax;height:160vmax;transform:translate(-50%,-50%);
+  background:conic-gradient(from 0deg,rgba(255,226,168,.0) 0 5deg,rgba(255,219,150,.30) 6deg 8deg,rgba(255,226,168,.0) 9deg 18deg,
+    rgba(255,219,150,.30) 19deg 21deg,rgba(255,226,168,.0) 22deg 30deg,rgba(255,219,150,.26) 31deg 33deg,rgba(255,226,168,.0) 34deg 42deg,
+    rgba(255,219,150,.30) 43deg 45deg,rgba(255,226,168,.0) 46deg 54deg,rgba(255,219,150,.26) 55deg 57deg,rgba(255,226,168,.0) 58deg 70deg,
+    rgba(255,219,150,.30) 71deg 73deg,rgba(255,226,168,.0) 74deg 90deg);
+  animation:spin 26s linear infinite;opacity:.9;pointer-events:none
+}
+.ssr-rays.two{animation-direction:reverse;animation-duration:38s;opacity:.45;transform:translate(-50%,-50%) scale(.76)}
+.ssr-burst{
+  position:absolute;left:50%;top:46%;width:74vmin;height:74vmin;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,rgba(255,247,214,.95) 0%,rgba(255,214,135,.55) 22%,rgba(255,168,193,.25) 45%,transparent 68%);
+  animation:popIn .8s cubic-bezier(.2,.8,.2,1) both, glowPulse 3s 1s infinite;pointer-events:none
+}
+.ssr-inner{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px 18px;width:100%;max-width:430px;animation:popIn .7s ease both}
+.ssr-kicker{
+  padding:5px 13px;border-radius:12px;background:linear-gradient(135deg,#fff0c2,#f0c070);color:#5b3414;
+  font-size:11px;font-weight:900;letter-spacing:3px;box-shadow:0 6px 18px rgba(255,199,92,.35)
+}
+.ssr-name{font-family:var(--serif);font-size:22px;font-weight:900;color:#fff6e1;letter-spacing:3px;text-shadow:0 0 22px rgba(255,211,141,.5)}
+.ssr-portrait{
+  position:relative;width:min(58vw,238px);aspect-ratio:.68;border-radius:20px;padding:3px;
+  background:linear-gradient(135deg,#fff5cd,#e2ab5e,#fff3c2,#c78d45,#fff5cd);
+  box-shadow:0 0 0 1px rgba(255,247,216,.8),0 0 46px rgba(255,199,92,.55),0 24px 50px rgba(0,0,0,.4);
+  animation:floaty 4s ease-in-out infinite
+}
+.ssr-portrait .inner{position:relative;width:100%;height:100%;border-radius:17px;overflow:hidden;background:#2b1837}
+.ssr-portrait .inner svg{width:100%;height:100%}
+.ssr-portrait .inner::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 58%,rgba(20,8,28,.45),rgba(20,8,28,.86))}
+.ssr-portrait .sname{position:absolute;left:0;right:0;bottom:10px;z-index:4;text-align:center;font-family:var(--serif);font-size:20px;font-weight:900;color:#fff1d3;letter-spacing:2px;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.ssr-portrait .srar{position:absolute;right:8px;top:8px;z-index:4;padding:3px 8px;border-radius:7px;background:linear-gradient(135deg,#fff0bc,#e9b25d);color:#5f3713;font-size:10px;font-weight:900;letter-spacing:1px}
+.ssr-cardname{font-family:var(--serif);font-size:15px;color:#ffe1ac;letter-spacing:2px;text-align:center}
+.ssr-tip{font-size:11px;color:#c9a9bd;letter-spacing:2px;animation:twinkle 2.4s infinite}
+.ssr-stars i{position:absolute;width:4px;height:4px;background:#fff3c8;box-shadow:0 0 10px #ffd987;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:sparkle 2.4s infinite}
+.ssr-stars i:nth-child(1){left:14%;top:20%;animation-delay:.2s}
+.ssr-stars i:nth-child(2){left:82%;top:26%;animation-delay:.9s}
+.ssr-stars i:nth-child(3){left:22%;top:66%;animation-delay:1.4s}
+.ssr-stars i:nth-child(4){left:76%;top:72%;animation-delay:1.9s}
+.ssr-stars i:nth-child(5){left:50%;top:12%;animation-delay:2.3s}
+
+/* ============ modal ============ */
+.modal-back{position:fixed;inset:0;z-index:36;display:none;justify-content:center;align-items:flex-end;
+  background:rgba(10,4,16,.66);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);padding:0}
+.modal-back.show{display:flex}
+.modal{
+  width:100%;max-width:430px;max-height:88dvh;overflow-y:auto;scrollbar-width:none;
+  background:linear-gradient(160deg,#fff9f2,#ffedf4);color:var(--ink);
+  border-radius:24px 24px 0 0;padding:18px 18px calc(18px + var(--safe-b));
+  box-shadow:0 -20px 60px rgba(10,4,16,.5);animation:sheetUp .32s ease both;border:1px solid rgba(255,255,255,.7)
+}
+.modal::-webkit-scrollbar{display:none}
+@keyframes sheetUp{from{transform:translateY(34px);opacity:.4}to{transform:translateY(0);opacity:1}}
+.modal.center{max-width:min(88vw,352px);border-radius:24px;margin:auto;padding:20px 18px;animation:popIn .3s ease both}
+.modal-back.center-mode{align-items:center;padding:20px}
+.modal h3{margin:0 0 6px;font-family:var(--serif);font-size:20px;color:#5b3252;letter-spacing:1px}
+.modal .msub{margin:0 0 12px;font-size:11px;color:#9c7b91;line-height:1.6}
+.modal .mbody{font-size:12px;color:#6b4a5f;line-height:1.75}
+.modal .mbody strong{color:#b23c72}
+.modal .actions{display:flex;gap:8px;margin-top:14px}
+.btn{
+  flex:1;min-height:48px;border-radius:14px;padding:0 14px;display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:14px;font-weight:800;letter-spacing:.5px;white-space:nowrap
+}
+.btn.primary{background:linear-gradient(135deg,#ff9ec6,#ff629c 70%,#e94888);color:#fff;box-shadow:0 8px 20px rgba(235,79,139,.3),inset 0 1px 0 rgba(255,255,255,.4)}
+.btn.ghost{background:#fff;color:#8f5c7b;border:1px solid #f0c7d9}
+.btn.gold{background:linear-gradient(135deg,#ffe6b9,#eab86c);color:#60380f;box-shadow:0 8px 20px rgba(220,170,90,.25)}
+.btn.danger{background:#fff;color:#c24768;border:1px solid #f1bfd0}
+.btn:disabled{filter:grayscale(.5) brightness(.86);box-shadow:none}
+.modal .x{position:absolute;right:14px;top:12px;width:32px;height:32px;border-radius:50%;background:rgba(95,50,82,.08);display:flex;align-items:center;justify-content:center;color:#9b7089;font-size:16px}
+.modal-wrap{position:relative}
+.detail-card{width:min(62vw,230px);margin:2px auto 12px}
+.detail-head{display:flex;align-items:flex-start;gap:10px}
+.detail-title{flex:1;min-width:0}
+.detail-title h3{font-size:19px;margin-bottom:2px;line-height:1.25}
+.detail-meta{font-size:10px;color:#9b778e;display:flex;gap:6px;flex-wrap:wrap}
+.detail-meta span{padding:2px 6px;border-radius:6px;background:#f6dfe9;color:#8d4d72}
+.detail-text{font-size:11px;color:#8a5f7d;line-height:1.72;margin:10px 0}
+.detail-actions{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.detail-actions .btn{min-height:46px;font-size:13px}
+.detail-actions .hint{font-size:10px;color:#a67d95;text-align:center;line-height:1.5}
+.rule-list{display:flex;flex-direction:column;gap:8px;margin:4px 0 0}
+.rule-item{display:flex;gap:8px;align-items:flex-start;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.66);border:1px solid #f4d9e5}
+.rule-item .ri{width:30px;height:30px;flex:0 0 30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ffd7e9,#ffe6c9);color:#a44e76;font-size:10px;font-weight:900}
+.rule-item b{display:block;font-size:12px;color:#63394f;margin-bottom:2px}
+.rule-item p{margin:0;font-size:10px;color:#957084;line-height:1.6}
+.rules-table{width:100%;border-collapse:collapse;font-size:11px;color:#74495f}
+.rules-table th,.rules-table td{padding:7px 6px;border-bottom:1px solid #f3dbe6;text-align:left}
+.rules-table th{color:#a15479;font-weight:800}
+.rules-table td:last-child{text-align:right;font-weight:900;color:#8d3e67}
+.rar-badge{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:20px;padding:0 7px;border-radius:6px;font-size:10px;font-weight:900}
+.rar-N{background:#ece7ee;color:#5e5166}.rar-R{background:#d6e9ff;color:#25598f}.rar-SR{background:#ead5ff;color:#6b2ea1}.rar-SSR{background:#ffe6ac;color:#8a5410}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.stat-box{background:rgba(255,255,255,.66);border:1px solid #f4d9e5;border-radius:12px;padding:9px 10px}
+.stat-box label{font-size:9px;color:#9d7890;display:block}
+.stat-box b{font-size:17px;color:#7d3558;font-family:var(--serif)}
+.stat-box b em{font-style:normal;font-size:10px;font-family:var(--sans);color:#a47d93;font-weight:600}
+.event-art{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ffe4ef,#ffe7c6);border:1px solid #f4d0dd}
+.event-art svg{width:26px;height:26px}
+.event-name{text-align:center;font-family:var(--serif);font-size:19px;color:#63364d;margin:0 0 4px}
+.event-desc{text-align:center;font-size:11px;color:#957084;line-height:1.7;margin:0 0 10px}
+.event-effect{text-align:center;font-size:11px;color:#a8547a;background:#fff;border:1px dashed #efc1d6;border-radius:10px;padding:7px 10px;margin-top:6px}
+.income-tag{display:flex;align-items:center;justify-content:center;gap:4px;margin:4px auto 10px;width:max-content;padding:4px 10px;border-radius:9px;background:#fff;border:1px solid #f2cfdd;font-size:11px;color:#8d5a76}
+.income-tag b{font-size:13px;color:#c34d7d}
+.reward-line{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0;padding:12px;border-radius:14px;background:linear-gradient(135deg,#fff8e6,#ffe9f1);border:1px solid #f3d6b4}
+.reward-line .amt{font-family:var(--serif);font-size:24px;font-weight:900;color:#a5641e}
+.reward-line span{font-size:10px;color:#a07b68;line-height:1.4}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:calc(178px + var(--safe-b));transform:translate(-50%,12px);z-index:45;
+  max-width:min(84vw,340px);padding:10px 15px;border-radius:13px;text-align:center;
+  background:rgba(29,12,38,.94);border:1px solid rgba(255,215,180,.35);color:#ffe9d6;font-size:12px;line-height:1.5;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;box-shadow:0 10px 30px rgba(8,3,14,.4)
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.warn{border-color:rgba(255,150,170,.5);color:#ffd8df}
+
+/* guide */
+.guide{position:fixed;inset:0;z-index:50;display:none;justify-content:center;align-items:center;padding:24px 18px;
+  background:radial-gradient(circle at 50% 28%,rgba(255,166,210,.20),transparent 55%),rgba(13,7,20,.88);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)
+}
+.guide.show{display:flex}
+.guide-card{
+  width:100%;max-width:340px;border-radius:26px;padding:22px 20px 18px;text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(160deg,rgba(255,248,240,.97),rgba(255,232,243,.97));color:#5e3352;
+  border:1px solid rgba(255,244,218,.9);box-shadow:0 24px 70px rgba(0,0,0,.45);animation:popIn .5s ease both
+}
+.guide-card::before{content:"";position:absolute;inset:0;background:radial-gradient(80% 50% at 50% 0,#ffe6f1,transparent 62%);pointer-events:none}
+.guide-logo{position:relative;width:66px;height:66px;margin:0 auto 8px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#ffb7d4,#ff7db3);box-shadow:0 10px 24px rgba(235,79,139,.28)}
+.guide-logo svg{width:34px;height:34px}
+.guide-card h2{position:relative;font-family:var(--serif);font-size:25px;letter-spacing:2px;margin:2px 0 4px;color:#7b2f56}
+.guide-card .sub{position:relative;font-size:10px;letter-spacing:2px;color:#b17e9a;margin-bottom:12px}
+.guide-card .desc{position:relative;font-size:12px;line-height:1.8;color:#7c586f;margin:0 0 12px;text-align:left;padding:10px 12px;background:rgba(255,255,255,.7);border:1px solid #f0d3e0;border-radius:12px}
+.guide-card .notice{position:relative;font-size:9px;color:#a88397;line-height:1.6;margin:0 0 12px}
+.guide-start{position:relative;width:100%;min-height:52px;border-radius:15px;background:linear-gradient(135deg,#ffa0c6,#ff619c 70%,#e84a89);color:#fff;font-size:16px;font-weight:900;letter-spacing:2px;box-shadow:0 10px 24px rgba(235,79,139,.32)}
+.coach{
+  position:fixed;left:50%;bottom:calc(186px + var(--safe-b));transform:translateX(-50%);z-index:16;
+  padding:8px 13px;border-radius:12px;background:rgba(31,13,40,.94);border:1px solid rgba(255,213,168,.45);
+  color:#ffe6c8;font-size:11px;white-space:nowrap;box-shadow:0 10px 24px rgba(8,3,14,.35);opacity:0;transition:opacity .3s
+}
+.coach.show{opacity:1}
+.coach::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:rgba(31,13,40,.94);border-right:1px solid rgba(255,213,168,.45);border-bottom:1px solid rgba(255,213,168,.45)}
+
+/* settlement */
+.settle-overlay{position:fixed;inset:0;z-index:34;display:none;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;
+  background:radial-gradient(80% 55% at 50% 12%,rgba(255,171,209,.2),transparent 62%),
+    radial-gradient(70% 50% at 20% 100%,rgba(149,104,255,.16),transparent 62%),
+    linear-gradient(180deg,#1a0e26,#2a112e 62%,#160b1e)
+}
+.settle-overlay.show{display:block}
+.settle-overlay::-webkit-scrollbar{display:none}
+.settle-wrap{width:100%;max-width:430px;margin:0 auto;padding:calc(16px + var(--safe-t)) 14px calc(12px + var(--safe-b));display:flex;flex-direction:column;align-items:center;gap:10px;min-height:100dvh;justify-content:center}
+.settle-cut{width:min(100% - 14px,354px);border-radius:24px;position:relative;overflow:hidden;
+  background:linear-gradient(165deg,#fff9f1 0%,#fff3f6 48%,#ffeaf3 100%);color:#563149;
+  border:1.5px solid #efce9b;box-shadow:0 24px 60px rgba(8,2,14,.48),0 0 0 1px rgba(255,255,255,.7) inset;
+  padding:14px 14px 12px;animation:popIn .55s ease both
+}
+.settle-cut::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(70% 50% at 50% 0,#ffe4f1,transparent 65%),radial-gradient(50% 40% at 100% 100%,#ffefcf,transparent 60%)}
+.settle-cut::after{content:"";position:absolute;inset:7px;border-radius:18px;border:1px dashed rgba(209,157,110,.4);pointer-events:none}
+.sc-top{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:4px}
+.sc-brand{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:10px;background:linear-gradient(135deg,#ffa9cb,#ff6aa9);color:#fff;font-size:10px;font-weight:900;letter-spacing:2px;box-shadow:0 5px 12px rgba(232,74,137,.22)}
+.sc-brand svg{width:13px;height:13px}
+.sc-top .small{font-size:9px;letter-spacing:1.5px;color:#a87c94}
+.sc-label{position:relative;z-index:2;text-align:center;font-size:9px;letter-spacing:3px;color:#b489a0;margin:7px 0 0}
+.sc-title{position:relative;z-index:2;text-align:center;font-family:var(--serif);font-size:30px;font-weight:900;letter-spacing:2px;color:#6c2f50;line-height:1.3;margin:2px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-desc{position:relative;z-index:2;text-align:center;font-size:10.5px;line-height:1.65;color:#966c86;margin:0 auto 8px;max-width:300px}
+.sc-avatar-row{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:4px;margin:8px 0 10px}
+.sc-avatar-row .aav{width:27px;height:27px;border-radius:50%;overflow:hidden;border:1.5px solid #fff;box-shadow:0 3px 8px rgba(90,42,62,.2);background:#f3dfe7}
+.sc-avatar-row .aav svg{width:100%;height:100%}
+.sc-avatar-row .sep{width:1px;height:18px;background:#e8cbd8;margin:0 1px}
+.sc-stats{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sc-stat{background:rgba(255,255,255,.72);border:1px solid #f0d6e2;border-radius:11px;padding:7px 9px 6px}
+.sc-stat label{display:block;font-size:8.5px;color:#a17c92;letter-spacing:.5px}
+.sc-stat b{display:block;margin-top:1px;font-family:var(--serif);font-size:18px;line-height:1.3;color:#a53d6b;white-space:nowrap}
+.sc-stat b em{font-style:normal;font-size:10px;font-family:var(--sans);color:#a17c92;font-weight:600}
+.sc-quote{position:relative;z-index:2;text-align:center;font-family:var(--serif);font-size:11.5px;line-height:1.6;color:#9a6b84;margin:10px 8px 8px}
+.sc-foot{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:7px;padding-top:8px;border-top:1px dashed #ebcad9;font-size:8px;letter-spacing:1.5px;color:#b08ba0}
+.sc-foot svg{width:11px;height:11px}
+.settle-actions{width:min(100% - 14px,354px);display:flex;gap:8px}
+.settle-actions .btn{min-height:50px;font-size:14px}
+.settle-tip{font-size:9px;color:#b08ba0;text-align:center;letter-spacing:1px;margin-top:1px}
+.settle-x{position:absolute;right:10px;top:10px;z-index:5;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.55);border:1px solid #ebcad9;display:flex;align-items:center;justify-content:center;color:#9c6f88;font-size:15px}
+
+/* market */
+.market-inner{position:relative;z-index:1;width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;min-height:0}
+.market-scroll{flex:1;min-height:0;overflow-y:auto;padding:4px 14px calc(20px + var(--safe-b));scrollbar-width:none}
+.market-scroll::-webkit-scrollbar{display:none}
+.market-note{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.13);font-size:10px;color:#c7a9ba;line-height:1.55;margin-bottom:10px}
+.market-note svg{width:18px;height:18px;flex:0 0 18px;opacity:.7}
+.market-list{display:flex;flex-direction:column;gap:8px}
+.mrow{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:15px;background:linear-gradient(150deg,rgba(255,255,255,.11),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.14)}
+.mrow .thumb{width:52px;height:68px;border-radius:9px;overflow:hidden;flex:0 0 52px;position:relative;border:1px solid rgba(255,255,255,.25);background:#2b1837}
+.mrow .thumb svg{width:100%;height:100%}
+.mrow .minfo{flex:1;min-width:0;line-height:1.3}
+.mrow .minfo b{display:block;font-size:12px;color:#fff2e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .minfo span{display:block;font-size:9px;color:#c4a4b7;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .minfo .mp{font-size:12px;color:#ffd89c;font-weight:900;margin-top:3px}
+.mrow .buy{min-width:60px;min-height:42px;padding:0 9px;border-radius:12px;background:linear-gradient(135deg,#ffdca7,#ecb869);color:#5c3517;font-size:11px;font-weight:900;white-space:nowrap}
+.mrow .buy:disabled{filter:grayscale(.55) brightness(.7)}
+.market-empty{padding:30px 10px;text-align:center;font-size:11px;color:#b896a8;line-height:1.7}
+
+@media (max-height:700px){
+  .poster{height:clamp(280px,42dvh,340px)}
+  .poster-info h1{font-size:32px}
+  .settle-cut{padding:11px 12px 10px}
+  .sc-title{font-size:27px}
+  .sc-avatar-row .aav{width:23px;height:23px}
+  .sc-stat b{font-size:16px}
+  .sc-desc{font-size:10px;margin-bottom:5px}
+  .sc-quote{margin:7px 6px 6px}
+}
+@media (min-width:431px){
+  body{background:#0d0814}
+  .app,.screen,.pack-overlay,.ssr-overlay,.settle-overlay,.modal-back{box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+  .settle-overlay,.pack-overlay{background-color:#120b1c}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="stars-bg" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+  <header class="topbar">
+    <button class="day-btn" data-act="day" aria-label="进入下一天">
+      <svg class="cal" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="16" rx="4" stroke="#ffe2ee" stroke-width="1.6"/>
+        <path d="M3 10h18" stroke="#ffe2ee" stroke-width="1.4" opacity=".7"/>
+        <path d="M8 3v4M16 3v4" stroke="#ffd9a0" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="8.5" cy="14.5" r="1.5" fill="#ffcf9a"/>
+        <circle cx="15.5" cy="14.5" r="1.5" fill="#ff9dc0"/>
+      </svg>
+      <span class="dt">
+        <b>第 <span id="dayNum">1</span> <em>/ 30 天</em></b>
+        <span id="dayHint">点此领取今日生活费</span>
+      </span>
+    </button>
+    <div class="top-right">
+      <div class="money-pill" id="moneyPill"><small>生活费 ¥</small><b id="moneyVal">500</b></div>
+      <button class="icon-btn" data-act="album" aria-label="卡册">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="17" height="17" rx="4" stroke="#ffe6f2" stroke-width="1.6"/>
+          <path d="M7 3.5v17" stroke="#ffd39b" stroke-width="1.5"/>
+          <path d="M11 8.5h6M11 12h6M11 15.5h3.5" stroke="#ffd8ea" stroke-width="1.3" stroke-linecap="round" opacity=".85"/>
+        </svg>
+        <span class="dot-badge" id="albumBadge" data-role="album-badge">0</span>
+      </button>
+      <button class="icon-btn" data-act="mute" id="muteBtn" aria-label="音效开关">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" id="muteIcon"></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="home-main" id="homeMain">
+    <section class="poster" id="poster">
+      <svg class="poster-sky" viewBox="0 0 390 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <radialGradient id="skyGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffe0b4" stop-opacity=".55"/>
+            <stop offset="100%" stop-color="#ffe0b4" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="orbit" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffe2b0" stop-opacity=".0"/>
+            <stop offset="45%" stop-color="#ffe2b0" stop-opacity=".75"/>
+            <stop offset="100%" stop-color="#ffb0cf" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <circle cx="288" cy="196" r="150" fill="url(#skyGlow)"/>
+        <ellipse cx="292" cy="210" rx="150" ry="64" fill="none" stroke="url(#orbit)" stroke-width="1.4" transform="rotate(-18 292 210)"/>
+        <ellipse cx="292" cy="210" rx="176" ry="78" fill="none" stroke="url(#orbit)" stroke-width="1" opacity=".55" transform="rotate(-18 292 210)"/>
+        <path d="M0 300 Q140 244 300 296 T390 268" fill="none" stroke="rgba(255,226,186,.16)" stroke-width="1.2"/>
+        <g fill="#fff3cf">
+          <circle cx="40" cy="58" r="1.8" opacity=".8"/><circle cx="86" cy="34" r="1.2" opacity=".6"/>
+          <circle cx="150" cy="70" r="1.4" opacity=".7"/><circle cx="212" cy="30" r="1" opacity=".55"/>
+          <circle cx="320" cy="58" r="2" opacity=".85"/><circle cx="366" cy="104" r="1.3" opacity=".6"/>
+          <circle cx="70" cy="150" r="1" opacity=".5"/><circle cx="188" cy="128" r="1.6" opacity=".7"/>
+          <circle cx="348" cy="258" r="1.4" opacity=".55"/><circle cx="132" cy="246" r="1.1" opacity=".5"/>
+        </g>
+      </svg>
+      <div class="poster-halo" aria-hidden="true"></div>
+      <div class="poster-halo two" aria-hidden="true"></div>
+      <div class="poster-art" id="posterArt" aria-hidden="true"></div>
+      <div class="poster-deco star" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#ffe6b3" opacity=".9"/></svg>
+      </div>
+      <div class="poster-deco crown" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 18h16l-1.4-7.2-4.3 3L12 7l-2.3 6.8-4.3-3z" fill="#ffe0ab" opacity=".8"/></svg>
+      </div>
+      <div class="poster-info">
+        <span class="pool-tag"><i></i>三周年限定</span>
+        <h1>星轨<br>回响</h1>
+        <p class="pool-sub">STAR7 · 3rd ANNIVERSARY</p>
+        <div class="up-chip"><b>UP</b><span id="upName">沈星野 · 星轨回响</span></div>
+      </div>
+      <div class="poster-foot">
+        <span>56 张限定</span><span>十连必出 SR 以上</span><span>60 抽硬保底</span>
+      </div>
+    </section>
+
+    <div class="home-panels">
+      <section class="glass-card pool-card">
+        <div class="pool-head"><h2>卡池说明</h2><span class="line"></span><span class="more">星轨之下，与你重逢</span></div>
+        <p class="pool-copy">三十天的限定旅程，七位少年沿着星轨向你走来。每一次拆包，都是一次心跳的重逢。</p>
+        <div class="prob-row">
+          <span class="prob-chip N">N <b>60%</b></span>
+          <span class="prob-chip R">R <b>30%</b></span>
+          <span class="prob-chip SR">SR <b>8%</b></span>
+          <span class="prob-chip SSR">SSR <b>2%</b></span>
+        </div>
+        <div style="display:flex;gap:7px;margin-top:11px;flex-wrap:wrap">
+          <button class="link-btn gold-link" data-act="rules">概率说明</button>
+          <button class="link-btn" data-act="more">更多玩法</button>
+        </div>
+      </section>
+
+      <section class="glass-card collect-strip" data-act="album" role="button" tabindex="0">
+        <div class="num"><span id="collectNum">0</span><em>/56</em></div>
+        <div class="bar"><i id="collectBar"></i></div>
+        <span class="go">卡册 ›</span>
+      </section>
+
+      <div class="mini-row">
+        <div class="mini-box"><label>今日已拆</label><b><span id="pullCountToday">0</span> <em>包</em></b></div>
+        <div class="mini-box"><label>碎片余额</label><b><span id="shardVal">0</span> <em>枚</em></b></div>
+        <div class="mini-box"><label>本局花费</label><b><span id="spentVal">0</span> <em>元</em></b></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bottom-dock">
+    <div class="pity-row">
+      <svg class="gem" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.6l2.2 4.6 4.6 1.8-4.6 1.8L8 14.4l-2.2-4.6L1.2 8l4.6-1.8z" fill="#ffd59a"/></svg>
+      <b id="pityText">再抽 60 包必出 SSR</b>
+      <span class="pity-bar"><i id="pityBar"></i></span>
+      <button class="mini-link" data-act="rules">概率</button>
+    </div>
+    <div class="pull-row">
+      <button class="pull-btn" data-act="pull1" id="pull1Btn">
+        <span class="pulse" aria-hidden="true"></span>
+        <span class="lb"><span>拆 1 包</span><small>单抽 · 得 1 张</small></span>
+        <span class="price"><small>¥</small>19</span>
+      </button>
+      <button class="pull-btn ten" data-act="pull10" id="pull10Btn">
+        <span class="pulse" aria-hidden="true"></span>
+        <span class="lb"><span>拆 10 包</span><small>十连 · 必出 SR 以上</small></span>
+        <span class="price"><small>¥</small>169</span>
+      </button>
+    </div>
+  </footer>
+</div>
+
+<div class="screen" id="screenAlbum">
+  <div class="album-inner">
+    <div class="page-head">
+      <button class="round-back" data-act="close-album" aria-label="返回">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M14.5 5.5L8 12l6.5 6.5" stroke="#ffe8f4" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="page-title"><b>星轨卡册</b><span>STAR7 CARD ALBUM</span></div>
+      <div class="right">
+        <span class="chip">碎片 <b id="shardVal2">0</b></span>
+      </div>
+    </div>
+    <div class="album-tabs-wrap"><div class="member-tabs" id="memberTabs"></div></div>
+    <div class="album-progress">
+      <span>总收集</span>
+      <div class="bar"><i id="albumBar"></i></div>
+      <b id="albumCount">0/56</b>
+    </div>
+    <div class="album-scroll" id="albumScroll">
+      <div class="album-grid" id="albumGrid"></div>
+      <div class="album-foot">
+        <span id="memberProgressText">该成员 0/8</span>
+        <button class="link-btn" data-act="exchange">碎片兑换</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="screenMarket">
+  <div class="market-inner">
+    <div class="page-head">
+      <button class="round-back" data-act="close-market" aria-label="返回">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M14.5 5.5L8 12l6.5 6.5" stroke="#ffe8f4" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="page-title"><b>星光集市</b><span>重复卡寄卖 · 碎片回收</span></div>
+      <div class="right"><span class="chip">余额 <b id="moneyVal2">500</b></span></div>
+    </div>
+    <div class="market-scroll">
+      <div class="market-note">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#ffd9a6" stroke-width="1.5"/><path d="M12 7.5v2M12 12.5v4" stroke="#ffd9a6" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span>这里是同好寄卖区：把重复卡寄卖换生活费，或花生活费直接收卡。寄卖成交后不可撤回，收益即时到账。</span>
+      </div>
+      <div class="market-list" id="marketList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="pack-overlay" id="packOverlay">
+  <div class="pack-inner">
+    <div class="pack-top">
+      <div class="pt"><b id="packTitle">拆包中</b><span id="packSub">星轨回响 · 限定卡包</span></div>
+      <div class="pack-actions">
+        <button class="skip-btn" data-act="skip-pack" id="skipPackBtn">跳过动画</button>
+      </div>
+    </div>
+    <div class="pack-body" id="packBody">
+      <div class="tear-stage" id="tearStage">
+        <div class="pack-wrap" id="packWrap">
+          <div class="pack-half top">
+            <svg class="foil-star" viewBox="0 0 24 24" fill="none"><path d="M12 2.2l2.9 6.2 6.7 1.2-4.7 4.3 1.3 6.5L12 17.2 5.8 20.4l1.3-6.5L2.4 9.6l6.7-1.2z" fill="#fff8e3" opacity=".92"/></svg>
+            <div class="brand">STAR7</div>
+          </div>
+          <div class="pack-half bot">
+            <div class="mini">TRACK OF STARS · 3RD ANNIVERSARY</div>
+          </div>
+          <div class="tear-line" id="tearLine"></div>
+          <div class="tear-glow"></div>
+          <div class="rip" id="ripBar"></div>
+        </div>
+        <div class="tear-hint" id="tearHint">
+          <b>横向滑动撕开卡包</b>
+          手指在撕口处左右拖动，或点击下方按钮
+        </div>
+        <div class="tear-cta">
+          <button class="skip-btn" data-act="tear-open" style="min-height:44px;padding:0 20px;font-size:13px">直接撕开</button>
+        </div>
+      </div>
+      <div class="cards-stage hidden" id="cardsStage">
+        <div class="cards-hint" id="cardsHint">点击卡背翻开 · <b>全部翻开</b> 可一次揭晓</div>
+        <div class="pack-grid" id="packGrid"></div>
+        <div class="pack-tally" id="packTally"></div>
+        <div style="display:flex;gap:8px;width:100%;max-width:330px">
+          <button class="skip-btn" data-act="flip-all" style="flex:1;min-height:46px;font-size:13px">全部翻开</button>
+          <button class="pack-collect" data-act="collect" id="collectBtn" style="flex:1.5;min-height:46px">收下卡牌</button>
+        </div>
+        <div style="font-size:10px;color:#c3a3b6;text-align:center" id="resultSummary"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ssr-overlay" id="ssrOverlay">
+  <div class="ssr-rays" aria-hidden="true"></div>
+  <div class="ssr-rays two" aria-hidden="true"></div>
+  <div class="ssr-burst" aria-hidden="true"></div>
+  <div class="ssr-stars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="ssr-inner">
+    <span class="ssr-kicker">SSR · 星轨降临</span>
+    <div class="ssr-portrait" id="ssrPortraitWrap">
+      <div class="inner" id="ssrPortrait"></div>
+      <span class="srar">SSR</span>
+      <span class="sname" id="ssrMember">沈星野</span>
+    </div>
+    <div class="ssr-name" id="ssrCardName">星轨回响</div>
+    <div class="ssr-cardname" id="ssrQuote">“这一次，我循着你的光而来。”</div>
+    <div class="ssr-tip">轻触任意处继续</div>
+  </div>
+</div>
+
+<div class="settle-overlay" id="settleOverlay">
+  <div class="settle-wrap">
+    <div class="settle-cut" id="settleCut">
+      <button class="settle-x" data-act="close-settle" aria-label="关闭">×</button>
+      <div class="sc-top">
+        <span class="sc-brand">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#fff8ea"/></svg>
+          STAR7
+        </span>
+        <span class="small">30 DAYS RECORD</span>
+      </div>
+      <p class="sc-label" id="scLabel">追星三十天 · 结局报告</p>
+      <h2 class="sc-title" id="scTitle">欧皇本皇</h2>
+      <p class="sc-desc" id="scDesc">三十天星轨之旅</p>
+      <div class="sc-avatar-row" id="scAvatars"></div>
+      <div class="sc-stats" id="scStats"></div>
+      <p class="sc-quote" id="scQuote"></p>
+      <div class="sc-foot">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#c99a7c"/></svg>
+        拆小卡模拟器 · 星轨回响 · 虚构企划
+      </div>
+    </div>
+    <div class="settle-actions">
+      <button class="btn gold" data-act="save-img" id="saveImgBtn">保存图片</button>
+    </div>
+    <div class="settle-actions">
+      <button class="btn primary" data-act="restart" style="flex:1.4">再来一局</button>
+      <button class="btn ghost" data-act="close-settle" style="flex:.8">先看看</button>
+    </div>
+    <p class="settle-tip" id="settleTip">手机端可长按结算卡直接保存 / 截图分享</p>
+  </div>
+</div>
+
+<div class="modal-back" id="modalBack"><div class="modal" id="modalBox"></div></div>
+
+<div class="toast" id="toast"></div>
+<div class="coach" id="coach">先拆一包试试运气吧～</div>
+
+<div class="guide" id="guide">
+  <div class="guide-card">
+    <div class="guide-logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#fff7e6"/></svg>
+    </div>
+    <h2>星轨回响</h2>
+    <div class="sub">STAR7 · 拆小卡模拟器</div>
+    <p class="desc">
+      你和 STAR7 一起度过三十天。<br>
+      每天领取生活费，去拆限定卡包，<br>
+      集齐七位成员，就能点亮整片星轨。
+    </p>
+    <p class="notice">本游戏纯属虚构，不涉及真实充值。所有卡牌与人物均为虚构，仅作娱乐。</p>
+    <button class="guide-start" data-act="start-game">开始三十天</button>
+  </div>
+</div>
+
+<script>
+/* ===== 02_data.js ===== */
+/* ================= STAR7 世界观 / 成员 / 卡池数据 ================= */
+const MEMBERS = [
+  {
+    key:'sy', name:'沈星野', en:'SHEN XINGYE', role:'队长 · 主舞',
+    color:'#8fc4ff', color2:'#cfe6ff', ink:'#20344f',
+    bg1:'#243a63', bg2:'#0e1830',
+    hair:'#cfd9ef', hair2:'#8fa4c8', eye:'#8fd4ff', skin:'#ffe9dd', skin2:'#f3c6b9',
+    cloth:'#22253c', cloth2:'#3d4363', trim:'#d9c58f',
+    hairStyle:'wolf', eyeStyle:'cool',
+    tag:'冷感队长', accessory:'starcuff',
+    intro:'台上是锋利到不近人情的队长，台下会替所有人把矿泉水拧开。'
+  },
+  {
+    key:'ja', name:'江予安', en:'JIANG YUAN', role:'主唱 · 甜系担当',
+    color:'#ffbe8a', color2:'#ffe3c4', ink:'#5a3520',
+    bg1:'#5c3a2c', bg2:'#251410',
+    hair:'#c99a72', hair2:'#8e6247', eye:'#ffcf7a', skin:'#ffeadc', skin2:'#f2c3ad',
+    cloth:'#f4e3cf', cloth2:'#d9bda2', trim:'#ff9f6e',
+    hairStyle:'curtain', eyeStyle:'soft',
+    tag:'温柔主唱', accessory:'scarf',
+    intro:'声音像刚出炉的舒芙蕾，会在深夜给粉丝的私信一条条点已读。'
+  },
+  {
+    key:'bl', name:'白鹿鸣', en:'BAI LUMING', role:'作曲 · 氛围担当',
+    color:'#c9a6ff', color2:'#ecdcff', ink:'#3b2360',
+    bg1:'#3c2a60', bg2:'#150f26',
+    hair:'#cdbcf0', hair2:'#9a86c9', eye:'#b98cff', skin:'#fdeade', skin2:'#eac0b4',
+    cloth:'#efe8f6', cloth2:'#b9a7d8', trim:'#8d6ad6',
+    hairStyle:'longwave', eyeStyle:'lazy',
+    tag:'天才作曲', accessory:'headphone',
+    intro:'写歌时会把窗帘拉死，凌晨三点发来一段 demo，附言只有一句「你听听」。'
+  },
+  {
+    key:'wy', name:'温以宁', en:'WEN YINING', role:'门面 · 舞蹈',
+    color:'#9fe6cf', color2:'#dcfff4', ink:'#1f4a3f',
+    bg1:'#224b46', bg2:'#0c1d1b',
+    hair:'#2d2a36', hair2:'#15131c', eye:'#7fe0c3', skin:'#ffe8df', skin2:'#efc2b8',
+    cloth:'#1b1c24', cloth2:'#343642', trim:'#e7e3d6',
+    hairStyle:'hime', eyeStyle:'elegant',
+    tag:'清冷舞者', accessory:'pearl',
+    intro:'练舞练到镜面起雾，谢幕时却会偷偷把花束分给后台每一个人。'
+  },
+  {
+    key:'gy', name:'顾时一', en:'GU SHIYI', role:'Rapper · 舞台担当',
+    color:'#ff9a92', color2:'#ffd9cf', ink:'#5a221f',
+    bg1:'#5c2626', bg2:'#210b0b',
+    hair:'#8c2f34', hair2:'#5a1b20', eye:'#ffcf88', skin:'#ffe6d6', skin2:'#efb89f',
+    cloth:'#3a1416', cloth2:'#67262a', trim:'#c9c9d4',
+    hairStyle:'slick', eyeStyle:'bold',
+    tag:'舞台炸弹', accessory:'chain',
+    intro:'嗓门最大、脾气最软。台上炸场，台下会记得每个工作人员的名字。'
+  },
+  {
+    key:'lq', name:'林青禾', en:'LIN QINGHE', role:'忙内 · 运动担当',
+    color:'#9fe0a8', color2:'#e1ffdf', ink:'#234d2b',
+    bg1:'#2a4a35', bg2:'#0d1c13',
+    hair:'#7fd3b6', hair2:'#3f9d88', eye:'#a8e7a0', skin:'#ffe9d9', skin2:'#f1c3a8',
+    cloth:'#d9efe0', cloth2:'#8fc9ab', trim:'#57a882',
+    hairStyle:'crop', eyeStyle:'bright',
+    tag:'阳光忙内', accessory:'band',
+    intro:'永远多带一瓶水、多带一件外套，被哥哥们叫做「移动补给站」。'
+  },
+  {
+    key:'xz', name:'夏知遥', en:'XIA ZHIYAO', role:'视觉 · 摄影担当',
+    color:'#ffc1a3', color2:'#ffe7d6', ink:'#5a3226',
+    bg1:'#5a3a32', bg2:'#23100c',
+    hair:'#e8c3a2', hair2:'#b98a67', eye:'#ffa98c', skin:'#ffecdf', skin2:'#f4c5b4',
+    cloth:'#ffe1cf', cloth2:'#f3bfa4', trim:'#ff9d86',
+    hairStyle:'airwave', eyeStyle:'sweet',
+    tag:'镜头捕手', accessory:'clip',
+    intro:'总在拍别人，自己的相册里只有模糊的合照和半张侧脸。'
+  }
+];
+const MEMBER_BY_KEY = Object.fromEntries(MEMBERS.map(m => [m.key, m]));
+
+const CARD_NAMES = {
+  sy:['练习室的灯','凌晨三点的琴','雨天公交站','舞台侧幕','未寄出的信','月光练习曲','只对你温柔','星轨回响'],
+  ja:['烤箱前的手套','周三的便利店','共享耳机','午后的甜度','围裙与糖霜','雨夜告白','心跳配方','蜜糖星期天'],
+  bl:['谱纸上的猫','深夜电台','旧钢琴','月光下的即兴','耳机里的雨','为你写的第一首歌','零点合奏','银河协奏曲'],
+  wy:['镜前的第七次','丝带与舞鞋','后台的薄荷茶','谢幕之后','独舞的夜','月光下的独舞','被你看见','黑天鹅之约'],
+  gy:['鼓点与心跳','皮夹克的雨','麦克风试音','深夜排练室','副歌之前','为你唱到沙哑','生日那天的歌','万人合唱时'],
+  lq:['篮球场的午后','偷吃的冰淇淋','练习生笔记','单车后座','晒伤的夏天','毕业那天','操场上的告白','盛夏限定'],
+  xz:['镜头外的小动作','奶茶三分糖','候机厅','海边的帽子','偷拍的睡颜','落日与汽水','你在我镜头里','夏日终章']
+};
+const CARD_QUOTES = {
+  sy:['灯亮之前，先把舞步练到不会出错。','琴声停在半空，像没说完的话。','雨把城市按了静音，只剩你在等车。','幕布外面很吵，我只听得见自己的心跳。','信写了很多遍，最后只寄出一张空白。','这首曲子没有名字，因为它是写给你的。','我对全世界都很冷，除了你。','这一次，我循着你的光而来。'],
+  ja:['手套上还留着糖霜的温度。','每周三的关东煮，多给你一串。','耳机分你一半，歌单里全是想说的话。','甜度刚好，和你笑起来的时候一样。','围裙系好，今天只做你爱吃的那道。','雨太大了，伞下的话，你听见了吗？','心动过速，处方是再看你一眼。','星期天的蜜糖，可以续杯。'],
+  bl:['猫趴在谱纸上，把降B压成了一声呼噜。','深夜电台放的是我还没发表的那首。','旧钢琴走音了，但它记得你的名字。','月光落下来，我随手弹了一整夜。','耳机里下雨，外面却是晴天。','第一首歌写得很慢，因为每个字都要像你。','零点整，我们隔着城市合奏。','银河很吵，我只想听见你的和声。'],
+  wy:['第七次转身，镜子里的我终于满意。','丝带系紧，舞鞋磨破了也不停。','薄荷茶是凉的，等你下台才敢递过去。','谢幕之后，灯灭了，我还在原地。','一个人的舞台，也要跳到最后。','月光是唯一的观众，你是第二个。','被你看见的那一秒，我差点忘了动作。','黑天鹅也会累，但不会在你面前低头。'],
+  gy:['鼓点砸下来，心跳比它还快半拍。','皮夹克被雨淋透，也懒得撑伞。','试音的时候，我偷偷唱了你的名字。','排练室的灯亮到凌晨，副歌还是不够狠。','副歌之前，先让我看你一眼。','唱到沙哑也没关系，你听见就值得。','生日那天的歌，我只唱给一个人。','万人合唱的时候，我在找你的口型。'],
+  lq:['午后的篮球场，风把球衣吹得很鼓。','冰淇淋融化得比我的暗恋还快。','笔记最后一页，写满了你的名字。','单车后座的风，是我藏不住的开心。','晒伤了也要笑，因为你在拍我。','毕业那天，校服第二颗扣子没送出去。','操场上喊的那句，被风吹散了一半。','这个夏天限定的，只有我和你。'],
+  xz:['镜头外的小动作，才是真正的你。','奶茶三分糖，和你一样刚刚好。','候机厅的广播很吵，我只看你。','海边的帽子被吹跑，你笑得最大声。','偷拍你睡着的样子，存进私密相册。','落日和汽水，都是夏天的滤镜。','取景框很小，刚好装下你。','夏日终章，但我还想再拍一季。']
+};
+
+const RARITY_ORDER = ['N','R','SR','SSR'];
+const RARITY_INFO = {
+  N:{ rate:.60, shard:1,  exchange:4,   label:'N',  glow:'#efe9f0' },
+  R:{ rate:.30, shard:3,  exchange:14,  label:'R',  glow:'#8fc2ff' },
+  SR:{ rate:.08, shard:8, exchange:45,  label:'SR', glow:'#c495ff' },
+  SSR:{ rate:.02, shard:30, exchange:120, label:'SSR', glow:'#ffd98b' }
+};
+const RARITY_LAYOUT = [['N','N','N','R','R','SR','SR','SSR']];
+
+const CARDS = [];
+MEMBERS.forEach(m => {
+  RARITY_LAYOUT[0].forEach((rar, i) => {
+    CARDS.push({
+      id: m.key + '-' + i,
+      member: m.key,
+      idx: i,
+      rarity: rar,
+      name: CARD_NAMES[m.key][i],
+      quote: CARD_QUOTES[m.key][i],
+      scene: (i + MEMBERS.indexOf(m)) % 4
+    });
+  });
+});
+const CARD_BY_ID = Object.fromEntries(CARDS.map(c => [c.id, c]));
+const CARDS_BY_MEMBER = {};
+MEMBERS.forEach(m => { CARDS_BY_MEMBER[m.key] = CARDS.filter(c => c.member === m.key); });
+
+const GAME = {
+  PRICE1: 19,
+  PRICE10: 169,
+  PITY_MAX: 60,
+  START_MONEY: 500,
+  TOTAL_DAYS: 30,
+  TOTAL_CARDS: 56,
+  DAILY_MIN: 45,
+  DAILY_MAX: 70,
+  TEN_MIN_SR: true,
+  UP_KEY: 'sy',
+  UP_CHANCE: 0.5,
+  COLLECT_REWARD_MONEY: 188,
+  COLLECT_REWARD_SHARD: 30,
+  SHARD_SELL_RATE: 2,
+  SAVE_KEY: 'star7_chai_xiao_v2'
+};
+
+const TITLES = {
+  emperor: { name:'欧皇本皇', desc:'金光从屏幕里溢出来，连你自己都不敢相信。', quote:'“三十天里，星轨真的为你偏了方向。”' },
+  poor:    { name:'吃土也要抽', desc:'钱包空了，卡册却沉甸甸的。', quote:'“泡面可以吃一个月，限定不能等。”' },
+  calm:    { name:'理智小粉丝', desc:'你精打细算，把每一包都拆在刀刃上。', quote:'“喜欢是喜欢，日子也要好好过。”' },
+  allround: { name:'全能追星人', desc:'卡册、碎片、生活费，你一样都没落下。', quote:'“追星不是逃课，是另一门必修。”' },
+  unlucky: { name:'非酋转世', desc:'金光总在别人的屏幕里，你依然没有放弃。', quote:'“下一包，一定下一包。”' },
+  collector:{ name:'卡册收藏家', desc:'五十六个位置，你几乎把整片星轨都收进了册子。', quote:'“每一张卡，都是一次认真喜欢。”' },
+  normal:  { name:'星轨旅人', desc:'不疾不徐，你走完了这段三十天的旅程。', quote:'“星轨很长，我们慢慢走。”' }
+};
+
+/* ===== 02_svg.js ===== */
+/* ================= 内联 SVG 立绘（7 位成员 · 统一手绘风） ================= */
+function hexMix(hex, target, p) {
+  const a = parseInt(hex.slice(1), 16), b = parseInt(target.slice(1), 16);
+  const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
+  const br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
+  const r = Math.round(ar + (br - ar) * p), g = Math.round(ag + (bg - ag) * p), bl = Math.round(ab + (bb - ab) * p);
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + bl).toString(16).slice(1);
+}
+const dark = (h, p) => hexMix(h, '#120b1a', p);
+const light = (h, p) => hexMix(h, '#ffffff', p);
+
+const EYES = {
+  cool:    { w:11.2, h:5.2, ir:5.4, irh:6.4, lash:3.2, flick:4, lid:0.5 },
+  soft:    { w:11.6, h:6.4, ir:6.0, irh:7.2, lash:3.0, flick:1, lid:0 },
+  lazy:    { w:11.0, h:5.6, ir:5.7, irh:6.8, lash:3.2, flick:1, lid:2 },
+  elegant: { w:11.8, h:4.6, ir:5.1, irh:6.0, lash:2.6, flick:4, lid:0.5 },
+  bold:    { w:12.0, h:6.4, ir:6.0, irh:7.0, lash:3.8, flick:4, lid:0 },
+  bright:  { w:12.0, h:7.0, ir:6.5, irh:7.8, lash:3.0, flick:2, lid:0 },
+  sweet:   { w:11.4, h:6.6, ir:6.2, irh:7.4, lash:3.4, flick:3, lid:0, lashes:1 }
+};
+
+function eyeSVG(ix, iy, s, u, side) {
+  const dir = side === 'r' ? 1 : -1;
+  const ox = ix + dir * s.w;
+  const irisCy = iy + s.h * 0.12;
+  const top = iy - s.h;
+  let lashes = '';
+  if (s.lashes) {
+    lashes = `<path d="M${ox} ${iy - 1} l${dir * 3.4} ${-1.6}" stroke="#2a1a2e" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>`;
+  }
+  return `<g>
+    <path d="M${ix - s.w} ${iy} C${ix - s.w * .55} ${iy - s.h * .95} ${ix + s.w * .55} ${iy - s.h * .95} ${ox} ${iy} C${ix + s.w * .55} ${iy + s.h * .82} ${ix - s.w * .55} ${iy + s.h * .85} ${ix - s.w} ${iy} Z" fill="#fff8fb"/>
+    <ellipse cx="${ix}" cy="${irisCy}" rx="${s.ir}" ry="${s.irh}" fill="url(#eye-${u})"/>
+    <ellipse cx="${ix}" cy="${irisCy}" rx="${s.ir * .58}" ry="${s.irh * .62}" fill="#1a1322" opacity=".92"/>
+    <ellipse cx="${ix}" cy="${irisCy}" rx="${s.ir * .28}" ry="${s.irh * .34}" fill="#090610"/>
+    <circle cx="${ix - s.ir * .36}" cy="${irisCy - s.irh * .34}" r="${s.ir * .33}" fill="#ffffff" opacity=".96"/>
+    <circle cx="${ix + s.ir * .32}" cy="${irisCy + s.irh * .34}" r="${s.ir * .15}" fill="#ffffff" opacity=".7"/>
+    <path d="M${ix - s.w} ${iy} C${ix - s.w * .5} ${top - s.lid} ${ix + s.w * .62} ${top - s.lid} ${ox + dir * 1} ${iy - s.flick}" fill="none" stroke="#2a1a2e" stroke-width="${s.lash}" stroke-linecap="round"/>
+    <path d="M${ix - s.w * .82} ${iy + s.h * .62} C${ix - s.w * .3} ${iy + s.h * .95} ${ix + s.w * .35} ${iy + s.h * .92} ${ix + s.w * .78} ${iy + s.h * .5}" fill="none" stroke="#9b6f7d" stroke-width=".8" opacity=".55"/>
+    ${lashes}
+  </g>`;
+}
+
+/* ---- 后发 ---- */
+function hairBack(m) {
+  const u = m.key, H = `url(#hair-${u})`;
+  switch (m.hairStyle) {
+    case 'wolf':
+      return `<path d="M60 120 C52 82 70 48 100 46 C130 48 148 82 140 122 C152 140 158 170 152 204 L140 190 C138 172 136 158 132 148 L68 148 C64 160 62 176 60 192 L44 206 C46 172 52 142 60 120 Z" fill="${H}"/>
+      <path d="M126 150 C138 162 142 180 140 200 C136 184 132 170 126 160 Z" fill="${dark(m.hair, .18)}" opacity=".6"/>`;
+    case 'curtain':
+      return `<path d="M60 116 C52 78 72 48 100 46 C128 48 148 78 140 116 C148 138 150 166 144 190 C138 178 136 160 132 150 L68 150 C64 162 62 178 56 190 C50 166 52 136 60 116 Z" fill="${H}"/>
+      <path d="M56 168 C60 180 62 188 68 194 C64 182 62 172 62 164 Z" fill="${dark(m.hair, .22)}" opacity=".7"/>
+      <path d="M144 168 C140 180 138 188 132 194 C136 182 138 172 138 164 Z" fill="${dark(m.hair, .22)}" opacity=".7"/>`;
+    case 'longwave':
+      return `<path d="M58 118 C50 76 70 44 100 42 C130 44 150 76 142 118 C152 142 160 186 164 246 C152 236 144 216 140 198 C146 168 138 146 132 136 L68 136 C62 148 54 170 58 198 C54 218 44 238 32 246 C38 186 48 140 58 118 Z" fill="${H}"/>
+      <path d="M44 200 C50 216 54 232 50 244 C44 230 40 214 40 200 Z" fill="${dark(m.hair, .2)}" opacity=".65"/>
+      <path d="M156 200 C150 216 146 232 150 244 C156 230 160 214 160 200 Z" fill="${dark(m.hair, .2)}" opacity=".65"/>
+      <path d="M62 152 C68 172 70 190 68 206" stroke="${light(m.hair, .35)}" stroke-width="1.2" fill="none" opacity=".5"/>`;
+    case 'hime':
+      return `<path d="M60 120 C52 80 72 48 100 46 C128 48 148 80 140 120 L145 176 L138 176 L136 204 L64 204 L62 176 L55 176 Z" fill="${H}"/>
+      <path d="M62 94 L60 188 L76 188 L74 102 Z" fill="${H}"/>
+      <path d="M138 94 L140 188 L124 188 L126 102 Z" fill="${H}"/>`;
+    case 'slick':
+      return `<path d="M66 112 C62 80 78 54 100 52 C122 54 138 80 134 112 L140 150 L60 150 Z" fill="${H}"/>
+      <path d="M60 136 L140 136 L141 150 L59 150 Z" fill="${dark(m.hair, .4)}" opacity=".8"/>`;
+    case 'crop':
+      return `<path d="M64 112 C60 82 76 52 100 50 C124 52 140 82 136 112 L142 144 L58 144 Z" fill="${H}"/>
+      <path d="M60 128 L140 128 L142 144 L58 144 Z" fill="${dark(m.hair, .25)}" opacity=".65"/>`;
+    case 'airwave':
+      return `<path d="M58 120 C50 78 70 44 100 42 C130 44 150 78 142 120 C152 146 158 192 152 242 C144 222 138 200 136 184 L64 184 C62 202 56 222 48 242 C42 192 48 146 58 120 Z" fill="${H}"/>
+      <path d="M48 196 C54 214 56 230 52 242 C46 228 42 210 42 196 Z" fill="${dark(m.hair, .2)}" opacity=".6"/>
+      <path d="M152 196 C146 214 144 230 148 242 C154 228 158 210 158 196 Z" fill="${dark(m.hair, .2)}" opacity=".6"/>`;
+  }
+  return '';
+}
+
+/* ---- 前发 ---- */
+function hairFront(m) {
+  const u = m.key, H = `url(#hair-${u})`;
+  switch (m.hairStyle) {
+    case 'wolf':
+      return `<path d="M64 108 C66 74 82 54 100 54 C120 54 136 74 137 106 C130 92 122 82 114 78 L111 100 L104 76 L100 98 L95 74 L89 96 L84 80 L78 104 C72 96 68 92 64 108 Z" fill="${H}"/>
+      <path d="M133 92 C140 110 140 132 136 152 C132 134 130 116 128 100 Z" fill="${H}" opacity=".92"/>
+      <path d="M76 80 C86 66 106 60 122 66" fill="none" stroke="${light(m.hair, .55)}" stroke-width="2" opacity=".65"/>`;
+    case 'curtain':
+      return `<path d="M100 54 C82 54 70 70 67 98 C74 84 84 76 98 70 C96 86 92 100 86 112 C98 100 100 84 100 68 C100 84 103 100 114 112 C108 100 104 86 102 70 C116 76 126 84 133 98 C130 70 118 54 100 54 Z" fill="${H}"/>
+      <path d="M68 96 C64 114 66 132 72 148 C72 130 70 112 68 96 Z" fill="${H}" opacity=".9"/>
+      <path d="M132 96 C136 114 134 132 128 148 C128 130 130 112 132 96 Z" fill="${H}" opacity=".9"/>
+      <path d="M80 66 C92 58 108 58 120 66" fill="none" stroke="${light(m.hair, .5)}" stroke-width="2" opacity=".5"/>`;
+    case 'longwave':
+      return `<path d="M100 52 C78 52 66 70 64 100 C70 84 80 74 94 68 C88 90 86 112 90 138 C98 122 100 102 100 84 C108 104 120 118 134 126 C130 100 120 66 100 52 Z" fill="${H}"/>
+      <path d="M132 100 C142 124 144 160 138 196 C134 166 132 130 130 108 Z" fill="${H}" opacity=".92"/>
+      <path d="M78 72 C88 60 102 56 114 60" fill="none" stroke="${light(m.hair, .5)}" stroke-width="1.8" opacity=".55"/>`;
+    case 'hime':
+      return `<path d="M65 106 C65 74 80 54 100 54 C120 54 135 74 135 106 L129 94 L124 108 L118 94 L112 108 L106 94 L100 108 L94 94 L88 108 L82 94 L76 108 L71 94 Z" fill="${H}"/>
+      <path d="M72 70 C84 58 116 58 128 70" fill="none" stroke="${light(m.hair, .5)}" stroke-width="2" opacity=".55"/>`;
+    case 'slick':
+      return `<path d="M67 100 C72 70 84 50 102 50 C120 50 132 64 135 92 C127 72 113 64 100 64 C86 64 76 76 67 100 Z" fill="${H}"/>
+      <path d="M86 64 C82 78 79 94 81 110 C86 100 88 86 90 74 Z" fill="${H}" opacity=".95"/>
+      <path d="M124 62 C132 68 136 78 137 90" fill="none" stroke="${light(m.hair, .45)}" stroke-width="1.8" opacity=".6"/>`;
+    case 'crop':
+      return `<path d="M64 102 C68 72 82 52 100 52 C118 52 132 70 136 96 C128 84 118 76 106 74 L111 90 L100 74 L92 92 L86 76 L78 94 C72 90 68 94 64 102 Z" fill="${H}"/>
+      <path d="M104 50 C112 34 122 32 128 38 C119 40 112 48 108 60 Z" fill="${H}"/>
+      <path d="M62 100 C56 110 54 124 58 138 C60 124 61 112 64 104 Z" fill="${H}" opacity=".9"/>
+      <path d="M80 68 C90 58 108 56 120 62" fill="none" stroke="${light(m.hair, .5)}" stroke-width="1.8" opacity=".5"/>`;
+    case 'airwave':
+      return `<path d="M66 104 C68 72 82 52 100 52 C118 52 133 72 135 104 C128 90 120 82 112 78 L108 96 L102 78 L96 96 L90 78 L83 88 L78 102 Z" fill="${H}"/>
+      <path d="M134 96 C142 118 144 150 138 184 C134 154 132 122 130 104 Z" fill="${H}" opacity=".92"/>
+      <path d="M64 100 C58 116 58 138 62 158 C64 136 64 116 66 104 Z" fill="${H}" opacity=".85"/>
+      <path d="M80 66 C92 56 110 56 122 64" fill="none" stroke="${light(m.hair, .55)}" stroke-width="2" opacity=".55"/>`;
+  }
+  return '';
+}
+
+/* ---- 服装 ---- */
+function outfitSVG(m) {
+  const u = m.key, C = `url(#cloth-${u})`, C2 = `url(#cloth2-${u})`;
+  const base = `<path d="M22 302 C24 248 46 214 78 202 L100 228 L122 202 C154 214 176 248 178 302 Z" fill="${C}"/>
+    <path d="M78 202 L100 228 L122 202 L130 208 C118 220 108 232 100 240 C92 232 82 220 70 208 Z" fill="${C2}"/>
+    <path d="M34 302 C36 266 46 238 62 220" stroke="${light(m.cloth, .3)}" stroke-width="1.2" fill="none" opacity=".55"/>
+    <path d="M166 302 C164 266 154 238 138 220" stroke="${light(m.cloth, .3)}" stroke-width="1.2" fill="none" opacity=".55"/>`;
+  switch (m.accessory) {
+    case 'starcuff':
+      return base + `<path d="M84 196 L100 214 L116 196 L122 202 L100 228 L78 202 Z" fill="${C2}" opacity=".9"/>
+      <path d="M100 214 L100 302" stroke="${dark(m.cloth, .35)}" stroke-width="1.2" opacity=".7"/>
+      <circle cx="100" cy="246" r="2.1" fill="${m.trim}"/>
+      <circle cx="100" cy="264" r="2.1" fill="${m.trim}"/>
+      <path d="M100 250 l2.4 6 6 .8-4.4 4.2 1 6-5-2.8-5 2.8 1-6-4.4-4.2 6-.8z" fill="${m.trim}" opacity=".95" transform="translate(-3 6) scale(.62)"/>
+      <path d="M132 190 C138 198 140 208 138 218" stroke="${m.trim}" stroke-width="1.4" fill="none" opacity=".8"/>`;
+    case 'scarf':
+      return base + `<path d="M80 184 C88 198 112 198 120 184 C132 190 138 202 134 218 L122 212 C114 224 86 224 78 212 L66 218 C62 202 68 190 80 184 Z" fill="${C2}"/>
+      <path d="M120 196 L132 260 L120 266 L112 204 Z" fill="${C2}"/>
+      <path d="M86 206 C94 214 106 214 114 206" stroke="${light(m.trim, .3)}" stroke-width="1.4" fill="none" opacity=".8"/>
+      <path d="M112 246 l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="${m.trim}" opacity=".9" transform="scale(.8) translate(28 60)"/>`;
+    case 'headphone':
+      return base + `<path d="M70 214 C64 200 66 186 78 178 L84 190 C76 196 74 204 76 214 Z" fill="${dark(m.cloth2, .3)}"/>
+      <path d="M130 214 C136 200 134 186 122 178 L116 190 C124 196 126 204 124 214 Z" fill="${dark(m.cloth2, .3)}"/>
+      <circle cx="70" cy="218" r="9" fill="${C2}" stroke="${light(m.cloth2, .35)}" stroke-width="1"/>
+      <circle cx="130" cy="218" r="9" fill="${C2}" stroke="${light(m.cloth2, .35)}" stroke-width="1"/>
+      <path d="M86 202 L100 220 L114 202 L118 206 L100 230 L82 206 Z" fill="${C2}"/>
+      <path d="M100 222 L100 302" stroke="${dark(m.cloth2, .25)}" stroke-width="1" opacity=".5"/>`;
+    case 'pearl':
+      return base + `<path d="M82 190 C88 200 112 200 118 190 C120 196 118 202 112 206 C106 212 94 212 88 206 C82 202 80 196 82 190 Z" fill="${dark(m.cloth, .3)}"/>
+      <path d="M84 204 C90 216 110 216 116 204" fill="none" stroke="${m.trim}" stroke-width="1" opacity=".7"/>
+      <g fill="${m.trim}"><circle cx="90" cy="214" r="2"/><circle cx="96" cy="218" r="2"/><circle cx="103" cy="219" r="2"/><circle cx="110" cy="216" r="2"/><circle cx="116" cy="211" r="2"/></g>
+      <path d="M68 226 L100 250 L132 226" fill="none" stroke="${dark(m.cloth, .2)}" stroke-width="1.2" opacity=".5"/>`;
+    case 'chain':
+      return base + `<path d="M80 198 L100 226 L120 198 L126 204 L100 236 L74 204 Z" fill="${dark(m.cloth2, .25)}"/>
+      <path d="M100 226 L100 302" stroke="${m.trim}" stroke-width="1.4" opacity=".75"/>
+      <path d="M84 224 C90 244 110 244 116 224" fill="none" stroke="${m.trim}" stroke-width="1.6" stroke-dasharray="2.6 2.2" opacity=".9"/>
+      <path d="M128 210 L124 262" stroke="${light(m.cloth2, .5)}" stroke-width="2" opacity=".8"/>
+      <path d="M96 202 L104 202 L104 208 L96 208 Z" fill="${m.trim}" opacity=".75"/>`;
+    case 'band':
+      return base + `<path d="M78 204 L100 232 L122 204 L128 210 L100 242 L72 210 Z" fill="${C2}"/>
+      <path d="M40 258 L52 254 L60 302 L46 302 Z" fill="${light(m.cloth, .35)}" opacity=".9"/>
+      <path d="M160 258 L148 254 L140 302 L154 302 Z" fill="${light(m.cloth, .35)}" opacity=".9"/>
+      <path d="M96 226 L104 226 L104 302 L96 302 Z" fill="${light(m.cloth, .5)}" opacity=".6"/>`;
+    case 'clip':
+      return base + `<path d="M84 198 C92 210 108 210 116 198 C118 206 114 214 106 218 C100 222 100 222 94 218 C86 214 82 206 84 198 Z" fill="#fff6ef" stroke="${light(m.cloth2, .3)}" stroke-width=".8"/>
+      <path d="M100 226 L100 302" stroke="${dark(m.cloth2, .2)}" stroke-width="1" opacity=".4"/>
+      <g fill="${light(m.cloth, .4)}"><circle cx="94" cy="240" r="1.5"/><circle cx="106" cy="252" r="1.5"/><circle cx="96" cy="268" r="1.5"/></g>`;
+  }
+  return base;
+}
+
+/* ---- 配件 ---- */
+function accessorySVG(m) {
+  switch (m.accessory) {
+    case 'starcuff':
+      return `<g stroke="${m.trim}" fill="none"><path d="M64 108 C60 104 60 100 64 98" stroke-width="1.6"/><path d="M65 124 C60 124 58 120 58 116" stroke-width="1.4"/></g>
+      <path d="M141 104 l1.6 4 4 .5-3 2.8.7 4-3.3-2-3.3 2 .7-4-3-2.8 4-.5z" fill="${m.trim}"/>`;
+    case 'scarf':
+      return `<circle cx="65" cy="120" r="2.2" fill="${m.trim}"/><circle cx="135" cy="120" r="2.2" fill="${m.trim}"/>
+      <ellipse cx="72" cy="129" rx="7" ry="3.2" fill="#ff9fae" opacity=".18"/><ellipse cx="128" cy="129" rx="7" ry="3.2" fill="#ff9fae" opacity=".18"/>`;
+    case 'headphone':
+      return `<path d="M67 112 C61 108 60 102 64 98" stroke="${light(m.cloth2, .4)}" stroke-width="1.4" fill="none"/>
+      <path d="M133 112 C139 108 140 102 136 98" stroke="${light(m.cloth2, .4)}" stroke-width="1.4" fill="none"/>`;
+    case 'pearl':
+      return `<circle cx="66" cy="122" r="1.8" fill="${m.trim}"/><circle cx="66" cy="127" r="1.8" fill="${m.trim}"/>
+      <circle cx="134" cy="122" r="1.8" fill="${m.trim}"/><circle cx="134" cy="127" r="1.8" fill="${m.trim}"/>
+      <ellipse cx="79" cy="132" rx="1.2" ry="1.6" fill="#a86a74" opacity=".55"/>`;
+    case 'chain':
+      return `<circle cx="64" cy="120" r="1.6" fill="${m.trim}"/><circle cx="136" cy="120" r="1.6" fill="${m.trim}"/>
+      <path d="M137 108 C142 112 142 118 138 122" stroke="${m.trim}" stroke-width="1.1" fill="none" opacity=".8"/>`;
+    case 'band':
+      return `<path d="M66 96 C74 90 86 88 100 88 C114 88 126 90 134 96 L132 101 C122 96 112 94 100 94 C88 94 78 96 68 101 Z" fill="${m.trim}" opacity=".95"/>
+      <circle cx="135" cy="118" r="1.6" fill="${m.trim}"/>`;
+    case 'clip':
+      return `<g transform="translate(126 74) rotate(18)"><path d="M0 0 C6 -4 12 0 10 6 C8 12 0 12 -3 6 C-5 2 -3 -1 0 0 Z" fill="#ff9d86"/><circle cx="4" cy="5" r="2.6" fill="#ffe4c4"/></g>
+      <circle cx="134" cy="124" r="1.6" fill="${m.trim}"/><circle cx="66" cy="124" r="1.6" fill="${m.trim}"/>`;
+  }
+  return '';
+}
+
+/* ---- 背景纹样（按卡牌 scene 变化） ---- */
+function motifSVG(scene, m) {
+  const c = light(m.color, .5);
+  if (scene === 1) {
+    return `<g fill="${c}" opacity=".2">
+      <circle cx="34" cy="46" r="15"/><circle cx="62" cy="26" r="8"/><circle cx="18" cy="88" r="6"/>
+      <circle cx="168" cy="216" r="13"/><circle cx="184" cy="186" r="7"/><circle cx="38" cy="252" r="9"/></g>
+      <g fill="#fff3d6" opacity=".45"><circle cx="150" cy="34" r="1.5"/><circle cx="20" cy="180" r="1.4"/></g>`;
+  }
+  if (scene === 2) {
+    return `<g stroke="${c}" fill="none" opacity=".26">
+      <path d="M-4 26 L52 108" stroke-width="2"/><path d="M28 18 L86 104" stroke-width="1.4"/>
+      <path d="M74 14 L128 96" stroke-width="1.8"/><path d="M124 20 L180 108" stroke-width="1.2"/>
+      <path d="M168 12 L212 86" stroke-width="1.6"/></g>
+      <g fill="${c}" opacity=".38"><circle cx="30" cy="150" r="2"/><circle cx="176" cy="168" r="1.6"/></g>`;
+  }
+  if (scene === 3) {
+    return `<g fill="${c}" opacity=".16">
+      <path d="M112 0 L200 0 L200 118 Z"/><path d="M0 0 L58 0 L0 104 Z"/></g>
+      <g stroke="${c}" fill="none" opacity=".5">
+      <path d="M22 60 C26 54 30 54 34 60 C38 54 42 54 46 60" stroke-width="1.3"/>
+      <path d="M160 44 C164 38 168 38 172 44 C176 38 180 38 184 44" stroke-width="1.3" opacity=".7"/></g>
+      <g fill="#fff3d6" opacity=".45"><circle cx="148" cy="236" r="1.8"/><circle cx="182" cy="150" r="1.2"/></g>`;
+  }
+  return `<g fill="#fff3d6" opacity=".55">
+    <path d="M34 40 l1.6 5 5 1.6-5 1.6-1.6 5-1.6-5-5-1.6 5-1.6z"/>
+    <path d="M168 210 l1.4 4.6 4.6 1.4-4.6 1.4-1.4 4.6-1.4-4.6-4.6-1.4 4.6-1.4z" opacity=".75"/>
+    <circle cx="164" cy="48" r="1.8"/><circle cx="28" cy="254" r="1.6"/><circle cx="90" cy="24" r="1.2" opacity=".65"/></g>
+    <path d="M154 40 a18 18 0 1 0 20 22 a14 14 0 0 1 -20 -22" fill="${light(m.color, .8)}" opacity=".22"/>`;
+}
+
+/* ---- 完整立绘 ---- */
+function portraitSVG(m, scene) {
+  const u = m.key;
+  const eyeStyle = EYES[m.eyeStyle] || EYES.soft;
+  const sc = (scene === undefined ? 0 : scene) % 4;
+  return `<svg viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${m.name}立绘">
+  <defs>
+    <linearGradient id="bg-${u}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${m.bg1}"/><stop offset="55%" stop-color="${dark(m.bg1, .35)}"/><stop offset="100%" stop-color="${m.bg2}"/>
+    </linearGradient>
+    <radialGradient id="halo-${u}" cx="50%" cy="28%" r="60%">
+      <stop offset="0" stop-color="${m.color}" stop-opacity=".62"/><stop offset="60%" stop-color="${m.color}" stop-opacity=".16"/><stop offset="100%" stop-color="${m.color}" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hair-${u}" x1="0" y1="0" x2=".7" y2="1">
+      <stop offset="0" stop-color="${light(m.hair, .22)}"/><stop offset="48%" stop-color="${m.hair}"/><stop offset="100%" stop-color="${m.hair2}"/>
+    </linearGradient>
+    <linearGradient id="skin-${u}" x1=".3" y1="0" x2=".8" y2="1">
+      <stop offset="0" stop-color="${light(m.skin, .12)}"/><stop offset="62%" stop-color="${m.skin}"/><stop offset="100%" stop-color="${m.skin2}"/>
+    </linearGradient>
+    <linearGradient id="cloth-${u}" x1="0" y1="0" x2=".4" y2="1">
+      <stop offset="0" stop-color="${light(m.cloth, .2)}"/><stop offset="46%" stop-color="${m.cloth}"/><stop offset="100%" stop-color="${dark(m.cloth, .35)}"/>
+    </linearGradient>
+    <linearGradient id="cloth2-${u}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${light(m.cloth2, .18)}"/><stop offset="100%" stop-color="${m.cloth2}"/>
+    </linearGradient>
+    <linearGradient id="eye-${u}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${dark(m.eye, .32)}"/><stop offset="55%" stop-color="${m.eye}"/><stop offset="100%" stop-color="${light(m.eye, .35)}"/>
+    </linearGradient>
+    <linearGradient id="bgfade-${u}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="58%" stop-color="#120b1a" stop-opacity="0"/><stop offset="100%" stop-color="#120b1a" stop-opacity=".55"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="300" fill="url(#bg-${u})"/>
+  <rect width="200" height="300" fill="${['rgba(0,0,0,0)','rgba(255,170,110,.10)','rgba(74,140,255,.12)','rgba(196,108,255,.11)'][sc]}"/>
+  <circle cx="100" cy="104" r="92" fill="url(#halo-${u})"/>
+  <path d="M-10 260 C40 236 70 248 104 238 C140 228 170 244 210 222" stroke="${light(m.color, .3)}" stroke-width="1" fill="none" opacity=".35"/>
+  ${motifSVG(sc, m)}
+  ${hairBack(m)}
+  ${outfitSVG(m)}
+  <path d="M90 146 L90 188 C90 198 110 198 110 188 L110 146 Z" fill="url(#skin-${u})"/>
+  <path d="M90 158 C95 172 105 172 110 158 L110 146 L90 146 Z" fill="${dark(m.skin2, .12)}" opacity=".55"/>
+  <ellipse cx="66.5" cy="114" rx="4.4" ry="8" fill="url(#skin-${u})"/>
+  <ellipse cx="133.5" cy="114" rx="4.4" ry="8" fill="url(#skin-${u})"/>
+  <path d="M65 110 C68 112 68 119 65 121" stroke="${dark(m.skin2, .2)}" stroke-width=".8" fill="none" opacity=".7"/>
+  <path d="M135 110 C132 112 132 119 135 121" stroke="${dark(m.skin2, .2)}" stroke-width=".8" fill="none" opacity=".7"/>
+  <path d="M68 106 C68 74 82 54 100 54 C118 54 132 74 132 106 C132 136 118 160 100 160 C82 160 68 136 68 106 Z" fill="url(#skin-${u})"/>
+  <path d="M68 104 C68 128 80 150 94 159 C82 144 74 126 72 104 Z" fill="${dark(m.skin2, .1)}" opacity=".22"/>
+  <path d="M118 77 C126 84 131 93 132 106 C132 128 122 148 110 157 C126 150 136 130 136 108 C136 94 129 82 118 77 Z" fill="#ffffff" opacity=".08"/>
+  ${hairFront(m)}
+  ${eyeSVG(82, 117, eyeStyle, u, 'l')}
+  ${eyeSVG(118, 117, eyeStyle, u, 'r')}
+  <path d="M72 100 C78 96 87 96 93 99" stroke="${dark(m.hair2, .35)}" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".85"/>
+  <path d="M107 99 C113 96 122 96 128 100" stroke="${dark(m.hair2, .35)}" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".85"/>
+  <path d="M99 126 C97 130 98 132 101 132" stroke="${dark(m.skin2, .28)}" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M94 141 C97 145 103 145 106 141" stroke="#c97488" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <ellipse cx="77" cy="133" rx="7" ry="3.2" fill="#ff98ae" opacity=".2"/>
+  <ellipse cx="123" cy="133" rx="7" ry="3.2" fill="#ff98ae" opacity=".2"/>
+  ${accessorySVG(m)}
+  <g opacity=".7"><circle cx="168" cy="84" r="2" fill="${light(m.color, .6)}"/><circle cx="34" cy="120" r="1.6" fill="#fff3d6"/><circle cx="154" cy="176" r="1.4" fill="${light(m.color, .5)}"/></g>
+  <rect width="200" height="300" fill="url(#bgfade-${u})" opacity=".7"/>
+</svg>`;
+}
+
+/* ---- 小头像（卡册 tab / 结算） ---- */
+function avatarSVG(m) {
+  const u = m.key;
+  const long = ['longwave', 'hime', 'airwave', 'curtain'].includes(m.hairStyle);
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="abg-${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light(m.bg1, .15)}"/><stop offset="100%" stop-color="${m.bg2}"/></linearGradient>
+    <linearGradient id="ahair-${u}" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="${light(m.hair, .2)}"/><stop offset="100%" stop-color="${m.hair2}"/></linearGradient>
+    <linearGradient id="askin-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${light(m.skin, .1)}"/><stop offset="100%" stop-color="${m.skin2}"/></linearGradient>
+  </defs>
+  <rect width="100" height="100" fill="url(#abg-${u})"/>
+  <circle cx="50" cy="36" r="42" fill="${m.color}" opacity=".16"/>
+  ${long ? `<path d="M20 42 C18 20 32 8 50 8 C68 8 82 20 80 42 L84 78 L68 72 L64 46 L36 46 L32 72 L16 78 Z" fill="url(#ahair-${u})"/>` : `<path d="M24 40 C24 20 34 9 50 9 C66 9 76 20 76 40 L78 62 L68 56 L64 42 L36 42 L32 56 L22 62 Z" fill="url(#ahair-${u})"/>`}
+  <path d="M20 100 C22 84 33 76 50 76 C67 76 78 84 80 100 Z" fill="${m.cloth}"/>
+  <path d="M42 84 L50 92 L58 84 L62 86 L50 100 L38 86 Z" fill="${m.cloth2}"/>
+  <ellipse cx="50" cy="48" rx="20" ry="24" fill="url(#askin-${u})"/>
+  <path d="M30 44 C32 22 40 14 50 14 C60 14 68 22 70 44 C64 34 58 28 50 28 C42 28 36 34 30 44 Z" fill="url(#ahair-${u})"/>
+  ${m.hairStyle === 'hime' ? `<path d="M30 34 L30 64 L37 64 L37 36 Z" fill="url(#ahair-${u})"/><path d="M70 34 L70 64 L63 64 L63 36 Z" fill="url(#ahair-${u})"/>` : ''}
+  ${m.hairStyle === 'crop' ? `<path d="M58 14 C64 6 72 6 74 12 C68 12 64 18 62 26 Z" fill="url(#ahair-${u})"/>` : ''}
+  <ellipse cx="43" cy="50" rx="3.4" ry="4.2" fill="#2a1a2e"/>
+  <ellipse cx="57" cy="50" rx="3.4" ry="4.2" fill="#2a1a2e"/>
+  <ellipse cx="43" cy="50" rx="2.1" ry="2.8" fill="${m.eye}"/>
+  <ellipse cx="57" cy="50" rx="2.1" ry="2.8" fill="${m.eye}"/>
+  <circle cx="42" cy="49" r=".9" fill="#fff"/><circle cx="56" cy="49" r=".9" fill="#fff"/>
+  <path d="M45 60 C48 63 52 63 55 60" stroke="#c97488" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="36" cy="56" rx="4" ry="2" fill="#ff98ae" opacity=".28"/>
+  <ellipse cx="64" cy="56" rx="4" ry="2" fill="#ff98ae" opacity=".28"/>
+</svg>`;
+}
+
+/* ===== 03a_core.js ===== */
+/* ================= 核心：状态 / 存档 / 音效 / 基础渲染 ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const rand = n => Math.floor(Math.random() * n);
+const randRange = (a, b) => a + rand(b - a + 1);
+
+function defaultState() {
+  return {
+    v: 2, day: 1, money: GAME.START_MONEY, shards: 0,
+    cards: {}, dupes: {}, fresh: {},
+    pityLeft: GAME.PITY_MAX,
+    stats: { spent: 0, pulls: 0, n: 0, r: 0, sr: 0, ssr: 0, dupShards: 0, income: 0 },
+    claimed: {}, mute: false, guideDone: false,
+    todayPulls: 0, dayIncome: 0, market: null, marketDay: 0,
+    events: [], ended: false, ending: null, lastEvent: null
+  };
+}
+
+let state = defaultState();
+let pendingPull = null;   // 当前拆包结果
+let tearProgress = 0;
+let packLocked = false;
+let ssrQueue = [];
+let ssrActive = false;
+
+function save() {
+  try { localStorage.setItem(GAME.SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(GAME.SAVE_KEY);
+    if (!raw) return false;
+    const p = JSON.parse(raw);
+    if (!p || typeof p !== 'object') return false;
+    const base = defaultState();
+    const s = Object.assign(base, p);
+    s.stats = Object.assign(base.stats, p.stats || {});
+    s.cards = (p.cards && typeof p.cards === 'object') ? p.cards : {};
+    s.dupes = (p.dupes && typeof p.dupes === 'object') ? p.dupes : {};
+    s.fresh = (p.fresh && typeof p.fresh === 'object') ? p.fresh : {};
+    s.claimed = (p.claimed && typeof p.claimed === 'object') ? p.claimed : {};
+    s.events = Array.isArray(p.events) ? p.events : [];
+    s.day = clamp(Math.round(+s.day || 1), 1, GAME.TOTAL_DAYS);
+    s.money = Math.max(0, Math.round(+s.money || 0));
+    s.shards = Math.max(0, Math.round(+s.shards || 0));
+    s.pityLeft = clamp(Math.round(+s.pityLeft || GAME.PITY_MAX), 1, GAME.PITY_MAX);
+    s.todayPulls = Math.max(0, Math.round(+s.todayPulls || 0));
+    Object.keys(s.cards).forEach(id => {
+      if (!CARD_BY_ID[id]) delete s.cards[id];
+    });
+    state = s;
+    return true;
+  } catch (e) { return false; }
+}
+
+function owned(id) { return !!(state.cards && state.cards[id]); }
+function uniqueCount() { return CARDS.filter(c => owned(c.id)).length; }
+function memberOwned(key) { return CARDS_BY_MEMBER[key].filter(c => owned(c.id)).length; }
+
+/* ---------- 音效（WebAudio 程序化合成，无外部文件） ---------- */
+let actx = null;
+function ensureAudio() {
+  try {
+    if (!actx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+    }
+    if (actx.state === 'suspended') actx.resume();
+  } catch (e) { actx = null; }
+  return actx;
+}
+function note(freq, t0, dur, vol, type) {
+  if (!actx) return;
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol || .1, t0 + .012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t0); o.stop(t0 + dur + .02);
+}
+function sfx(name) {
+  if (!state || state.mute) return;
+  if (!ensureAudio()) return;
+  const t = actx.currentTime;
+  switch (name) {
+    case 'click': note(760, t, .06, .05, 'sine'); note(1120, t + .04, .05, .03, 'sine'); break;
+    case 'tear': note(260, t, .18, .05, 'sawtooth'); note(420, t + .08, .2, .04, 'sawtooth'); break;
+    case 'flip': note(520, t, .07, .05, 'triangle'); note(880, t + .05, .09, .045, 'triangle'); break;
+    case 'sr': [660, 880, 1100].forEach((f, i) => note(f, t + i * .07, .18, .07, 'triangle')); break;
+    case 'ssr': [523, 659, 784, 1046, 1318].forEach((f, i) => note(f, t + i * .1, .5, .09, 'triangle')); note(1568, t + .52, .8, .07, 'sine'); break;
+    case 'reward': [784, 988, 1175].forEach((f, i) => note(f, t + i * .09, .3, .08, 'sine')); break;
+    case 'error': note(190, t, .12, .06, 'square'); note(150, t + .1, .16, .05, 'square'); break;
+    case 'day': note(440, t, .12, .05, 'sine'); note(660, t + .1, .16, .05, 'sine'); break;
+    case 'collect': note(990, t, .2, .07, 'sine'); break;
+  }
+}
+
+/* ---------- toast ---------- */
+let toastTimer = null;
+function toast(msg, warn) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (warn ? ' warn' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = 'toast' + (warn ? ' warn' : ''); }, 2200);
+}
+
+/* ---------- 弹窗 ---------- */
+function openModal(html, center) {
+  const back = $('#modalBack'), box = $('#modalBox');
+  box.innerHTML = html;
+  box.className = 'modal' + (center ? ' center' : '');
+  back.className = 'modal-back show' + (center ? ' center-mode' : '');
+  back.dataset.center = center ? '1' : '0';
+  sfx('click');
+}
+function closeModal() {
+  $('#modalBack').className = 'modal-back';
+  $('#modalBox').innerHTML = '';
+}
+
+/* ---------- 静音 ---------- */
+function muteIcon() {
+  const on = state && !state.mute;
+  $('#muteIcon').innerHTML = on
+    ? `<path d="M4 9.5h3.2l4.3-3.4v11.8l-4.3-3.4H4z" fill="#ffe6f2"/><path d="M15.5 8.5c1.6 1.8 1.6 5.2 0 7M18 6.2c2.6 2.9 2.6 8.7 0 11.6" stroke="#ffd39b" stroke-width="1.5" fill="none" stroke-linecap="round"/>`
+    : `<path d="M4 9.5h3.2l4.3-3.4v11.8l-4.3-3.4H4z" fill="#ffe6f2" opacity=".6"/><path d="M15 9l5 6M20 9l-5 6" stroke="#ff9da9" stroke-width="1.6" stroke-linecap="round"/>`;
+}
+
+/* ---------- 金额展示 ---------- */
+function fmt(n) { return Math.max(0, Math.round(n)); }
+
+function addMoney(n) {
+  state.money = Math.max(0, state.money + n);
+  if (n > 0) state.stats.income += n;
+  save();
+}
+function canPay(n) { return state.money >= n; }
+
+/* ---------- 主界面渲染 ---------- */
+function render() {
+  if (!state) return;
+  $('#dayNum').textContent = state.day;
+  $('#dayHint').textContent = state.day >= GAME.TOTAL_DAYS
+    ? '查看三十天结算报告'
+    : ('今日生活费 +¥' + (state.dayIncome || 0));
+  $('#moneyVal').textContent = fmt(state.money);
+  $('#moneyVal2').textContent = fmt(state.money);
+  $('#shardVal').textContent = fmt(state.shards);
+  $('#shardVal2').textContent = fmt(state.shards);
+  $('#pullCountToday').textContent = state.todayPulls;
+  $('#spentVal').textContent = fmt(state.stats.spent);
+  $('#albumBadge').textContent = uniqueCount();
+  $('#pityText').textContent = '再抽 ' + state.pityLeft + ' 包必出 SSR';
+  $('#pityBar').style.width = ((GAME.PITY_MAX - state.pityLeft) / GAME.PITY_MAX * 100).toFixed(1) + '%';
+  const u = uniqueCount();
+  $('#collectNum').textContent = u;
+  $('#collectBar').style.width = (u / GAME.TOTAL_CARDS * 100).toFixed(1) + '%';
+  $('#albumCount').textContent = u + '/' + GAME.TOTAL_CARDS;
+  $('#albumBar').style.width = (u / GAME.TOTAL_CARDS * 100).toFixed(1) + '%';
+  $('#pull1Btn').classList.toggle('dim', !canPay(GAME.PRICE1));
+  $('#pull10Btn').classList.toggle('dim', !canPay(GAME.PRICE10));
+  $('#muteBtn').setAttribute('aria-pressed', state.mute ? 'true' : 'false');
+  muteIcon();
+  if ($('#screenAlbum').classList.contains('show')) renderAlbum();
+}
+
+function initPoster() {
+  const up = MEMBER_BY_KEY[GAME.UP_KEY];
+  $('#posterArt').innerHTML = portraitSVG(up, 0);
+  $('#upName').textContent = up.name + ' · 星轨回响';
+}
+
+/* ---------- 稀有度 / 卡片渲染 ---------- */
+function cardArtHTML(card) {
+  const m = MEMBER_BY_KEY[card.member];
+  return portraitSVG(m, card.scene);
+}
+function rarityTag(r) { return `<span class="rb">${r}</span>`; }
+
+function cardHTML(c, opts) {
+  const o = opts || {};
+  const m = MEMBER_BY_KEY[c.member];
+  const lock = !owned(c.id) && !o.force;
+  return `<div class="gcard ${c.rarity}${lock ? ' locked' : ''}" data-act="${o.act || 'card'}" data-card="${c.id}">
+    <div class="art" style="--mc:${m.color}">${cardArtHTML(c)}
+      ${o.badge === 'new' ? '<span class="badge-new">NEW</span>' : ''}
+      ${o.badge === 'dup' ? '<span class="badge-dup">重复</span>' : ''}
+      ${lock ? '<div class="lock-mark"><div class="lc"><svg viewBox="0 0 24 24" fill="none"><rect x="6" y="10" width="12" height="9" rx="3" stroke="#e7d2dc" stroke-width="1.6"/><path d="M9 10V7.6a3 3 0 016 0V10" stroke="#e7d2dc" stroke-width="1.6" fill="none"/></svg></div><span>未获得</span></div>' : ''}
+    </div>
+    ${rarityTag(c.rarity)}
+    <div class="shine"></div>
+    ${c.rarity === 'SSR' ? '<span class="spark"></span><span class="spark"></span><span class="spark"></span>' : ''}
+    <div class="meta">
+      <div class="mem" style="--mc:${m.color}"><i></i>${m.name}</div>
+      <p class="nm">${lock ? '？？？' : c.name}</p>
+    </div>
+  </div>`;
+}
+
+/* ---------- 首屏引导 / 教练气泡 ---------- */
+function showGuide() {
+  $('#guide').classList.add('show');
+}
+function hideGuide() {
+  $('#guide').classList.remove('show');
+}
+let coachTimer = null;
+function showCoach(text, ms) {
+  const el = $('#coach');
+  el.textContent = text || '先拆一包试试运气吧～';
+  el.classList.add('show');
+  clearTimeout(coachTimer);
+  coachTimer = setTimeout(() => el.classList.remove('show'), ms || 6000);
+}
+function hideCoach() {
+  clearTimeout(coachTimer);
+  $('#coach').classList.remove('show');
+}
+
+/* ===== 03b_gacha.js ===== */
+/* ================= 抽卡 / 拆包 / 翻卡 / SSR 演出 ================= */
+const RAR_TAG = {
+  N: ['linear-gradient(135deg,#f2eef2,#cfc5d6)', '#54455e'],
+  R: ['linear-gradient(135deg,#b8dcff,#6aa8ff)', '#14345f'],
+  SR: ['linear-gradient(135deg,#e2c4ff,#a86cff)', '#37145d'],
+  SSR: ['linear-gradient(135deg,#fff0bf,#e8b45e)', '#5e3813']
+};
+
+function pickCard(rarity) {
+  const pool = CARDS.filter(c => c.rarity === rarity);
+  return pool[rand(pool.length)];
+}
+function pickSSR() {
+  if (Math.random() < GAME.UP_CHANCE) return CARD_BY_ID[GAME.UP_KEY + '-7'];
+  const ssr = CARDS.filter(c => c.rarity === 'SSR');
+  return ssr[rand(ssr.length)];
+}
+
+/* 单抽：硬保底优先，命中 SSR 后重置 */
+function rollOne() {
+  let card;
+  if (state.pityLeft <= 1) {
+    card = pickSSR();
+  } else {
+    const r = Math.random();
+    let rar = 'N';
+    if (r < .02) rar = 'SSR';
+    else if (r < .10) rar = 'SR';
+    else if (r < .40) rar = 'R';
+    else rar = 'N';
+    card = pickCard(rar);
+  }
+  if (card.rarity === 'SSR') state.pityLeft = GAME.PITY_MAX;
+  else state.pityLeft = Math.max(1, state.pityLeft - 1);
+  return card;
+}
+
+function rollBatch(n) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(rollOne());
+  if (n >= 10 && GAME.TEN_MIN_SR && !out.some(c => c.rarity === 'SR' || c.rarity === 'SSR')) {
+    out[out.length - 1] = pickCard('SR');
+  }
+  return out;
+}
+
+function applyResults(results) {
+  let newCount = 0, dupCount = 0, shardsGained = 0;
+  const entries = results.map(c => {
+    state.stats.pulls++;
+    state.stats[c.rarity.toLowerCase()]++;
+    if (owned(c.id)) {
+      dupCount++;
+      state.dupes[c.id] = (state.dupes[c.id] || 0) + 1;
+      const sh = RARITY_INFO[c.rarity].shard;
+      state.shards += sh;
+      state.stats.dupShards += sh;
+      shardsGained += sh;
+      return { card: c, dup: true, shards: sh };
+    }
+    state.cards[c.id] = 1;
+    state.fresh[c.id] = true;
+    newCount++;
+    return { card: c, dup: false };
+  });
+  state.todayPulls += results.length;
+  return { entries, newCount, dupCount, shardsGained };
+}
+
+function doPull(n) {
+  if (state.ended) { toast('本局已经结束啦，点「再来一局」重新开始', true); return; }
+  const price = n === 1 ? GAME.PRICE1 : GAME.PRICE10;
+  if (!canPay(price)) {
+    sfx('error');
+    const btn = n === 1 ? $('#pull1Btn') : $('#pull10Btn');
+    btn.style.transform = 'scale(.94)';
+    setTimeout(() => { btn.style.transform = ''; }, 180);
+    toast('生活费不足：这包要 ¥' + price + '，先去右上角「过一天」领钱吧', true);
+    return;
+  }
+  hideCoach();
+  state.money -= price;
+  state.stats.spent += price;
+  const results = rollBatch(n);
+  const applied = applyResults(results);
+  pendingPull = { n: n, results: results, applied: applied, flipped: new Array(n).fill(false), flipCount: 0 };
+  save();
+  render();
+  openPack(n);
+}
+
+/* ---------- 拆包 ---------- */
+function openPack(n) {
+  const ov = $('#packOverlay');
+  ov.classList.add('show');
+  $('#packTitle').textContent = n === 1 ? '拆 1 包' : '拆 10 包';
+  $('#packSub').textContent = '星轨回响 · 限定卡包';
+  const wrap = $('#packWrap');
+  wrap.classList.remove('open', 'dragging');
+  tearProgress = 0;
+  packLocked = false;
+  $('#ripBar').style.height = '0';
+  $('#tearLine').style.opacity = '';
+  $('#tearStage').classList.remove('hidden');
+  $('#cardsStage').classList.add('hidden');
+  $('#packGrid').innerHTML = '';
+  $('#packGrid').className = 'pack-grid';
+  $('#packTally').innerHTML = '';
+  $('#resultSummary').textContent = '';
+  $('#collectBtn').textContent = '收下卡牌';
+  $('#cardsHint').innerHTML = n === 1 ? '点击卡背翻开' : '点击卡背翻开 · 也可 <b>全部翻开</b>';
+  $('#tearHint').innerHTML = n === 1
+    ? '<b>横向滑动撕开卡包</b>手指在撕口处左右拖动，或点击下方按钮'
+    : '<b>横向滑动撕开卡包</b>十连共 10 张，撕开后逐张翻开';
+  ssrQueue = [];
+  ssrActive = false;
+  sfx('click');
+}
+
+function tearStep() {
+  if (packLocked) return;
+  tearProgress = Math.min(100, tearProgress + 30);
+  $('#ripBar').style.height = tearProgress + '%';
+  $('#tearLine').style.opacity = '1';
+  sfx('tear');
+  if (tearProgress >= 100) openPackAnim();
+}
+function openPackAnim(instant) {
+  if (packLocked) return;
+  packLocked = true;
+  tearProgress = 100;
+  $('#ripBar').style.height = '100%';
+  $('#packWrap').classList.add('open');
+  sfx('tear');
+  setTimeout(() => { showCards(instant); }, instant ? 0 : 680);
+}
+
+/* ---------- 卡牌列表 ---------- */
+function frontHTML(r) {
+  const c = r.card, m = MEMBER_BY_KEY[c.member];
+  const tag = RAR_TAG[c.rarity];
+  return `<div class="face front" style="--rc:${RARITY_INFO[c.rarity].glow};--tag-bg:${tag[0]};--tag-ink:${tag[1]}">
+    <div class="art">${cardArtHTML(c)}</div>
+    <span class="fc-r">${c.rarity}</span>
+    ${r.dup ? '<span class="fc-dup">重复</span>' : '<span class="fc-new">NEW</span>'}
+    <div class="fc-meta">
+      <div class="fc-mem">${m.name}</div>
+      <div class="fc-nm">${c.name}</div>
+    </div>
+    ${c.rarity === 'SSR' ? '<span class="fc-spark" style="left:12%;top:18%"></span><span class="fc-spark" style="right:14%;top:40%;animation-delay:1.1s"></span>' : ''}
+  </div>`;
+}
+
+function backHTML() {
+  return `<div class="face back">
+    <svg class="logo" viewBox="0 0 24 24" fill="none"><path d="M12 2.2l2.9 6.2 6.7 1.2-4.7 4.3 1.3 6.5L12 17.2 5.8 20.4l1.3-6.5L2.4 9.6l6.7-1.2z" fill="#ffe8c8" opacity=".92"/></svg>
+    <span class="bn">STAR7</span>
+  </div>`;
+}
+
+function showCards(instant) {
+  $('#tearStage').classList.add('hidden');
+  $('#cardsStage').classList.remove('hidden');
+  $('#cardsStage').classList.toggle('ten-mode', pendingPull.n !== 1);
+  const grid = $('#packGrid');
+  const n = pendingPull.n;
+  grid.className = 'pack-grid ' + (n === 1 ? 'n1' : 'n10');
+  grid.innerHTML = pendingPull.applied.entries.map((r, i) => `
+    <div class="flip" data-flip="${i}" style="animation-delay:${instant ? 0 : (i * .045)}s">
+      <div class="flipper">${backHTML()}${frontHTML(r)}</div>
+    </div>`).join('');
+  if (instant) {
+    $$('.flip', grid).forEach((el, i) => { el.classList.add('flipped'); pendingPull.flipped[i] = true; });
+    pendingPull.flipCount = n;
+    finishReveal(true);
+  }
+  const s = pendingPull.applied;
+  const counts = { N: 0, R: 0, SR: 0, SSR: 0 };
+  s.entries.forEach(r => { counts[r.card.rarity]++; });
+  $('#packTally').innerHTML = n === 10
+    ? RARITY_ORDER.filter(r => counts[r] > 0).map(r => `<span class="tchip ${r}">${r} × ${counts[r]}</span>`).join('')
+      + `<span class="tchip new">新卡 ${s.newCount}</span>`
+      + (s.dupCount ? `<span class="tchip dup">重复 ${s.dupCount} → 碎片 +${s.shardsGained}</span>` : '')
+    : '';
+  $('#resultSummary').textContent = `新卡 ${s.newCount} 张 · 重复 ${s.dupCount} 张 → 碎片 +${s.shardsGained}`;
+}
+
+function flipOne(el) {
+  const i = +el.dataset.flip;
+  if (pendingPull.flipped[i]) return;
+  pendingPull.flipped[i] = true;
+  pendingPull.flipCount++;
+  el.classList.add('flipped');
+  const r = pendingPull.applied.entries[i];
+  sfx('flip');
+  if (r.card.rarity === 'SSR') {
+    setTimeout(() => queueSSR(r.card), 500);
+  } else if (r.card.rarity === 'SR') {
+    sfx('sr');
+  }
+  if (pendingPull.flipCount === pendingPull.n) finishReveal(false);
+}
+
+function flipAll(instant, noSSR) {
+  $$('.flip').forEach((el, i) => {
+    if (!pendingPull.flipped[i]) {
+      pendingPull.flipped[i] = true;
+      pendingPull.flipCount++;
+      el.classList.add('flipped');
+    }
+  });
+  sfx('flip');
+  if (!noSSR) {
+    const ssr = pendingPull.applied.entries.find(r => r.card.rarity === 'SSR');
+    if (ssr) setTimeout(() => queueSSR(ssr.card), 420);
+  }
+  finishReveal(!!instant);
+}
+
+function finishReveal(instant) {
+  $('#cardsHint').innerHTML = '已全部揭晓 · 点下方 <b>收下卡牌</b> 入册';
+  $('#collectBtn').textContent = pendingPull.n === 1 ? '收下这张卡' : '收下全部 10 张';
+  if (!instant) sfx('collect');
+}
+
+/* ---------- SSR 放大 ---------- */
+function queueSSR(card) {
+  ssrQueue.push(card);
+  if (!ssrActive) nextSSR();
+}
+function nextSSR() {
+  if (!ssrQueue.length) { ssrActive = false; return; }
+  ssrActive = true;
+  const c = ssrQueue.shift();
+  const m = MEMBER_BY_KEY[c.member];
+  $('#ssrPortrait').innerHTML = portraitSVG(m, c.scene);
+  $('#ssrMember').textContent = m.name;
+  $('#ssrCardName').textContent = c.name;
+  $('#ssrQuote').textContent = '“' + c.quote + '”';
+  $('#ssrOverlay').classList.add('show');
+  sfx('ssr');
+  try { if (navigator.vibrate) navigator.vibrate([18, 40, 26]); } catch (e) {}
+}
+function closeSSR() {
+  $('#ssrOverlay').classList.remove('show');
+  ssrActive = false;
+  setTimeout(() => { if (ssrQueue.length) nextSSR(); }, 140);
+}
+
+/* ---------- 收下卡牌 ---------- */
+function collectPack() {
+  if (!pendingPull) { closePack(); return; }
+  const s = pendingPull.applied;
+  closeSSR();
+  ssrQueue = [];
+  $('#packOverlay').classList.remove('show');
+  $('#cardsStage').classList.add('hidden');
+  $('#tearStage').classList.remove('hidden');
+  const tip = `新卡 ${s.newCount} 张` + (s.dupCount ? `，重复 ${s.dupCount} 张折算碎片 +${s.shardsGained}` : '');
+  toast(tip);
+  pendingPull = null;
+  save();
+  render();
+  hideCoach();
+  setTimeout(checkCollectRewards, 260);
+}
+function closePack() {
+  $('#packOverlay').classList.remove('show');
+  pendingPull = null;
+}
+
+/* ---------- 撕包手势 ---------- */
+function initTearDrag() {
+  const wrap = $('#packWrap');
+  if (!wrap) return;
+  let dragging = false, startX = 0, baseProgress = 0;
+  const active = () => $('#packOverlay').classList.contains('show') && !packLocked;
+  wrap.addEventListener('pointerdown', e => {
+    if (!active()) return;
+    dragging = true;
+    startX = e.clientX;
+    baseProgress = tearProgress;
+    wrap.classList.add('dragging');
+    try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  wrap.addEventListener('pointermove', e => {
+    if (!dragging || !active()) return;
+    const dx = Math.abs(e.clientX - startX);
+    tearProgress = Math.min(100, baseProgress + dx / Math.max(1, wrap.clientWidth) * 105);
+    $('#ripBar').style.height = tearProgress + '%';
+    $('#tearLine').style.opacity = '1';
+    if (tearProgress >= 100) { dragging = false; wrap.classList.remove('dragging'); openPackAnim(); }
+  });
+  const end = () => { dragging = false; wrap.classList.remove('dragging'); };
+  wrap.addEventListener('pointerup', end);
+  wrap.addEventListener('pointercancel', end);
+  wrap.addEventListener('click', e => {
+    if (!active()) return;
+    e.preventDefault();
+    tearStep();
+  });
+}
+
+/* ===== 03c_album.js ===== */
+/* ================= 卡册 / 兑换 / 收集奖励 / 星光集市 ================= */
+let albumMember = 'sy';
+
+function openAlbum() {
+  $('#screenAlbum').classList.add('show');
+  buildMemberTabs();
+  renderAlbum();
+  sfx('click');
+  setTimeout(checkCollectRewards, 220);
+}
+function closeAlbum() {
+  $('#screenAlbum').classList.remove('show');
+  state.fresh = {};
+  save();
+  render();
+}
+
+function buildMemberTabs() {
+  $('#memberTabs').innerHTML = MEMBERS.map(m => `
+    <button class="mtab ${m.key === albumMember ? 'on' : ''}" data-act="tab" data-member="${m.key}">
+      <span class="av">${avatarSVG(m)}</span>
+      <b>${m.name}</b>
+      <span>${memberOwned(m.key)}/8</span>
+    </button>`).join('');
+}
+
+function renderAlbum() {
+  if (!state) return;
+  const m = MEMBER_BY_KEY[albumMember] || MEMBERS[0];
+  $$('.mtab').forEach(el => {
+    const key = el.dataset.member;
+    el.classList.toggle('on', key === albumMember);
+    const n = memberOwned(key);
+    const sp = el.querySelector('span:last-child');
+    if (sp) sp.textContent = n + '/8';
+  });
+  const list = CARDS_BY_MEMBER[m.key].slice().sort((a, b) => a.idx - b.idx);
+  $('#albumGrid').innerHTML = list.map(c => cardHTML(c, {
+    act: 'detail',
+    badge: owned(c.id) && state.fresh[c.id] ? 'new' : ''
+  })).join('');
+  const on = $('.mtab.on');
+  if (on) { try { on.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {} }
+  $('#memberProgressText').textContent = m.name + ' · ' + memberOwned(m.key) + '/8';
+  const u = uniqueCount();
+  $('#albumCount').textContent = u + '/' + GAME.TOTAL_CARDS;
+  $('#albumBar').style.width = (u / GAME.TOTAL_CARDS * 100).toFixed(1) + '%';
+  $('#shardVal2').textContent = fmt(state.shards);
+}
+
+function showCardDetail(id) {
+  const c = CARD_BY_ID[id];
+  if (!c) return;
+  const m = MEMBER_BY_KEY[c.member];
+  const have = owned(id);
+  const cost = RARITY_INFO[c.rarity].exchange;
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <div class="detail-head">
+      <div class="detail-card">${cardHTML(c, { force: true, act: 'noop' })}</div>
+      <div class="detail-title">
+        <h3>${have ? c.name : '尚未获得的卡'}</h3>
+        <div class="detail-meta"><span>${m.name}</span><span>${c.rarity}</span><span>${m.role}</span></div>
+        <p class="detail-meta" style="margin-top:6px;font-size:10px">${have ? '已收集 · 可反复欣赏' : '卡册剪影 · 可用碎片兑换'}</p>
+      </div>
+    </div>
+    <p class="detail-text">${have ? '“' + c.quote + '”' : '这张卡还没有被你拆到。收集重复卡获得的碎片，可以在这里兑换指定卡。'}</p>
+    <div class="detail-actions">
+      ${have
+        ? `<button class="btn ghost" data-act="close-modal">关闭</button><div class="hint">已收入星轨卡册 · 共 ${state.dupes[id] || 0} 次重复记录</div>`
+        : `<button class="btn gold" data-act="exchange-buy" data-id="${id}" ${state.shards < cost ? 'disabled' : ''}>用 ${cost} 碎片兑换</button>
+           <div class="hint">当前碎片 ${state.shards} 枚 · 重复卡自动折算碎片</div>`}
+    </div>
+  </div>`, true);
+}
+
+function buyCardWithShards(id) {
+  const c = CARD_BY_ID[id];
+  if (!c || owned(id)) return;
+  const cost = RARITY_INFO[c.rarity].exchange;
+  if (state.shards < cost) { toast('碎片不够，还差 ' + (cost - state.shards) + ' 枚', true); sfx('error'); return; }
+  state.shards -= cost;
+  state.cards[id] = 1;
+  state.fresh[id] = true;
+  save();
+  closeModal();
+  toast('兑换成功：' + c.name);
+  sfx('reward');
+  render();
+  renderAlbum();
+  setTimeout(checkCollectRewards, 240);
+}
+
+/* ---------- 集齐成员奖励 ---------- */
+function pendingReward() {
+  return MEMBERS.find(m => memberOwned(m.key) === 8 && !state.claimed[m.key]);
+}
+function checkCollectRewards() {
+  const m = pendingReward();
+  if (!m) return;
+  const done = MEMBERS.filter(x => memberOwned(x.key) === 8).length;
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <div class="event-art"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#e8b45e"/></svg></div>
+    <h3 class="event-name">${m.name} · 全员收集达成</h3>
+    <p class="event-desc">你收齐了 ${m.name} 的 8 张卡，星轨为他亮起一整圈。<br>第 ${done} / 7 位成员完成收集。</p>
+    <div class="reward-line"><div class="amt">¥${GAME.COLLECT_REWARD_MONEY}</div><span>生活费<br>+${GAME.COLLECT_REWARD_SHARD} 碎片</span></div>
+    <div class="actions">
+      <button class="btn gold" data-act="claim-reward" data-member="${m.key}">领取奖励</button>
+      <button class="btn ghost" data-act="close-modal">稍后再领</button>
+    </div>
+  </div>`, true);
+}
+function claimReward(key) {
+  const m = MEMBER_BY_KEY[key];
+  if (!m || state.claimed[key] || memberOwned(key) !== 8) { closeModal(); return; }
+  state.claimed[key] = true;
+  state.money = Math.max(0, state.money + GAME.COLLECT_REWARD_MONEY);
+  state.stats.income += GAME.COLLECT_REWARD_MONEY;
+  state.shards += GAME.COLLECT_REWARD_SHARD;
+  save();
+  closeModal();
+  render();
+  if ($('#screenAlbum').classList.contains('show')) renderAlbum();
+  sfx('reward');
+  toast(m.name + ' 收集奖励已到账：¥' + GAME.COLLECT_REWARD_MONEY + ' + ' + GAME.COLLECT_REWARD_SHARD + ' 碎片');
+  setTimeout(checkCollectRewards, 300);
+}
+
+/* ---------- 星光集市 ---------- */
+const MARKET_PRICE = { N: 26, R: 58, SR: 138, SSR: 360 };
+
+function ensureMarket() {
+  if (state.market && state.marketDay === state.day) return;
+  const want = ['N', 'R', 'R', 'SR'];
+  if (Math.random() < .22) want[3] = 'SSR';
+  const picks = [];
+  want.forEach(r => {
+    const pool = CARDS.filter(c => c.rarity === r && !owned(c.id));
+    if (pool.length) picks.push(pool[rand(pool.length)]);
+  });
+  const extra = CARDS.filter(c => !owned(c.id) && !picks.some(p => p.id === c.id));
+  if (extra.length && picks.length < 5) picks.push(extra[rand(extra.length)]);
+  state.market = picks.map(c => ({ id: c.id, price: MARKET_PRICE[c.rarity] + rand(5) * 3 }));
+  state.marketDay = state.day;
+  save();
+}
+
+function openMarket() {
+  ensureMarket();
+  $('#screenMarket').classList.add('show');
+  renderMarket();
+  sfx('click');
+}
+function closeMarket() {
+  $('#screenMarket').classList.remove('show');
+}
+
+function renderMarket() {
+  ensureMarket();
+  const offers = state.market || [];
+  const shardRow = `<div class="mrow">
+    <div class="thumb" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#5c3a63,#2a1533)">
+      <svg viewBox="0 0 24 24" fill="none" style="width:26px;height:26px"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#ffd9a0"/></svg>
+    </div>
+    <div class="minfo"><b>碎片寄卖</b><span>重复卡折算的碎片 · 1 枚 = ¥${GAME.SHARD_SELL_RATE}</span><div class="mp">持有 ${state.shards} 枚 · 可换 ¥${state.shards * GAME.SHARD_SELL_RATE}</div></div>
+    <button class="buy" data-act="sell-shards" ${state.shards <= 0 ? 'disabled' : ''}>卖出</button>
+  </div>`;
+  const list = offers.length ? offers.map(o => {
+    const c = CARD_BY_ID[o.id];
+    if (!c) return '';
+    const m = MEMBER_BY_KEY[c.member];
+    return `<div class="mrow">
+      <div class="thumb">${cardArtHTML(c)}</div>
+      <div class="minfo">
+        <b>${c.name}</b>
+        <span>${m.name} · ${c.rarity} · ${owned(c.id) ? '已拥有（重复折算碎片）' : '未拥有'}</span>
+        <div class="mp">¥${o.price}</div>
+      </div>
+      <button class="buy" data-act="market-buy" data-id="${c.id}" ${state.money < o.price ? 'disabled' : ''}>收下</button>
+    </div>`;
+  }).join('') : `<div class="market-empty">今天的集市已经空了<br>明天再来看看吧</div>`;
+  $('#marketList').innerHTML = shardRow + list;
+  $('#moneyVal2').textContent = fmt(state.money);
+}
+
+function buyMarketCard(id) {
+  ensureMarket();
+  const offer = (state.market || []).find(o => o.id === id);
+  if (!offer) return;
+  if (state.money < offer.price) { toast('生活费不够啦', true); sfx('error'); return; }
+  state.money -= offer.price;
+  state.stats.spent += offer.price;
+  const c = CARD_BY_ID[id];
+  let msg = '';
+  if (owned(id)) {
+    const sh = RARITY_INFO[c.rarity].shard;
+    state.dupes[id] = (state.dupes[id] || 0) + 1;
+    state.shards += sh;
+    state.stats.dupShards += sh;
+    msg = '已拥有，自动折算 ' + sh + ' 碎片';
+  } else {
+    state.cards[id] = 1;
+    state.fresh[id] = true;
+    msg = '新卡入册：' + c.name;
+  }
+  state.market = state.market.filter(o => o.id !== id);
+  save();
+  render();
+  renderMarket();
+  sfx('reward');
+  toast(msg);
+  setTimeout(checkCollectRewards, 240);
+}
+
+function sellShards() {
+  if (state.shards <= 0) { toast('还没有碎片可以寄卖', true); return; }
+  const gain = state.shards * GAME.SHARD_SELL_RATE;
+  state.shards = 0;
+  state.money = Math.max(0, state.money + gain);
+  state.stats.income += gain;
+  save();
+  render();
+  renderMarket();
+  sfx('reward');
+  toast('碎片寄卖成功，生活费 +¥' + gain);
+}
+
+/* ---------- 更多玩法 ---------- */
+function openMore() {
+  const done = MEMBERS.filter(m => state.claimed[m.key]).length;
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3>更多玩法</h3>
+    <p class="msub">主线是拆卡，这些是旅程里的小小支线。</p>
+    <div class="rule-list">
+      <div class="rule-item"><div class="ri">市</div><div><b>星光集市</b><p>用生活费收别人的重复卡，也可把碎片寄卖换钱。</p></div></div>
+      <div class="rule-item"><div class="ri">兑</div><div><b>碎片兑换</b><p>卡册里点未获得的剪影，可用碎片直接兑换指定卡。</p></div></div>
+      <div class="rule-item"><div class="ri">奖</div><div><b>全员收集</b><p>集齐某位成员的 8 张卡，领取 ¥188 + 30 碎片。已完成 ${done}/7。</p></div></div>
+      <div class="rule-item"><div class="ri">音</div><div><b>音效与存档</b><p>音效默认开启，可在右上角静音；进度自动保存在本机。</p></div></div>
+    </div>
+    <div class="actions">
+      <button class="btn gold" data-act="go-market">去星光集市</button>
+      <button class="btn ghost" data-act="close-modal">返回</button>
+    </div>
+  </div>`);
+}
+
+/* ===== 03d_end.js ===== */
+/* ================= 天数 / 事件 / 结算 / 重开 / 规则 ================= */
+const DAILY_EVENTS = [
+  { key:'hot', name:'登上热搜第一', desc:'昨晚的舞台片段被剪成短视频，转发量还在涨。品牌方临时加了一条推广。', money:30, shard:0, tag:'热搜' },
+  { key:'birthday', name:'生日应援车', desc:'粉丝把应援车开到了公司楼下。你路过时，车窗上正好贴着你的手幅。', money:45, shard:0, tag:'应援' },
+  { key:'work', name:'临时打工', desc:'为了下一包限定，你在便利店多顶了一个夜班。', money:60, shard:0, tag:'打工' },
+  { key:'comeback', name:'回归预告', desc:'凌晨十二点，官方放出了 17 秒预告。你把进度条拖了三十遍。', money:0, shard:30, tag:'回归' },
+  { key:'sign', name:'签售抽选', desc:'你居然抽中了签售资格，现场领到了限定小卡和一封手写信。', money:35, shard:10, tag:'签售' },
+  { key:'rumor', name:'一条小绯闻', desc:'营销号发了捕风捉影的图文。你冷静控评，顺手花掉一点钱买奶茶压惊。', money:-25, shard:5, tag:'绯闻' }
+];
+
+function maybeEvent() {
+  if (Math.random() > .42) return null;
+  return DAILY_EVENTS[rand(DAILY_EVENTS.length)];
+}
+
+function nextDay() {
+  if (state.ended || state.day >= GAME.TOTAL_DAYS) { openSettlement(); return; }
+  state.day++;
+  state.todayPulls = 0;
+  const inc = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
+  state.dayIncome = inc;
+  state.money = Math.max(0, state.money + inc);
+  state.stats.income += inc;
+  state.marketDay = 0;
+  state.market = null;
+  save();
+  render();
+  sfx('day');
+  if (state.day >= GAME.TOTAL_DAYS) {
+    toast('第 30 天 · 星轨到站，准备结算');
+    setTimeout(openSettlement, 900);
+    return;
+  }
+  const ev = maybeEvent();
+  if (ev) {
+    applyEvent(ev);
+    save();
+    render();
+    setTimeout(() => showEvent(ev), 480);
+  } else {
+    toast('第 ' + state.day + ' 天 · 今日生活费 +¥' + inc);
+  }
+}
+
+function applyEvent(ev) {
+  state.lastEvent = ev.key;
+  state.events.push({ day: state.day, key: ev.key });
+  if (state.events.length > 40) state.events.shift();
+  if (ev.money) {
+    state.money = Math.max(0, state.money + ev.money);
+    if (ev.money > 0) state.stats.income += ev.money;
+  }
+  if (ev.shard) state.shards += ev.shard;
+}
+
+function showEvent(ev) {
+  const sign = ev.money > 0 ? '生活费 +¥' + ev.money : (ev.money < 0 ? '生活费 −¥' + Math.abs(ev.money) : '');
+  const sh = ev.shard ? (sign ? ' · ' : '') + '碎片 +' + ev.shard : '';
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <div class="event-art"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#e8a45e"/></svg></div>
+    <p class="event-name">${ev.name}</p>
+    <p class="event-desc">${ev.desc}</p>
+    <div class="event-effect">${sign}${sh || '心情值 +1'}</div>
+    <div class="actions"><button class="btn primary" data-act="close-modal">收下这份日常</button></div>
+  </div>`, true);
+  sfx('click');
+}
+
+/* ---------- 结算称号 ---------- */
+function computeEnding() {
+  const u = uniqueCount();
+  const s = state.stats;
+  const pulls = s.pulls, ssr = s.ssr, spent = s.spent, money = state.money;
+  if (ssr >= 4) return 'emperor';
+  if (u >= 48) return 'collector';
+  if (spent >= 900 && money < 120) return 'poor';
+  if (ssr === 0 && pulls >= 25) return 'unlucky';
+  if (pulls <= 22 && spent <= 500 && u >= 8) return 'calm';
+  if (u >= 30) return 'allround';
+  return 'normal';
+}
+
+function openSettlement() {
+  if (!state.ended) {
+    state.ended = true;
+    state.ending = computeEnding();
+    save();
+  }
+  if (!state.ending) state.ending = computeEnding();
+  const t = TITLES[state.ending] || TITLES.normal;
+  const u = uniqueCount();
+  const rate = (u / GAME.TOTAL_CARDS * 100).toFixed(1);
+  $('#scTitle').textContent = t.name;
+  $('#scDesc').textContent = t.desc;
+  $('#scQuote').textContent = t.quote;
+  $('#scLabel').textContent = '第 30 天 · 星轨记录';
+  $('#scAvatars').innerHTML = MEMBERS.map(m => `<span class="aav">${avatarSVG(m)}</span>`).join('<span class="sep"></span>');
+  const box = (label, value) => `<div class="sc-stat"><label>${label}</label><b>${value}</b></div>`;
+  $('#scStats').innerHTML = [
+    box('拆包总数', state.stats.pulls + ' <em>包</em>'),
+    box('本局花费', '¥' + fmt(state.stats.spent)),
+    box('收集进度', u + '<em>/56</em>'),
+    box('抽到 SSR', state.stats.ssr + ' <em>张</em>'),
+    box('剩余生活费', '¥' + fmt(state.money)),
+    box('收集率', rate + '<em>%</em>')
+  ].join('');
+  $('#settleTip').textContent = (u / GAME.TOTAL_CARDS >= .88)
+    ? '收集率已过 88%，这张卡值得长按收藏'
+    : '手机端可长按结算卡直接保存 / 截图分享';
+  $('#settleOverlay').classList.add('show');
+  $('#screenAlbum').classList.remove('show');
+  $('#screenMarket').classList.remove('show');
+  closeModal();
+  sfx('reward');
+  try { if (navigator.vibrate) navigator.vibrate([10, 30, 10]); } catch (e) {}
+}
+
+function closeSettlement() {
+  $('#settleOverlay').classList.remove('show');
+  render();
+}
+
+function restartGame() {
+  state = defaultState();
+  state.guideDone = true;
+  state.dayIncome = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
+  state.money = GAME.START_MONEY + state.dayIncome;
+  state.stats.income = state.dayIncome;
+  try { localStorage.removeItem(GAME.SAVE_KEY); } catch (e) {}
+  albumMember = 'sy';
+  pendingPull = null;
+  ssrQueue = [];
+  ssrActive = false;
+  closeModal();
+  $('#settleOverlay').classList.remove('show');
+  $('#packOverlay').classList.remove('show');
+  $('#ssrOverlay').classList.remove('show');
+  buildMemberTabs();
+  save();
+  render();
+  sfx('reward');
+  toast('新的一局开始：第 1 天 · 生活费 +¥' + state.dayIncome);
+  showCoach('新的三十天，从第一包开始～');
+}
+
+/* ---------- 首局开始 ---------- */
+function startGame() {
+  if (state.guideDone) { hideGuide(); return; }
+  state.guideDone = true;
+  state.dayIncome = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
+  state.money = Math.max(0, state.money + state.dayIncome);
+  state.stats.income += state.dayIncome;
+  save();
+  hideGuide();
+  render();
+  sfx('reward');
+  toast('第 1 天 · 生活费 +¥' + state.dayIncome);
+  showCoach('先拆一包试试运气吧～', 7000);
+}
+
+/* ---------- 规则 ---------- */
+function openRules() {
+  const rows = ['N', 'R', 'SR', 'SSR'].map(r => {
+    const info = RARITY_INFO[r];
+    return `<tr><td><span class="rar-badge rar-${r}">${r}</span></td><td>${(info.rate * 100).toFixed(0)}%</td><td>重复 +${info.shard} 碎片</td><td>兑换 ${info.exchange}</td></tr>`;
+  }).join('');
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3>卡池概率与规则</h3>
+    <p class="msub">「STAR7 三周年 · 星轨回响限定池」· 以下数值均真实生效</p>
+    <table class="rules-table">
+      <thead><tr><th>稀有度</th><th>单抽概率</th><th>重复折算</th><th>碎片兑换</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="rule-list" style="margin-top:12px">
+      <div class="rule-item"><div class="ri">十</div><div><b>十连 SR 保底</b><p>十连中若没有 SR / SSR，系统会把最后一张升级为 SR，真实生效。</p></div></div>
+      <div class="rule-item"><div class="ri">60</div><div><b>60 抽 SSR 硬保底</b><p>每抽累加计数，60 抽内必出 SSR；出 SSR 后计数重置为 60。</p></div></div>
+      <div class="rule-item"><div class="ri">UP</div><div><b>限定 UP</b><p>出 SSR 时，有 50% 概率为沈星野「星轨回响」，其余均分给另外 6 张 SSR。</p></div></div>
+      <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥19，十连 ¥169；每天「过一天」发放 ¥45–70 生活费，余额永不为负。</p></div></div>
+      <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡。</p></div></div>
+    </div>
+    <div class="actions"><button class="btn primary" data-act="close-modal">明白了</button></div>
+  </div>`);
+}
+
+/* ---------- 碎片兑换清单 ---------- */
+function openExchange() {
+  const list = CARDS_BY_MEMBER[albumMember].filter(c => !owned(c.id));
+  const m = MEMBER_BY_KEY[albumMember];
+  const rows = list.length ? list.map(c => {
+    const cost = RARITY_INFO[c.rarity].exchange;
+    return `<div class="rule-item" style="align-items:center">
+      <div class="ri" style="background:${RARITY_INFO[c.rarity].glow};color:#3b2434">${c.rarity}</div>
+      <div style="flex:1;min-width:0"><b>${c.name}</b><p>${m.name} · 需 ${cost} 碎片</p></div>
+      <button class="link-btn gold-link" data-act="exchange-buy" data-id="${c.id}" ${state.shards < cost ? 'disabled' : ''} style="min-height:38px">${state.shards < cost ? '碎片不足' : '兑换'}</button>
+    </div>`;
+  }).join('') : `<div class="market-empty">${m.name} 的卡已经全部收齐啦</div>`;
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3>碎片兑换 · ${m.name}</h3>
+    <p class="msub">当前碎片 <b style="color:#b23c72">${state.shards}</b> 枚 · 重复卡自动折算，碎片不会过期</p>
+    <div class="rule-list">${rows}</div>
+    <div class="actions"><button class="btn ghost" data-act="close-modal">返回</button></div>
+  </div>`);
+}
+
+/* ===== 03e_canvas.js ===== */
+/* ================= 结算卡 Canvas 重绘 / PNG 导出 ================= */
+function rr(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+  else {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+}
+function wrapText(ctx, text, x, y, maxW, lineH) {
+  const chars = Array.from(text);
+  let line = '', n = 0;
+  chars.forEach(ch => {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, y + n * lineH);
+      n++; line = ch;
+    } else line = test;
+  });
+  if (line) { ctx.fillText(line, x, y + n * lineH); n++; }
+  return n;
+}
+
+function drawSettlementCanvas() {
+  const W = 720, H = 1040;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const t = TITLES[state.ending || 'normal'] || TITLES.normal;
+  const u = uniqueCount();
+  const rate = (u / GAME.TOTAL_CARDS * 100).toFixed(1);
+
+  const bg = ctx.createLinearGradient(0, 0, W * .4, H);
+  bg.addColorStop(0, '#fff9f1'); bg.addColorStop(.5, '#fff3f6'); bg.addColorStop(1, '#ffeaf3');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  const glow = ctx.createRadialGradient(W / 2, 0, 10, W / 2, 0, 620);
+  glow.addColorStop(0, 'rgba(255,210,236,.9)'); glow.addColorStop(1, 'rgba(255,210,236,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, 560);
+  const glow2 = ctx.createRadialGradient(W, H, 10, W, H, 460);
+  glow2.addColorStop(0, 'rgba(255,236,196,.85)'); glow2.addColorStop(1, 'rgba(255,236,196,0)');
+  ctx.fillStyle = glow2; ctx.fillRect(0, H - 500, W, 500);
+
+  ctx.strokeStyle = '#efce9b'; ctx.lineWidth = 3;
+  rr(ctx, 16, 16, W - 32, H - 32, 34); ctx.stroke();
+  ctx.setLineDash([7, 7]); ctx.strokeStyle = 'rgba(209,157,110,.5)'; ctx.lineWidth = 1.4;
+  rr(ctx, 30, 30, W - 60, H - 60, 26); ctx.stroke(); ctx.setLineDash([]);
+
+  // 品牌
+  ctx.save();
+  const pill = ctx.createLinearGradient(250, 0, 470, 0);
+  pill.addColorStop(0, '#ffa9cb'); pill.addColorStop(1, '#ff6aa9');
+  ctx.fillStyle = pill;
+  rr(ctx, 250, 58, 220, 46, 23); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '900 24px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('✦ STAR7', W / 2, 82);
+  ctx.font = '600 14px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = '#a87c94';
+  ctx.fillText('30 DAYS RECORD', W / 2, 124);
+  ctx.restore();
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#b489a0';
+  ctx.font = '500 18px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('第 30 天 · 追 星 记 录', W / 2, 166);
+
+  ctx.fillStyle = '#6c2f50';
+  ctx.font = '900 64px "Songti SC","Noto Serif SC","Microsoft YaHei",serif';
+  ctx.fillText(t.name, W / 2, 246);
+
+  ctx.fillStyle = '#966c86';
+  ctx.font = '400 22px "PingFang SC","Microsoft YaHei",sans-serif';
+  wrapText(ctx, t.desc, W / 2, 292, 580, 32);
+
+  // 头像
+  const avY = 386, r = 26, gap = 12;
+  const totalW = MEMBERS.length * r * 2 + (MEMBERS.length - 1) * gap;
+  let ax = (W - totalW) / 2 + r;
+  MEMBERS.forEach(m => {
+    ctx.beginPath(); ctx.arc(ax, avY, r + 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    const ag = ctx.createLinearGradient(ax - r, avY - r, ax + r, avY + r);
+    ag.addColorStop(0, light(m.color, .2)); ag.addColorStop(1, m.color);
+    ctx.beginPath(); ctx.arc(ax, avY, r, 0, Math.PI * 2);
+    ctx.fillStyle = ag; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '900 22px "Songti SC","Microsoft YaHei",serif';
+    ctx.fillText(m.name.slice(0, 1), ax, avY + 1);
+    ax += r * 2 + gap;
+  });
+
+  // 数据
+  const stats = [
+    ['拆包总数', state.stats.pulls + ' 包'],
+    ['本局花费', '¥' + fmt(state.stats.spent)],
+    ['收集进度', u + ' / 56'],
+    ['抽到 SSR', state.stats.ssr + ' 张'],
+    ['剩余生活费', '¥' + fmt(state.money)],
+    ['收集率', rate + '%']
+  ];
+  const bx = 52, by = 442, bw = 300, bh = 90, bgg = 16;
+  stats.forEach((s, i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = bx + col * (bw + bgg), y = by + row * (bh + 14);
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    rr(ctx, x, y, bw, bh, 18); ctx.fill();
+    ctx.strokeStyle = '#f0d6e2'; ctx.lineWidth = 1.4; rr(ctx, x, y, bw, bh, 18); ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#a17c92'; ctx.font = '500 17px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(s[0], x + 20, y + 30);
+    ctx.fillStyle = '#a53d6b'; ctx.font = '900 30px "Songti SC","Microsoft YaHei",serif';
+    ctx.fillText(s[1], x + 20, y + 68);
+  });
+
+  // 语录
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#9a6b84'; ctx.font = '400 23px "Songti SC","Microsoft YaHei",serif';
+  ctx.fillText(t.quote, W / 2, 800);
+
+  ctx.strokeStyle = '#ebcad9'; ctx.lineWidth = 1.2; ctx.setLineDash([6, 6]);
+  ctx.beginPath(); ctx.moveTo(64, 858); ctx.lineTo(W - 64, 858); ctx.stroke(); ctx.setLineDash([]);
+
+  ctx.fillStyle = '#b08ba0'; ctx.font = '500 15px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('拆小卡模拟器 · 星轨回响 · 虚构企划', W / 2, 900);
+  ctx.font = '500 13px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = '#c2a1b2';
+  ctx.fillText('本游戏纯属虚构，不涉及真实充值', W / 2, 928);
+
+  // 水印装饰
+  ctx.save();
+  ctx.globalAlpha = .12;
+  ctx.fillStyle = '#d8a85f';
+  ctx.font = '900 76px "Songti SC","Microsoft YaHei",serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('STAR7', W - 44, H - 40);
+  ctx.restore();
+  return cv;
+}
+
+function showImagePreview(dataUrl, name) {
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3 style="text-align:center">结算卡已生成</h3>
+    <p class="msub" style="text-align:center">若浏览器未自动下载，可长按下方图片保存到相册</p>
+    <img src="${dataUrl}" alt="STAR7 三十天结算卡" style="display:block;width:100%;max-width:300px;margin:0 auto 12px;border-radius:16px;border:1px solid #efce9b;box-shadow:0 12px 30px rgba(90,42,62,.18)">
+    <div class="actions">
+      <a class="btn gold" href="${dataUrl}" download="${name}" style="text-decoration:none">再存一次</a>
+      <button class="btn ghost" data-act="close-modal">关闭</button>
+    </div>
+  </div>`, true);
+}
+
+function saveSettlementImage() {
+  let cv;
+  try { cv = drawSettlementCanvas(); }
+  catch (e) { toast('生成失败，请直接截图保存', true); return; }
+  const t = TITLES[state.ending || 'normal'] || TITLES.normal;
+  const name = 'STAR7-结算-' + t.name + '.png';
+  try {
+    cv.toBlob(blob => {
+      if (!blob) { showImagePreview(cv.toDataURL('image/png'), name); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} a.remove(); }, 600);
+      showImagePreview(cv.toDataURL('image/png'), name);
+    }, 'image/png');
+  } catch (e) {
+    try { showImagePreview(cv.toDataURL('image/png'), name); }
+    catch (e2) { toast('生成失败，请长按截图保存', true); }
+  }
+  toast('正在生成高清结算图…');
+  sfx('reward');
+}
+
+/* ===== 03f_init.js ===== */
+/* ================= 交互绑定 / 初始化 ================= */
+function bindEvents() {
+  document.addEventListener('click', e => {
+    const flip = e.target.closest('.flip');
+    if (flip && pendingPull && $('#packOverlay').classList.contains('show')) {
+      flipOne(flip);
+      return;
+    }
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    const act = el.dataset.act;
+    if (act === 'noop') { e.preventDefault(); return; }
+    switch (act) {
+      case 'start-game': ensureAudio(); startGame(); break;
+      case 'day': ensureAudio(); nextDay(); break;
+      case 'mute': {
+        state.mute = !state.mute;
+        save(); render();
+        if (!state.mute) { ensureAudio(); sfx('click'); toast('音效已开启'); }
+        else toast('已静音，点击右上角可恢复');
+        break;
+      }
+      case 'album': ensureAudio(); openAlbum(); break;
+      case 'close-album': closeAlbum(); break;
+      case 'rules': openRules(); break;
+      case 'more': openMore(); break;
+      case 'pull1': ensureAudio(); doPull(1); break;
+      case 'pull10': ensureAudio(); doPull(10); break;
+      case 'skip-pack': {
+        if (!$('#tearStage').classList.contains('hidden')) openPackAnim(true);
+        else flipAll(true, true);
+        break;
+      }
+      case 'tear-open': openPackAnim(); break;
+      case 'flip-all': ensureAudio(); flipAll(false, false); break;
+      case 'collect': collectPack(); break;
+      case 'close-ssr': closeSSR(); break;
+      case 'tab': {
+        albumMember = el.dataset.member;
+        buildMemberTabs(); renderAlbum(); sfx('click');
+        break;
+      }
+      case 'detail': showCardDetail(el.dataset.card); break;
+      case 'exchange': openExchange(); break;
+      case 'exchange-buy': ensureAudio(); buyCardWithShards(el.dataset.id); break;
+      case 'claim-reward': claimReward(el.dataset.member); break;
+      case 'close-modal': closeModal(); break;
+      case 'go-market': closeModal(); setTimeout(openMarket, 60); break;
+      case 'market': openMarket(); break;
+      case 'close-market': closeMarket(); break;
+      case 'market-buy': ensureAudio(); buyMarketCard(el.dataset.id); break;
+      case 'sell-shards': ensureAudio(); sellShards(); break;
+      case 'save-img': ensureAudio(); saveSettlementImage(); break;
+      case 'close-settle': closeSettlement(); break;
+      case 'restart': {
+        openModal(`<div class="modal-wrap">
+          <button class="x" data-act="close-modal">×</button>
+          <div class="event-art"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#e8a45e"/></svg></div>
+          <h3 style="text-align:center">确定要再来一局吗？</h3>
+          <p class="event-desc" style="text-align:center">当前卡册、生活费、碎片与三十天记录都会被清空，且无法恢复。</p>
+          <div class="actions">
+            <button class="btn danger" data-act="confirm-restart">确认清档重开</button>
+            <button class="btn ghost" data-act="close-modal">再想想</button>
+          </div>
+        </div>`, true);
+        break;
+      }
+      case 'confirm-restart': restartGame(); break;
+    }
+    if (state) save();
+  });
+
+  $('#modalBack').addEventListener('click', e => {
+    if (e.target === $('#modalBack')) closeModal();
+  });
+  $('#ssrOverlay').addEventListener('click', closeSSR);
+  $('#settleOverlay').addEventListener('click', e => {
+    if (e.target === $('#settleOverlay')) closeSettlement();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeModal();
+      $('#screenAlbum').classList.remove('show');
+      $('#screenMarket').classList.remove('show');
+      $('#settleOverlay').classList.remove('show');
+    }
+  });
+}
+
+function init() {
+  initPoster();
+  const loaded = load();
+  if (!loaded) state = defaultState();
+  ensureMarket();
+  buildMemberTabs();
+  render();
+  initTearDrag();
+  bindEvents();
+  const unlock = () => { ensureAudio(); };
+  document.addEventListener('pointerdown', unlock, { once: true });
+  if (state.guideDone) $('#guide').classList.remove('show');
+  else $('#guide').classList.add('show');
+  if (state.guideDone && state.stats.pulls === 0 && !state.ended) {
+    showCoach('先拆一包试试运气吧～', 7000);
+  }
+  if (state.ended) setTimeout(openSettlement, 500);
+  save();
+
+  window.__game = {
+    get state() { return state; },
+    get lastPull() { return pendingPull; },
+    data: { MEMBERS, CARDS, GAME, RARITY_INFO, TITLES, CARD_BY_ID },
+    save, render, pull: doPull, nextDay, openSettlement, computeEnding,
+    uniqueCount, memberOwned, openAlbum, closeAlbum, openMarket, closeMarket,
+    openRules, restart: restartGame, checkCollectRewards,
+    collectedSet: () => CARDS.filter(c => owned(c.id)).map(c => c.id),
+    fillMember(key) {
+      (CARDS_BY_MEMBER[key] || []).forEach(c => { if (!owned(c.id)) { state.cards[c.id] = 1; state.fresh[c.id] = true; } });
+      save(); render();
+    },
+    grantCard(id) {
+      if (!CARD_BY_ID[id]) return false;
+      if (!owned(id)) { state.cards[id] = 1; state.fresh[id] = true; save(); render(); }
+      return true;
+    },
+    setMoney(n) { state.money = Math.max(0, Math.round(n)); save(); render(); },
+    finishAll() {
+      CARDS.forEach(c => { if (!owned(c.id)) { state.cards[c.id] = 1; state.fresh[c.id] = true; } });
+      save(); render();
+    }
+  };
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+
+</script>
+</body>
+</html>
