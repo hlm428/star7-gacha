@@ -579,8 +579,14 @@ img,svg{display:block;max-width:100%}
 .btn:disabled{filter:grayscale(.5) brightness(.86);box-shadow:none}
 .modal .x{position:absolute;right:14px;top:12px;z-index:20;width:32px;height:32px;border-radius:50%;background:rgba(95,50,82,.08);display:flex;align-items:center;justify-content:center;color:#9b7089;font-size:16px}
 .modal-wrap{position:relative}
-/* 详情弹窗：关闭按钮独占顶部安全带，正文整体下移，标题与按钮零重叠 */
-.detail-wrap{padding-top:58px}
+/* 详情 / 规则弹窗共用同一套顶部安全带：× 独占 58px，正文整体下移，标题与按钮零重叠 */
+.detail-wrap,.rules-wrap{padding-top:58px}
+/* 规则弹窗标题与副标题限制在 × 右侧安全带以内，最多两行，禁止横向压到 × 下方 */
+.rules-wrap h3,.rules-wrap .msub{max-width:calc(100% - 46px);
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+  text-overflow:ellipsis;word-break:break-word}
+.rules-wrap h3{line-height:1.3}
+.rules-wrap .msub{line-height:1.55}
 .detail-card{width:min(44vw,176px);margin:2px auto 12px}
 .detail-head{display:flex;align-items:flex-start;gap:10px}
 .detail-title{flex:1;min-width:0;padding-right:4px}
@@ -770,6 +776,8 @@ img,svg{display:block;max-width:100%}
 @media (max-width:370px){
   .detail-title h3{font-size:15px}
   .detail-meta{font-size:8.5px}
+  .rules-wrap h3{font-size:17px;line-height:1.28}
+  .rules-wrap .msub{font-size:10px;line-height:1.5}
 }
 @media (max-height:700px){
   .poster{height:clamp(280px,42dvh,340px)}
@@ -2524,7 +2532,7 @@ function openRules() {
     const info = RARITY_INFO[r];
     return `<tr><td><span class="rar-badge rar-${r}">${r}</span></td><td>${(info.rate * 100).toFixed(0)}%</td><td>重复 +${info.shard} 碎片</td><td>兑换 ${info.exchange}</td></tr>`;
   }).join('');
-  openModal(`<div class="modal-wrap">
+  openModal(`<div class="modal-wrap rules-wrap">
     <button class="x" data-act="close-modal">×</button>
     <h3>卡池概率与规则</h3>
     <p class="msub">「STAR7 三周年 · 星轨回响限定池」· 以下数值均真实生效</p>
