@@ -462,7 +462,7 @@ img,svg{display:block;max-width:100%}
 .pack-grid.n1{grid-template-columns:minmax(0,186px);gap:0}
 .pack-grid.n10{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
   flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;
-  padding:2px 2px 4px;scrollbar-width:none;overscroll-behavior:contain}
+  padding:2px 2px calc(76px + var(--safe-b));scrollbar-width:none;overscroll-behavior:contain}
 .pack-grid.n10::-webkit-scrollbar{display:none}
 .flip{
   position:relative;aspect-ratio:.68;perspective:900px;cursor:pointer;min-width:0;
@@ -574,7 +574,7 @@ img,svg{display:block;max-width:100%}
 .modal{
   width:100%;max-width:430px;max-height:88dvh;overflow-y:auto;scrollbar-width:none;
   background:linear-gradient(160deg,#fff9f2,#ffedf4);color:var(--ink);
-  border-radius:24px 24px 0 0;padding:18px 18px calc(18px + var(--safe-b));
+  border-radius:24px 24px 0 0;padding:18px 18px calc(34px + var(--safe-b));
   box-shadow:0 -20px 60px rgba(10,4,16,.5);animation:sheetUp .32s ease both;border:1px solid rgba(255,255,255,.7)
 }
 .modal::-webkit-scrollbar{display:none}
@@ -803,11 +803,11 @@ img,svg{display:block;max-width:100%}
 .pf.sr-scene>img{--pz:1.1;--pox:50%;--poy:24%;object-position:50% 22%}
 .pf.sr-split>img{--pz:1.24;--pox:58%;--poy:4%;object-position:58% 2%;--pf:saturate(1.12) contrast(1.05) hue-rotate(-8deg)}
 
-/* 卡册成员头像：点击进档案 */
+/* 卡册成员页签：点头像切卡册，档案走头像外的独立小按钮 */
 .mtab .av{position:relative}
-.mtab .pdot{position:absolute;right:-1px;bottom:-1px;width:14px;height:14px;border-radius:50%;
-  background:linear-gradient(135deg,#ffd9ec,#f59ac4);color:#6d2448;font-size:8px;font-style:normal;font-weight:900;
-  display:flex;align-items:center;justify-content:center;border:1px solid #fff;box-shadow:0 2px 6px rgba(120,30,70,.25)}
+.mtab .pbtn{position:absolute;top:3px;right:3px;z-index:3;padding:2px 5px;border-radius:8px;
+  background:linear-gradient(135deg,#ffd9ec,#f59ac4);color:#6d2448;font-size:8px;font-style:normal;font-weight:900;line-height:1.4;
+  border:1px solid #fff;box-shadow:0 2px 6px rgba(120,30,70,.25);cursor:pointer}
 
 /* 成员档案 */
 .profile-wrap{padding-top:58px}
@@ -832,11 +832,23 @@ img,svg{display:block;max-width:100%}
 .av-fallback{display:block;width:100%;height:100%}
 
 /* 弹层操作按钮吸底，避免长内容把按钮顶出屏幕 */
-.modal .actions{position:sticky;bottom:calc(-1 * (18px + var(--safe-b)));z-index:2;
+.modal .actions{position:sticky;bottom:calc(-1 * (34px + var(--safe-b)));z-index:2;
   padding:10px 0 4px;margin-top:8px;background:linear-gradient(180deg,rgba(255,244,248,0),#fff4f8 38%)}
 /* toast 不再压住全屏拆卡层 */
 .toast{z-index:25!important}
 .btn:disabled{opacity:.6;filter:grayscale(.15);cursor:not-allowed;transform:none!important}
+
+/* 语音播放中的音波小动画 */
+.vw{display:none;align-items:flex-end;gap:2px;height:12px;margin-left:3px}
+.vw b{width:3px;border-radius:2px;background:currentColor;animation:vw .8s ease-in-out infinite}
+.vw b:nth-child(2){animation-delay:.15s}
+.vw b:nth-child(3){animation-delay:.3s}
+@keyframes vw{0%,100%{height:4px}50%{height:12px}}
+.vplaying .vw{display:inline-flex}
+
+/* 概率表「碎片兑换」列：按钮等宽右对齐 */
+.rules-table th:last-child{text-align:right}
+.rules-table .ex-btn{min-width:66px;min-height:30px;justify-content:center;padding:0 8px;font-size:10px}
 
 @media (max-width:370px){
   .detail-title h3{font-size:15px}
@@ -1150,7 +1162,7 @@ img,svg{display:block;max-width:100%}
             <div class="brand">STAR7</div>
           </div>
           <div class="pack-half bot">
-            <div class="mini">TRACK OF STARS · 3RD ANNIV.</div>
+            <div class="mini" id="packMini">TRACK OF STARS · 3RD ANNIV.</div>
           </div>
           <div class="tear-line" id="tearLine"></div>
           <div class="tear-glow"></div>
@@ -1383,36 +1395,36 @@ const CARD_QUOTES = {
 
 /* ================= 集齐成员：长独白 / 称号 / 语音 ================= */
 const COLLECT_LINES = {
-  sy:'八张卡。\n从练习室的灯，到最后的星轨回响。\n我本来以为，有些话永远不会说出口。\n但你把它们都收集齐了。\n……那就当作，我亲口告诉过你吧。',
-  ja:'甜度从低糖到全糖，你好像都试过了。\n其实我最喜欢的，是你把我所有味道都记得的样子。\n星期天可以续杯，喜欢也可以。',
-  bl:'八首歌。\n有的写给夜，有的写给雨，有的只写给一个人。\n现在它们都在你手里了。\n那我……是不是也可以稍微任性一点？',
-  wy:'镜子前的第七次，谢幕后的沉默，黑天鹅终于落地。\n原来被完整看见的感觉，比独舞更让人腿软。',
-  gy:'从鼓点到万人合唱，你都在。\n嗓子哑了也没关系，反正我最想让你听见的，已经都唱过了。',
-  lq:'冰淇淋化了，扣子没送出去，操场上的告白被风吹走了一半。\n但你把它们都收好了。\n那这个夏天，就不算结束。',
-  xz:'镜头里的你，镜头外的你，我好像都拍到了。\n可还是贪心。\n夏日终章之后，能不能……再给我一季？'
+  sy:'八张卡，你都收好了。谢谢。',
+  ja:'甜度刚刚好，和你一样。',
+  bl:'（小声，有点惊讶）八首歌……现在都在你手里了。',
+  wy:'（语气很淡，带一点颤）被你完整看见的感觉，很好。',
+  gy:'下一场，你还来吗？',
+  lq:'（元气，又有点舍不得）这个夏天，不算结束！',
+  xz:'再给我一季，好不好？'
 };
 const COLLECT_TITLE = key => (MEMBER_BY_KEY[key] ? MEMBER_BY_KEY[key].name + '的完整星轨' : '完整星轨');
 
 /* SSR 深读长独白（80–130 字，语气贴合角色） */
 const SSR_LONG = {
-  sy:'星轨很长，长到我曾经以为，有些人注定只能隔着舞台看。\n可你一抽一抽地把我拼回来。\n练习室的灯、没寄出的信、只对你的温柔……\n原来我一直在等的，不是完美的舞台，是有人愿意把这些不完美的部分也收进卡册。\n这一次，换我朝你的方向走过来。',
-  ja:'甜度从低糖到全糖，你好像都试过了。\n其实我最喜欢的，是你把我所有味道都记得的样子。\n烤箱前的手套、周三的便利店、共享耳机里的歌——原来这些平常的日子，被你一张一张收进了卡册。\n星期天可以续杯，喜欢也可以。',
-  bl:'八首歌，有的写给夜，有的写给雨，有的只写给一个人。\n谱纸上的猫、旧钢琴、耳机里的雨，那些没发表的 demo，你都听完了。\n现在它们都在你手里了。\n那我……是不是也可以稍微任性一点，把下一首只写给你？',
-  wy:'镜子前的第七次，谢幕后的沉默，黑天鹅终于落地。\n丝带、舞鞋、后台那杯凉掉的薄荷茶，你都记得。\n原来被完整看见的感觉，比独舞更让人腿软。\n这一支，我只跳给你看。',
-  gy:'从鼓点到万人合唱，你都在。\n皮夹克被雨淋透的夜里，试音时偷偷唱你的名字，副歌之前那一眼——嗓子哑了也没关系，反正我最想让你听见的，已经都唱过了。\n下一场，还来吗？',
-  lq:'冰淇淋化了，扣子没送出去，操场上的告白被风吹走了一半。\n可你把它们都收好了：单车后座的风、晒伤的夏天、毕业那天的校服。\n那这个夏天，就不算结束。\n下一次，换我先开口。',
-  xz:'镜头里的你，镜头外的你，我好像都拍到了。\n奶茶三分糖、候机厅的广播、被吹跑的海边帽子，全在取景框里。\n可还是贪心。\n夏日终章之后，能不能……再给我一季？这次我想站在镜头里面。'
+  sy:'星轨很长，长到我以为，有些人注定只能隔着舞台看。可你一张一张，把我拼了回来。练习室的灯，没寄出的信，只给你的温柔，原来我一直在等的，不是完美的舞台，是有人愿意把不完美的我也收进卡册。这一次，换我朝你走过来。',
+  ja:'甜度从少糖到全糖，你好像都试过了。其实我最喜欢的，是你把我所有味道都记得的样子。烤箱前的手套，周三的便利店，耳机里分你一半的歌，这些平常的日子，被你一张一张收进了卡册。星期天可以续杯，喜欢也可以。',
+  bl:'八首歌，有的写给夜，有的写给雨，有的只写给一个人。……谱纸上的猫、旧钢琴、耳机里的雨，那些没发表的 demo，你都听完了。……现在它们都在你手里了。……那我……是不是也可以稍微任性一点，把下一首只写给你？',
+  wy:'镜子前的第七遍，谢幕后的安静，黑天鹅终于落了地。丝带、舞鞋、后台那杯凉掉的薄荷茶，你都记得。原来被人完整看见，比独舞还让人腿软。这一支，我只跳给你看。',
+  gy:'从第一声鼓点到万人合唱，你都在。皮夹克被雨淋透的那晚，试音时偷偷唱你的名字，副歌前看你的那一眼。嗓子哑了也没关系，我最想让你听见的，都已经唱过了。下一场，还来吗？',
+  lq:'冰淇淋化了，扣子没送出去，操场上的告白被风吹走了一半。可你把它们都收好了，单车后座的风，晒伤的夏天，毕业那天的校服。那这个夏天，就不算结束。下一次，换我先开口。',
+  xz:'镜头里的你，镜头外的你，我好像都拍到了。三分糖的奶茶，候机厅的广播，海边被吹跑的帽子，全在取景框里。可我还是贪心。夏日终章之后，能不能再给我一季？这次，我想站在镜头里面。'
 };
 
-/* 语音分层台词（浏览器 TTS 朗读；无语音资源时静默降级） */
+/* 语音台词（预录配音 assets/voice/<成员>_<类型>.mp3；无对应音频时静默） */
 const VOICE_LINES = {
-  sy:{ ssr:'这一次，我循着你的光而来。', collect:'八张卡，你都收好了。……谢谢。', birthday:'今天是我的生日，可以只看着我吗？', idle:'跟着我，别掉队。' },
-  ja:{ ssr:'今天的甜度，由你决定。', collect:'甜度刚好，和你一样。', birthday:'生日愿望，是再见到你。', idle:'要记得好好吃饭。' },
-  bl:{ ssr:'这首歌，只写给你。', collect:'八首歌，现在都在你手里了。', birthday:'今天，能听我弹一首吗？', idle:'新写的副歌，你先听听。' },
-  wy:{ ssr:'这一支，只跳一次。', collect:'被你完整看见的感觉，很好。', birthday:'谢幕之后，别急着走。', idle:'看好，这一支只跳一次。' },
-  gy:{ ssr:'音浪够大，就跟我一起喊。', collect:'下一场，还来吗？', birthday:'今天的歌，只唱给一个人。', idle:'嗓子哑了也没关系。' },
-  lq:{ ssr:'水我带了两瓶，给你一瓶。', collect:'这个夏天，不算结束。', birthday:'今天，能陪我跑一圈吗？', idle:'今天也要记得吃饭。' },
-  xz:{ ssr:'别动，这个角度很好看。', collect:'再给我一季，好不好？', birthday:'今天，我想拍你。', idle:'别动，这个角度很好看。' }
+  sy:{ ssr:'这一次，我循着你的光来了。', collect:'八张卡，你都收好了。谢谢。', birthday:'今天是我生日。可以，只看着我吗？', idle:'跟紧我，别掉队。', thanks:'谢了。', long:'星轨很长，长到我以为，有些人注定只能隔着舞台看。可你一张一张，把我拼了回来。练习室的灯，没寄出的信，只给你的温柔，原来我一直在等的，不是完美的舞台，是有人愿意把不完美的我也收进卡册。这一次，换我朝你走过来。' },
+  ja:{ ssr:'今天的甜度，由你决定哦。', collect:'甜度刚刚好，和你一样。', birthday:'我的生日愿望是，再见到你。', idle:'饭要好好吃，觉也要好好睡，知道吗？', thanks:'谢谢你呀。', long:'甜度从少糖到全糖，你好像都试过了。其实我最喜欢的，是你把我所有味道都记得的样子。烤箱前的手套，周三的便利店，耳机里分你一半的歌，这些平常的日子，被你一张一张收进了卡册。星期天可以续杯，喜欢也可以。' },
+  bl:{ ssr:'（很轻，慢吞吞）这首歌……只写给你。', collect:'（小声，有点惊讶）八首歌……现在都在你手里了。', birthday:'（犹豫一下）今天……能听我弹一首吗？', idle:'（刚睡醒，沙哑）新写的副歌，你先听听。', thanks:'（小声）……谢了。', long:'八首歌，有的写给夜，有的写给雨，有的只写给一个人。……谱纸上的猫、旧钢琴、耳机里的雨，那些没发表的 demo，你都听完了。……现在它们都在你手里了。……那我……是不是也可以稍微任性一点，把下一首只写给你？' },
+  wy:{ ssr:'（清冷，咬字干净）这一支，只跳一次。', collect:'（语气很淡，带一点颤）被你完整看见的感觉，很好。', birthday:'（轻声）谢幕之后，别急着走。', idle:'（平静）看好了。', thanks:'（淡淡）谢谢。', long:'镜子前的第七遍，谢幕后的安静，黑天鹅终于落了地。丝带、舞鞋、后台那杯凉掉的薄荷茶，你都记得。原来被人完整看见，比独舞还让人腿软。这一支，我只跳给你看。' },
+  gy:{ ssr:'音浪够大，就跟我一起喊！', collect:'下一场，你还来吗？', birthday:'今天的歌，我只唱给一个人。', idle:'嗓子哑了也没事，你听得见就行。', thanks:'谢啦！', long:'从第一声鼓点到万人合唱，你都在。皮夹克被雨淋透的那晚，试音时偷偷唱你的名字，副歌前看你的那一眼。嗓子哑了也没关系，我最想让你听见的，都已经唱过了。下一场，还来吗？' },
+  lq:{ ssr:'（跑过来喘着气，笑）水我带了两瓶，给你一瓶！', collect:'（元气，又有点舍不得）这个夏天，不算结束！', birthday:'（期待，语速快）今天能陪我跑一圈吗？就一圈！', idle:'（开朗）外套我多带了一件，冷了就跟我说！', thanks:'（大声）谢谢哥！……啊不对，谢谢你！', long:'冰淇淋化了，扣子没送出去，操场上的告白被风吹走了一半。可你把它们都收好了，单车后座的风，晒伤的夏天，毕业那天的校服。那这个夏天，就不算结束。下一次，换我先开口。' },
+  xz:{ ssr:'别动，这个角度很好看。', collect:'再给我一季，好不好？', birthday:'今天，我想拍你。', idle:'站那儿别跑，我对个焦。', thanks:'谢了，这张送你。', long:'镜头里的你，镜头外的你，我好像都拍到了。三分糖的奶茶，候机厅的广播，海边被吹跑的帽子，全在取景框里。可我还是贪心。夏日终章之后，能不能再给我一季？这次，我想站在镜头里面。' }
 };
 
 /* 终章全员寄语 */
@@ -1793,8 +1805,8 @@ function defaultState() {
   return {
     v: 2, day: 1, money: GAME.START_MONEY, shards: 0,
     cards: {}, dupes: {}, fresh: {},
-    pityLeft: GAME.PITY_MAX,
-    stats: { spent: 0, pulls: 0, n: 0, r: 0, sr: 0, ssr: 0, dupShards: 0, income: 0 },
+    pityLeft: GAME.PITY_MAX, upPity: false,
+    stats: { spent: 0, pulls: 0, n: 0, r: 0, sr: 0, ssr: 0, dupShards: 0, income: 0, shards: 0 },
     claimed: {}, mute: false, guideDone: false,
     lines: {},   // 每个成员已解锁的台词序号（按解锁顺序）
     todayPulls: 0, dayIncome: 0, market: null, marketDay: 0,
@@ -1850,6 +1862,7 @@ function normalizeSave(p) {
   s.freeTen = Math.max(0, Math.round(+s.freeTen || 0));
   s.freeTenDay = Math.max(0, Math.round(+s.freeTenDay || 0));
   s.boostDay = Math.max(0, Math.round(+s.boostDay || 0));
+  s.upPity = !!s.upPity;
   const vol = p.vol && typeof p.vol === 'object' ? p.vol : {};
   const vnum = (v, d) => Number.isFinite(+v) ? clamp(+v, 0, 1) : d;
   s.vol = { bgm: vnum(vol.bgm, .6), sfx: vnum(vol.sfx, .8), voice: vnum(vol.voice, 1) };
@@ -1912,11 +1925,10 @@ function syncLineUnlocks() {
   });
 }
 
-/* ---------- 音效 / BGM / 语音 分层（WebAudio 程序化合成，无外部文件） ---------- */
+/* ---------- 音效 / BGM（WebAudio 合成）/ 语音（assets/voice 预录 mp3） 分层 ---------- */
 let actx = null, bgmGain = null, sfxGain = null;
 const AUDIO = { bgmKind: '', bgmTimer: null };
 const VOL_DEFAULT = { bgm: .6, sfx: .8, voice: 1 };
-const VOICE_PITCH = { sy: .9, ja: 1.06, bl: .96, wy: 1.0, gy: .86, lq: 1.08, xz: 1.02 };
 
 function audioVol(k) {
   const v = state && state.vol ? state.vol[k] : null;
@@ -1971,24 +1983,32 @@ function sfx(name) {
   }
 }
 
-/* ---------- 语音（浏览器 TTS，无语音资源时静默降级） ---------- */
-function speak(text, memberKey) {
-  if (!text || !state || state.mute) return;
+/* ---------- 语音（预录配音 assets/voice/<成员>_<类型>.mp3；文件不存在时静默，不回退机器朗读） ---------- */
+let curVoice = null;
+function playVoice(memberKey, type) {
+  if (!state || state.mute) return;
   const v = audioVol('voice');
   if (v <= 0) return;
   try {
-    if (!('speechSynthesis' in window)) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'zh-CN';
-    u.rate = .94;
-    u.volume = v;
-    u.pitch = VOICE_PITCH[memberKey] || 1;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  } catch (e) { /* 忽略不支持的环境 */ }
+    stopVoice();
+    const a = new Audio('assets/voice/' + memberKey + '_' + type + '.mp3');
+    a.volume = v;
+    curVoice = a;
+    const btn = document.querySelector('[data-act="voice-play"][data-member="' + memberKey + '"]');
+    const done = () => {
+      if (curVoice === a) curVoice = null;
+      if (btn) btn.classList.remove('vplaying');
+    };
+    a.addEventListener('ended', done);
+    a.addEventListener('error', done);   /* 无对应音频文件：静默 */
+    const p = a.play();
+    if (p && p.catch) p.catch(done);
+    if (btn) btn.classList.add('vplaying');
+  } catch (e) { /* 无音频环境时静默 */ }
 }
 function stopVoice() {
-  try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+  try { if (curVoice) { curVoice.pause(); curVoice.currentTime = 0; curVoice = null; } } catch (e) {}
+  $$('.vplaying').forEach(b => b.classList.remove('vplaying'));
 }
 
 /* ---------- BGM（分层循环，音量走 bgmGain） ---------- */
@@ -2080,6 +2100,11 @@ function addMoney(n) {
   if (n > 0) state.stats.income += n;
   save();
 }
+function gainShards(n) {
+  state.shards = Math.max(0, state.shards + n);
+  if (n > 0) state.stats.shards += n;
+  save();
+}
 function canPay(n) { return state.money >= n; }
 
 /* ---------- 主界面渲染 ---------- */
@@ -2099,8 +2124,10 @@ function render() {
   $('#pullCountToday').textContent = state.todayPulls;
   $('#spentVal').textContent = fmt(state.stats.spent);
   $('#albumBadge').textContent = uniqueCount();
-  $('#pityText').textContent = '再抽 ' + state.pityLeft + ' 包必出 SSR';
-  $('#pityBar').style.width = ((GAME.PITY_MAX - state.pityLeft) / GAME.PITY_MAX * 100).toFixed(1) + '%';
+  /* 开包期间显示抽前保底快照，收下后才更新为逐张结算后的数字，保证「看到的数 = 实际生效的数」 */
+  const pShow = (pendingPull && pendingPull.pityBefore) || state.pityLeft;
+  $('#pityText').textContent = '再抽 ' + pShow + ' 包必出 SSR';
+  $('#pityBar').style.width = ((GAME.PITY_MAX - pShow) / GAME.PITY_MAX * 100).toFixed(1) + '%';
   const u = uniqueCount();
   $('#collectNum').textContent = u;
   $('#collectBar').style.width = (u / GAME.TOTAL_CARDS * 100).toFixed(1) + '%';
@@ -2117,6 +2144,8 @@ function render() {
     $('#couponRow').innerHTML = chips.join('');
     $('#couponRow').classList.toggle('show', chips.length > 0);
   }
+  const p1Price = $('#pull1Btn .price');
+  if (p1Price) p1Price.innerHTML = freeOne ? ('免费 ×' + state.freeSingles) : ('<small>¥</small>' + GAME.PRICE1);
   $('#pull1Btn').classList.toggle('dim', !(freeOne || canPay(GAME.PRICE1)));
   $('#pull10Btn').classList.toggle('dim', !(freeTenOK || canPay(GAME.PRICE10)));
   applyVol();
@@ -2230,7 +2259,9 @@ function pickCard(rarity) {
 }
 function pickSSR() {
   const upId = upKeyNow() + '-7';
-  if (Math.random() < GAME.UP_CHANCE) return CARD_BY_ID[upId];
+  /* 大保底：上次 SSR 歪了（非 UP），这次必出 UP；抽出 UP 后重置 */
+  if (state.upPity || Math.random() < GAME.UP_CHANCE) { state.upPity = false; return CARD_BY_ID[upId]; }
+  state.upPity = true;
   const ssr = CARDS.filter(c => c.rarity === 'SSR' && c.id !== upId);
   return ssr[rand(ssr.length)];
 }
@@ -2274,7 +2305,7 @@ function applyResults(results) {
       dupCount++;
       state.dupes[c.id] = (state.dupes[c.id] || 0) + 1;
       const sh = RARITY_INFO[c.rarity].shard;
-      state.shards += sh;
+      gainShards(sh);
       state.stats.dupShards += sh;
       shardsGained += sh;
       return { card: c, dup: true, shards: sh };
@@ -2300,7 +2331,7 @@ function doPull(n) {
     const btn = n === 1 ? $('#pull1Btn') : $('#pull10Btn');
     btn.style.transform = 'scale(.94)';
     setTimeout(() => { btn.style.transform = ''; }, 180);
-    toast('生活费不足：这包要 ¥' + price + '，点顶部「进入下一天」领生活费吧', true);
+    toast('生活费不够啦，明天再来', true);
     return;
   }
   hideCoach();
@@ -2312,9 +2343,11 @@ function doPull(n) {
   } else {
     toast(n === 1 ? '已使用免费单抽券' : '已使用免费十连券（仅今天有效）');
   }
+  /* 保底快照：本次开包期间，顶栏保底仍显示抽前数字，收下后再更新为逐张结算结果 */
+  const pityBefore = state.pityLeft;
   const results = rollBatch(n);
   const applied = applyResults(results);
-  pendingPull = { n: n, results: results, applied: applied, flipped: new Array(n).fill(false), flipCount: 0 };
+  pendingPull = { n: n, results: results, applied: applied, pityBefore: pityBefore, flipped: new Array(n).fill(false), flipCount: 0 };
   save();
   render();
   openPack(n);
@@ -2329,7 +2362,13 @@ function openPack(n) {
   const ov = $('#packOverlay');
   ov.classList.add('show');
   $('#packTitle').textContent = n === 1 ? '拆 1 包' : '拆 10 包';
-  $('#packSub').textContent = '星轨回响 · 限定卡包';
+  /* 生日池：卡包换成对应成员的生日卡包 */
+  const bkey = birthdayKeyForDay(state.day);
+  $('#packSub').textContent = bkey ? (MEMBER_BY_KEY[bkey].name + ' · 生日限定卡包') : '星轨回响 · 限定卡包';
+  const pmini = $('#packMini');
+  if (pmini) pmini.textContent = bkey
+    ? ('HAPPY BIRTHDAY · ' + gameDate(state.day).m + '/' + gameDate(state.day).d)
+    : 'TRACK OF STARS · 3RD ANNIV.';
   const wrap = $('#packWrap');
   wrap.classList.remove('open', 'dragging');
   tearProgress = 0;
@@ -2394,6 +2433,14 @@ function backHTML() {
   </div>`;
 }
 
+/* 翻开时才写入卡面 DOM：翻牌前页面上只有卡背，不看源码也剧透不了 */
+function revealCard(el, i) {
+  const flipper = el.querySelector('.flipper');
+  if (flipper && !flipper.querySelector('.front')) {
+    flipper.insertAdjacentHTML('beforeend', frontHTML(pendingPull.applied.entries[i]));
+  }
+}
+
 function showCards(instant) {
   $('#tearStage').classList.add('hidden');
   $('#cardsStage').classList.remove('hidden');
@@ -2403,7 +2450,7 @@ function showCards(instant) {
   grid.className = 'pack-grid ' + (n === 1 ? 'n1' : 'n10');
   grid.innerHTML = pendingPull.applied.entries.map((r, i) => `
     <div class="flip" data-flip="${i}" role="button" tabindex="0" aria-label="翻开第 ${i + 1} 张卡" aria-pressed="false" style="animation-delay:${instant ? 0 : (i * .045)}s">
-      <div class="flipper">${backHTML()}${frontHTML(r)}</div>
+      <div class="flipper">${backHTML()}</div>
     </div>`).join('');
   $('#packTally').innerHTML = '';
   $('#resultSummary').textContent = '';
@@ -2412,7 +2459,7 @@ function showCards(instant) {
   $('#collectBtn').textContent = n === 1 ? '先翻开卡牌' : '先翻开全部卡牌';
   $('#cardsHint').innerHTML = n === 1 ? '点击卡背翻开这张卡' : '点击卡背逐张翻开 · <b>全部翻开</b> 可一次揭晓';
   if (instant) {
-    $$('.flip', grid).forEach((el, i) => { el.classList.add('flipped'); el.setAttribute('aria-pressed', 'true'); pendingPull.flipped[i] = true; });
+    $$('.flip', grid).forEach((el, i) => { revealCard(el, i); el.classList.add('flipped'); el.setAttribute('aria-pressed', 'true'); pendingPull.flipped[i] = true; });
     pendingPull.flipCount = n;
     finishReveal(true);
   }
@@ -2437,6 +2484,7 @@ function flipOne(el) {
   if (pendingPull.flipped[i]) return;
   pendingPull.flipped[i] = true;
   pendingPull.flipCount++;
+  revealCard(el, i);
   el.classList.add('flipped');
   el.setAttribute('aria-pressed', 'true');
   const r = pendingPull.applied.entries[i];
@@ -2454,6 +2502,7 @@ function flipAll(instant, noSSR) {
     if (!pendingPull.flipped[i]) {
       pendingPull.flipped[i] = true;
       pendingPull.flipCount++;
+      revealCard(el, i);
       el.classList.add('flipped');
       el.setAttribute('aria-pressed', 'true');
     }
@@ -2494,7 +2543,7 @@ function nextSSR() {
   $('#ssrOverlay').classList.add('show');
   startBGM('ssr');
   sfx('ssr');
-  speak(VOICE_LINES[c.member] && VOICE_LINES[c.member].ssr, c.member);
+  playVoice(c.member, 'ssr');
   try { if (navigator.vibrate) navigator.vibrate([18, 40, 26]); } catch (e) {}
   if (ssrTimer) clearTimeout(ssrTimer);
   /* 原演出时长保持 1.6s；点击「深读」可中断并展开长独白 */
@@ -2512,7 +2561,7 @@ function showSSRDeep() {
   $('#ssrDeepName').textContent = m.name + ' · ' + c.name;
   $('#ssrDeepText').textContent = '';
   startBGM('ssr');
-  speak(text.replace(/\n/g, '，'), c.member);
+  playVoice(c.member, 'long');
   sfx('star');
   clearInterval(deepTypeTimer);
   let i = 0;
@@ -2615,7 +2664,8 @@ function closeAlbum() {
 function buildMemberTabs() {
   $('#memberTabs').innerHTML = MEMBERS.map(m => `
     <button class="mtab ${m.key === albumMember ? 'on' : ''}" data-act="tab" data-member="${m.key}">
-      <span class="av" data-act="profile" data-member="${m.key}" title="查看 ${m.name} 的档案">${avatarSVG(m)}<i class="pdot">档</i></span>
+      <span class="av">${avatarSVG(m)}</span>
+      <i class="pbtn" data-act="profile" data-member="${m.key}" title="查看 ${m.name} 的档案">档案</i>
       <b>${m.name}</b>
       <span>${memberOwned(m.key)}/8</span>
     </button>`).join('');
@@ -2652,7 +2702,7 @@ function openProfile(key) {
     <div class="profile-lines-h">台词收藏 <i>${unlocked.length}/8</i><small>抽到他的新卡即可解锁一句</small></div>
     <div class="profile-lines">${unlocked.map(i => { const c = cards.find(x => x.idx === i); return c ? lineHTML(c, true) : ''; }).join('')}${locked.map(c => lineHTML(c, false)).join('')}</div>
     <div class="actions">
-      <button class="btn ghost" data-act="voice-play" data-member="${key}">语音</button>
+      <button class="btn ghost" data-act="voice-play" data-member="${key}">语音<i class="vw"><b></b><b></b><b></b></i></button>
       <button class="btn ghost" data-act="close-modal">收起档案</button>
     </div>
   </div>`);
@@ -2720,7 +2770,7 @@ function showCardDetail(id) {
     <p class="detail-text">${have ? '“' + c.quote + '”' : '这张卡还没有被你拆到。收集重复卡获得的碎片，可以在这里兑换指定卡。'}</p>
     <div class="detail-actions">
       ${have
-        ? `<button class="btn ghost" data-act="voice-play" data-member="${c.member}">语音</button><button class="btn ghost" data-act="close-modal">关闭</button><div class="hint">已收入星轨卡册 · 共 ${state.dupes[id] || 0} 次重复记录</div>`
+        ? `<button class="btn ghost" data-act="voice-play" data-member="${c.member}">语音<i class="vw"><b></b><b></b><b></b></i></button><button class="btn ghost" data-act="close-modal">关闭</button><div class="hint">已收入星轨卡册 · 共 ${state.dupes[id] || 0} 次重复记录</div>`
         : `<button class="btn gold" data-act="exchange-buy" data-id="${id}" ${state.shards < cost ? 'disabled' : ''}>用 ${cost} 碎片兑换</button>
            <div class="hint">当前碎片 ${state.shards} 枚 · 重复卡自动折算碎片</div>`}
     </div>
@@ -2742,6 +2792,26 @@ function buyCardWithShards(id) {
   sfx('reward');
   render();
   renderAlbum();
+  setTimeout(checkCollectRewards, 240);
+}
+
+/* 概率表按稀有度直兑：兑换全池中第一张未拥有的该稀有度卡 */
+function exchangeRarity(rarity) {
+  const info = RARITY_INFO[rarity];
+  if (!info) return;
+  const cost = info.exchange;
+  if (state.shards < cost) { toast('碎片不够，还差 ' + (cost - state.shards) + ' 枚', true); sfx('error'); return; }
+  const c = CARDS.find(x => x.rarity === rarity && !owned(x.id));
+  if (!c) { toast(rarity + ' 卡已经全部收齐啦'); return; }
+  state.shards -= cost;
+  state.cards[c.id] = 1;
+  state.fresh[c.id] = true;
+  unlockLine(c);
+  save();
+  toast('兑换成功：' + c.name);
+  sfx('reward');
+  render();
+  openRules();
   setTimeout(checkCollectRewards, 240);
 }
 
@@ -2796,7 +2866,7 @@ function checkCollectRewards() {
   typeCollect(COLLECT_LINES[m.key] || '');
   startBGM('collect');
   sfx('complete');
-  speak(VOICE_LINES[m.key] && VOICE_LINES[m.key].collect, m.key);
+  playVoice(m.key, 'collect');
 }
 function claimReward(key) {
   const m = MEMBER_BY_KEY[key];
@@ -2805,7 +2875,7 @@ function claimReward(key) {
   state.titles[key] = 1;
   state.money = Math.max(0, state.money + GAME.COLLECT_REWARD_MONEY);
   state.stats.income += GAME.COLLECT_REWARD_MONEY;
-  state.shards += GAME.COLLECT_REWARD_SHARD;
+  gainShards(GAME.COLLECT_REWARD_SHARD);
   save();
   closeModal();
   render();
@@ -2876,11 +2946,14 @@ function renderMarket() {
   $('#moneyVal2').textContent = fmt(state.money);
 }
 
+let marketBusy = false;
 function buyMarketCard(id) {
+  if (marketBusy) return;
   ensureMarket();
   const offer = (state.market || []).find(o => o.id === id);
   if (!offer) return;
-  if (state.money < offer.price) { toast('还差 ¥' + (offer.price - state.money), true); sfx('error'); return; }
+  if (state.money < offer.price) { toast('生活费不够啦，明天再来', true); sfx('error'); return; }
+  marketBusy = true;
   state.money -= offer.price;
   state.stats.spent += offer.price;
   const c = CARD_BY_ID[id];
@@ -2888,7 +2961,7 @@ function buyMarketCard(id) {
   if (owned(id)) {
     const sh = RARITY_INFO[c.rarity].shard;
     state.dupes[id] = (state.dupes[id] || 0) + 1;
-    state.shards += sh;
+    gainShards(sh);
     state.stats.dupShards += sh;
     msg = '已拥有，自动折算 ' + sh + ' 碎片';
   } else {
@@ -2904,6 +2977,7 @@ function buyMarketCard(id) {
   sfx('reward');
   toast(msg);
   setTimeout(checkCollectRewards, 240);
+  setTimeout(() => { marketBusy = false; }, 350);
 }
 
 function sellShards() {
@@ -2931,7 +3005,7 @@ function openMore() {
       <div class="rule-item"><div class="ri">兑</div><div><b>碎片兑换</b><p>卡册里点未获得的剪影，可用碎片直接兑换指定卡。</p></div></div>
       <div class="rule-item"><div class="ri">奖</div><div><b>全员收集</b><p>集齐某位成员的 8 张卡，触发完整星轨庆祝，领取 ¥188 + 30 碎片与专属称号。已完成 ${done}/7。</p></div></div>
       <div class="rule-item"><div class="ri">事</div><div><b>旅程事件</b><p>第 5/10/15/20/25/30 天触发固定剧情；每天进入下一天另有 30% 概率遇到小事件。路人缘 ${state.tags.passerby || 0}。</p></div></div>
-      <div class="rule-item"><div class="ri">音</div><div><b>声音分层</b><p>BGM、音效、语音三条独立滑条；语音使用系统中文 TTS，不支持时静默降级。进度在状态变化时立即写入本机。</p></div></div>
+      <div class="rule-item"><div class="ri">音</div><div><b>声音分层</b><p>BGM、音效、语音三条独立滑条；成员语音为预录配音，无对应音频时静默。进度在状态变化时立即写入本机。</p></div></div>
     </div>
     <div class="vol-set">
       <div class="vol-h">音量分层</div>
@@ -3067,8 +3141,8 @@ function triggerFixedEvent(day) {
   state.fixedDone[day] = 1;
   if (day === 5) state.freeSingles += 1;
   if (day === 10 || day === 20) {
-    state.shards += 30;
-    speak(VOICE_LINES[ev.member] && VOICE_LINES[ev.member].birthday, ev.member);
+    gainShards(30);
+    playVoice(ev.member, 'birthday');
   }
   if (day === 15) {
     const u = uniqueCount();
@@ -3178,7 +3252,7 @@ function chooseStory(key, choice) {
     <div class="actions"><button class="btn primary" data-act="close-modal">离开练习室</button></div>
   </div>`, true);
   sfx('reward');
-  speak('谢了。', key);
+  playVoice(key, 'thanks');
 }
 
 /* ---------- 随机小事件：每天 30% 概率，一天最多 1 次 ---------- */
@@ -3219,7 +3293,7 @@ function applySmallEvent(ev) {
     state.money = Math.max(0, state.money + ev.money);
     if (ev.money > 0) state.stats.income += ev.money;
   }
-  if (ev.shard) state.shards += ev.shard;
+  if (ev.shard) gainShards(ev.shard);
   if (ev.free) state.freeSingles += ev.free;
   if (ev.tag) state.tags[ev.tag] = (state.tags[ev.tag] || 0) + 1;
   let eff = '';
@@ -3294,7 +3368,7 @@ function applyEvent(ev) {
     state.money = Math.max(0, state.money + ev.money);
     if (ev.money > 0) state.stats.income += ev.money;
   }
-  if (ev.shard) state.shards += ev.shard;
+  if (ev.shard) gainShards(ev.shard);
 }
 
 function showEvent(ev) {
@@ -3346,6 +3420,8 @@ function openSettlement() {
     box('本局花费', '¥' + fmt(state.stats.spent)),
     box('永久图鉴', u + '<em>/56</em>'),
     box('抽到 SSR', state.stats.ssr + ' <em>张</em>'),
+    box('领到的生活费总额', '¥' + fmt(state.stats.income)),
+    box('获得碎片总数', (state.stats.shards || 0) + ' <em>枚</em>'),
     box('剩余生活费', '¥' + fmt(state.money)),
     box('收集率', rate + '<em>%</em>')
   ].join('');
@@ -3427,7 +3503,7 @@ function startGame() {
 function openRules() {
   const rows = ['N', 'R', 'SR', 'SSR'].map(r => {
     const info = RARITY_INFO[r];
-    return `<tr><td><span class="rar-badge rar-${r}">${r}</span></td><td>${(info.rate * 100).toFixed(0)}%</td><td>重复 +${info.shard} 碎片</td><td>兑换 ${info.exchange}</td></tr>`;
+    return `<tr><td><span class="rar-badge rar-${r}">${r}</span></td><td>${(info.rate * 100).toFixed(0)}%</td><td>重复 +${info.shard} 碎片</td><td><button class="link-btn gold-link ex-btn" data-act="exchange-rarity" data-rarity="${r}" ${state.shards < info.exchange ? 'disabled' : ''}>兑换 ${info.exchange}</button></td></tr>`;
   }).join('');
   openModal(`<div class="modal-wrap rules-wrap">
     <button class="x" data-act="close-modal">×</button>
@@ -3440,7 +3516,7 @@ function openRules() {
     <div class="rule-list" style="margin-top:12px">
       <div class="rule-item"><div class="ri">十</div><div><b>十连 SR 保底</b><p>十连中若没有 SR / SSR，系统会把最后一张升级为 SR，真实生效。</p></div></div>
       <div class="rule-item"><div class="ri">60</div><div><b>60 抽 SSR 硬保底</b><p>每抽累加计数，60 抽内必出 SSR；出 SSR 后计数重置为 60。</p></div></div>
-      <div class="rule-item"><div class="ri">UP</div><div><b>限定 UP</b><p>出 SSR 时，有 50% 概率为当天 UP 成员；平时是沈星野「星轨回响」，生日当天换成寿星，其余均分给另外 6 张 SSR。</p></div></div>
+      <div class="rule-item"><div class="ri">UP</div><div><b>限定 UP</b><p>出 SSR 时，有 50% 概率为当天 UP 成员；平时是沈星野「星轨回响」，生日当天换成寿星，其余均分给另外 6 张 SSR。若抽到的 SSR 不是 UP，则下一个 SSR 必定为 UP（大保底，抽出 UP 后重置）。</p></div></div>
       <div class="rule-item"><div class="ri">生</div><div><b>生日限定池</b><p>第 10 天（3/14）是沈星野生日，第 20 天（3/24）是江予安生日；当天海报与 UP 换成寿星，只开一天，概率与保底完全不变。</p></div></div>
       <div class="rule-item"><div class="ri">日</div><div><b>固定事件日</b><p>第 5 天练习室加练（免费单抽 ×1）、第 10/20 天生日（额外 30 碎片 + 生日语音）、第 15 天中期考核（按进度发 ¥80/120/180）、第 25 天彩排（当天 SSR 2%→3.5%，送免费十连券）、第 30 天全员寄语结算。</p></div></div>
       <div class="rule-item"><div class="ri">随</div><div><b>随机小事件</b><p>每天进入下一天有 30% 概率触发 1 次小事件，事件池 12 个，最近 7 天不重复；雨天限定「雨天共伞」。</p></div></div>
@@ -3788,10 +3864,10 @@ function bindEvents() {
       case 'light-stick': {
         el.classList.toggle('on');
         sfx('star');
-        speak(VOICE_LINES[el.dataset.member] && VOICE_LINES[el.dataset.member].birthday, el.dataset.member);
+        playVoice(el.dataset.member, 'birthday');
         break;
       }
-      case 'voice-play': ensureAudio(); speak(VOICE_LINES[el.dataset.member] && VOICE_LINES[el.dataset.member].idle, el.dataset.member); break;
+      case 'voice-play': ensureAudio(); playVoice(el.dataset.member, 'idle'); break;
       case 'save-collect': ensureAudio(); saveCollectImage(el.dataset.member); break;
       case 'profile': ensureAudio(); openProfile(el.dataset.member); sfx('click'); break;
       case 'tab': {
@@ -3802,6 +3878,7 @@ function bindEvents() {
       case 'detail': showCardDetail(el.dataset.card); break;
       case 'exchange': openExchange(); break;
       case 'exchange-buy': ensureAudio(); buyCardWithShards(el.dataset.id); break;
+      case 'exchange-rarity': ensureAudio(); exchangeRarity(el.dataset.rarity); break;
       case 'claim-reward': claimReward(el.dataset.member); break;
       case 'close-modal': closeModal(); break;
       case 'go-market': closeModal(); setTimeout(openMarket, 60); break;
@@ -3921,7 +3998,7 @@ function init() {
       syncLineUnlocks(); save(); render();
     },
     openProfile, upKeyNow, gameDate, birthdayKeyForDay,
-    showSSRDeep, triggerFixedEvent, maybeSmallEvent, speak,
+    showSSRDeep, triggerFixedEvent, maybeSmallEvent, playVoice,
     dataExtra: { FIXED_EVENTS, SMALL_EVENTS, SSR_LONG, COLLECT_LINES, VOICE_LINES }
   };
 }
