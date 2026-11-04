@@ -1688,6 +1688,7 @@ function load() {
     });
     state = s;
     syncLineUnlocks();
+    save();   // 迁移/补齐台词后立即落盘，避免刷新回退
     return true;
   } catch (e) { return false; }
 }
@@ -1834,6 +1835,7 @@ function render() {
   $('#collectBar').style.width = (u / GAME.TOTAL_CARDS * 100).toFixed(1) + '%';
   $('#albumCount').textContent = u + '/' + GAME.TOTAL_CARDS;
   $('#albumBar').style.width = (u / GAME.TOTAL_CARDS * 100).toFixed(1) + '%';
+  if (typeof syncMemberTabs === 'function') syncMemberTabs();
   $('#pull1Btn').classList.toggle('dim', !canPay(GAME.PRICE1));
   $('#pull10Btn').classList.toggle('dim', !canPay(GAME.PRICE10));
   $('#muteBtn').setAttribute('aria-pressed', state.mute ? 'true' : 'false');
@@ -2312,16 +2314,28 @@ function openProfile(key) {
   </div>`);
 }
 
-function renderAlbum() {
-  if (!state) return;
-  const m = MEMBER_BY_KEY[albumMember] || MEMBERS[0];
-  $$('.mtab').forEach(el => {
+/* 成员页计数：任何渲染路径都统一从这里刷新，保证成员之和 = 总进度 */
+function syncMemberTabs() {
+  const tabs = $$('#memberTabs .mtab');
+  if (!tabs.length) return 0;
+  let sum = 0;
+  tabs.forEach(el => {
     const key = el.dataset.member;
     el.classList.toggle('on', key === albumMember);
     const n = memberOwned(key);
+    sum += n;
     const sp = el.querySelector('span:last-child');
     if (sp) sp.textContent = n + '/8';
   });
+  const cur = MEMBER_BY_KEY[albumMember];
+  if (cur && $('#memberProgressText')) $('#memberProgressText').textContent = cur.name + ' · ' + memberOwned(cur.key) + '/8';
+  return sum;
+}
+
+function renderAlbum() {
+  if (!state) return;
+  const m = MEMBER_BY_KEY[albumMember] || MEMBERS[0];
+  syncMemberTabs();
   const list = CARDS_BY_MEMBER[m.key].slice().sort((a, b) => a.idx - b.idx);
   $('#albumGrid').innerHTML = list.map(c => cardHTML(c, {
     act: 'detail',
@@ -2329,7 +2343,6 @@ function renderAlbum() {
   })).join('');
   const on = $('.mtab.on');
   if (on) { try { on.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {} }
-  $('#memberProgressText').textContent = m.name + ' · ' + memberOwned(m.key) + '/8';
   const u = uniqueCount();
   $('#albumCount').textContent = u + '/' + GAME.TOTAL_CARDS;
   $('#albumBar').style.width = (u / GAME.TOTAL_CARDS * 100).toFixed(1) + '%';
