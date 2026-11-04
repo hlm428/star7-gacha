@@ -1046,6 +1046,8 @@ img,svg{display:block;max-width:100%}
         <div style="display:flex;gap:7px;margin-top:11px;flex-wrap:wrap">
           <button class="link-btn gold-link" data-act="rules">概率说明</button>
           <button class="link-btn" data-act="more">更多玩法</button>
+          <button class="link-btn" data-act="save-menu">存档</button>
+          <button class="link-btn" data-act="restart">重开一局</button>
         </div>
       </section>
 
@@ -2948,6 +2950,22 @@ function openMore() {
   </div>`);
 }
 
+/* 存档菜单：首页直达的导出/导入入口（本机自动存档 + 存档码手动备份） */
+function openSaveMenu() {
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3>存档</h3>
+    <p class="msub">进度已自动保存在本机浏览器，清缓存前建议先导出存档码备份；换手机或换浏览器时粘贴存档码即可恢复。</p>
+    <div class="actions">
+      <button class="btn gold" data-act="export-save">导出存档码</button>
+      <button class="btn ghost" data-act="import-save">导入存档码</button>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" data-act="close-modal">返回</button>
+    </div>
+  </div>`);
+}
+
 /* 存档码：本机存储不可用（隐私模式 / 配额满）时的兜底备份与迁移 */
 function exportSaveCode() {
   let code = '';
@@ -3748,6 +3766,7 @@ function bindEvents() {
       case 'close-album': closeAlbum(); break;
       case 'rules': openRules(); break;
       case 'more': openMore(); break;
+      case 'save-menu': openSaveMenu(); break;
       case 'export-save': exportSaveCode(); break;
       case 'import-save': importSaveCode(); break;
       case 'copy-save-code': copySaveCode(); break;
