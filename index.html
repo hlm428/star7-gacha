@@ -166,6 +166,7 @@ img,svg{display:block;max-width:100%}
   background:linear-gradient(135deg,#ffb1cd,#ff7fb4);font-size:9px;color:#62203f;letter-spacing:.5px;flex:0 0 auto
 }
 .up-chip span{overflow:hidden;text-overflow:ellipsis}
+.up-hint{margin-top:5px;font-size:9px;letter-spacing:.4px;color:#f3cfdd;opacity:.85;text-shadow:0 1px 8px rgba(30,6,34,.8)}
 .poster-foot{
   position:absolute;left:16px;bottom:14px;z-index:4;display:flex;gap:6px;flex-wrap:wrap;
 }
@@ -861,6 +862,94 @@ img,svg{display:block;max-width:100%}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
 }
+
+/* ================= v4：免费券 / 深读 / 庆祝 / 音量 ================= */
+.coupon-row{display:none;gap:6px;justify-content:center;align-items:center;margin:0 0 7px;flex-wrap:wrap}
+.coupon-row.show{display:flex}
+.coupon-chip{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.02em;color:#6b3a4d;background:linear-gradient(180deg,#fff2dc,#ffd9a8);border:1px solid #f3c27f;box-shadow:0 4px 12px rgba(210,150,80,.22)}
+
+.ssr-deep-btn{position:absolute;left:50%;bottom:max(18px,6.5dvh);transform:translateX(-50%);z-index:6;height:40px;padding:0 18px;border-radius:999px;border:1px solid rgba(255,232,190,.6);background:linear-gradient(180deg,rgba(70,38,92,.72),rgba(28,16,42,.86));color:#fff0d6;font-size:12px;font-weight:700;letter-spacing:.08em;box-shadow:0 10px 26px rgba(0,0,0,.35);cursor:pointer}
+.ssr-overlay.deep .ssr-inner{display:none}
+.ssr-overlay.deep .ssr-deep-btn{display:none}
+.ssr-overlay.deep{background:radial-gradient(circle at 50% 22%,rgba(88,52,116,.5),rgba(8,5,14,.97) 68%),#08050e}
+.ssr-deep{display:none;position:relative;z-index:3;width:min(320px,86vw);max-height:74dvh;overflow:auto;flex-direction:column;gap:12px;padding:4px 2px 18px}
+.ssr-overlay.deep .ssr-deep{display:flex;animation:ccIn .6s ease both}
+.ssr-deep-kicker{font-size:10px;letter-spacing:.22em;color:#f3cf9a;text-align:center}
+.ssr-deep-text{margin:0;font-family:"Songti SC","Noto Serif SC",serif;font-size:13.5px;line-height:2;color:#fff4e2;white-space:pre-wrap;text-shadow:0 2px 18px rgba(255,205,150,.25)}
+.ssr-deep-tip{margin-top:auto;text-align:center;font-size:9.5px;letter-spacing:.16em;color:rgba(255,226,198,.56)}
+
+/* 集齐成员庆祝 */
+.modal-back.celebrate{background:radial-gradient(circle at 50% 12%,rgba(84,48,110,.55),rgba(6,3,12,.95) 62%),#06030c;backdrop-filter:blur(6px)}
+.modal-back.celebrate .modal.celebrate-box{width:min(342px,93vw);background:linear-gradient(162deg,#26142e,#100a18 62%,#0b0712);border:1px solid color-mix(in srgb,var(--mc,#c9a0ff) 42%,transparent);box-shadow:0 26px 70px rgba(0,0,0,.6),0 0 50px color-mix(in srgb,var(--mc,#c9a0ff) 16%,transparent);color:#f7ecff;max-height:88dvh;overflow:auto}
+.modal-back.celebrate .x{color:#ffe6c9;border-color:rgba(255,220,180,.35);background:rgba(255,255,255,.08)}
+.cc-wrap{--mc:#c9a0ff;--mc2:#ffe0b8;text-align:center}
+.cc-stage{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:6px}
+.cc-glow{position:absolute;top:-8px;left:50%;width:230px;height:230px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,var(--mc) 0%,transparent 66%);opacity:.42;filter:blur(2px);animation:ccPulse 3.2s ease-in-out infinite}
+.cc-portrait{position:relative;width:122px;height:164px;border-radius:14px;overflow:hidden;border:1px solid color-mix(in srgb,var(--mc) 60%,#fff 10%);box-shadow:0 14px 34px rgba(0,0,0,.5),0 0 0 4px color-mix(in srgb,var(--mc) 22%,transparent);animation:ccRise .9s cubic-bezier(.2,.9,.3,1) both;z-index:1}
+.cc-portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.cc-star{position:absolute;width:5px;height:5px;border-radius:50%;background:#fff5d8;box-shadow:0 0 12px 4px rgba(255,232,180,.55);animation:ccTwinkle 2.4s ease-in-out infinite}
+.cc-star.s1{top:14%;left:12%}.cc-star.s2{top:30%;right:10%;animation-delay:.7s}.cc-star.s3{top:58%;left:6%;animation-delay:1.3s}
+.cc-kicker{position:relative;font-size:9px;letter-spacing:.2em;color:#e9c79c;z-index:1}
+.cc-title{position:relative;margin:2px 0 0;font-family:"Songti SC","Noto Serif SC",serif;font-size:23px;line-height:1.3;letter-spacing:.02em;background:linear-gradient(100deg,#fff6e6,var(--mc) 55%,#fff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;z-index:1}
+.cc-quote{position:relative;font-size:10.5px;color:rgba(255,236,214,.68);z-index:1}
+.cc-type{position:relative;margin:4px 0 0;min-height:4.6em;padding:0 6px;font-family:"Songti SC","Noto Serif SC",serif;font-size:12.5px;line-height:1.85;color:#fff3e2;white-space:pre-wrap;text-align:left;z-index:1}
+.cc-type::after{content:'▍';color:var(--mc);animation:ccCaret 1s steps(1) infinite}
+.cc-reward{position:relative;width:100%;margin:6px 0 2px;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,224,185,.18);font-size:10.5px;line-height:1.7;color:#ffe9cd;z-index:1}
+.cc-reward b{color:#ffd18d;font-size:13px}
+.cc-share{margin-top:2px}
+/* 庆祝弹窗的吸底操作区沿用暗色底，避免浅粉渐变把 ghost 按钮冲白 */
+.modal-back.celebrate .modal .actions{background:linear-gradient(180deg,rgba(22,12,30,0),#160d1e 38%)}
+.modal-back.celebrate .btn.gold{background:linear-gradient(180deg,#ffe7b4,#eab066);color:#4a2418;border-color:#f4c982}
+.modal-back.celebrate .btn.ghost{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.5)}
+
+/* 成员页专属星轨背景 */
+.album-inner{position:relative}
+.album-inner>*{position:relative;z-index:1}
+#screenAlbum.member-done .album-inner::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 50% -8%,var(--mc),transparent 60%);opacity:.34}
+#screenAlbum.member-done .album-scroll{box-shadow:inset 0 0 60px color-mix(in srgb,var(--mc) 18%,transparent)}
+.profile-title{display:inline-flex;margin-top:6px;padding:3px 9px;border-radius:999px;border:1px solid;font-size:9.5px;font-weight:700;letter-spacing:.04em}
+
+/* 固定事件剧情（顶部留出 × 的安全带，避免关闭按钮压正文） */
+.story-wrap{text-align:left;padding-top:50px}
+.story-art{display:flex;justify-content:center;margin:2px 0 8px}
+.story-art img{width:104px;height:138px;object-fit:cover;border-radius:12px;border:1px solid #e8c8a6;box-shadow:0 12px 28px rgba(120,60,80,.22)}
+.story-kicker{font-size:9.5px;letter-spacing:.18em;color:#a5704e;text-align:center;margin-bottom:6px}
+.story-title{margin:2px 0 8px;font-family:"Songti SC",serif;font-size:19px;text-align:center;color:#5b2b42}
+.story-text{margin:0 0 8px;font-size:12px;line-height:1.95;color:#5b3a4c}
+.story-quote{margin:8px 0;padding:9px 12px;border-left:3px solid #d8a25e;background:#fff7ea;border-radius:0 10px 10px 0;font-family:"Songti SC",serif;font-size:13px;line-height:1.8;color:#7a4526}
+.story-choices{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.story-choices .choice{min-height:44px;border-radius:999px;border:1px solid #e6bd8f;background:linear-gradient(180deg,#fff7e8,#ffe3bd);color:#6a3a22;font-size:12px;font-weight:700;cursor:pointer}
+.bday-wrap{text-align:center;position:relative;overflow:hidden;padding-top:50px}
+.bday-glow{position:absolute;top:-20px;left:50%;width:260px;height:260px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,var(--mc) 0%,transparent 66%);opacity:.28}
+.light-stick{position:relative;z-index:1;height:42px;min-width:180px;padding:0 20px;border-radius:999px;border:1px solid #e9c08c;background:linear-gradient(180deg,#fff8ec,#ffe1ba);color:#6a3a22;font-size:12px;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:box-shadow .3s,transform .2s}
+.light-stick.on{box-shadow:0 0 28px 8px var(--mc,#ffd58a);transform:scale(1.03);color:#fff;background:linear-gradient(180deg,var(--mc,#ffd58a),#8a5a44)}
+
+/* 音量分层滑条 */
+.vol-set{margin:10px 8px 4px;padding:10px;border-radius:12px;background:#fff8ef;border:1px solid #efd6b6}
+.vol-h{font-size:10px;letter-spacing:.16em;color:#a5704e;margin-bottom:6px}
+.vol-set label{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:11px;color:#5b3a4c}
+.vol-set label span{width:34px;flex:0 0 auto;font-weight:700}
+.vol-set label i{width:36px;text-align:right;font-style:normal;font-size:10px;color:#a5704e}
+.vol-set input[type=range]{flex:1;height:4px;accent-color:#d89b5c;background:linear-gradient(90deg,#e8b977,#f6ddbb);border-radius:999px}
+
+/* 终章全员寄语 */
+.sc-msgs{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;margin:7px 6px 2px}
+.sc-msgs:empty{display:none}
+.sc-msg-h{grid-column:1/-1;font-size:9px;letter-spacing:.16em;color:#b07a55;font-weight:700;margin-bottom:1px}
+.sc-msg{display:flex;gap:4px;align-items:baseline;font-size:9px;line-height:1.45;color:#684053}
+.sc-msg b{flex:0 0 auto;color:var(--mc,#b0744f);font-size:9px}
+.sc-msg span{opacity:.86}
+
+@keyframes ccPulse{0%,100%{opacity:.3;transform:translateX(-50%) scale(.92)}50%{opacity:.55;transform:translateX(-50%) scale(1.06)}}
+@keyframes ccRise{from{opacity:0;transform:translateY(16px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes ccTwinkle{0%,100%{opacity:.35;transform:scale(.7)}50%{opacity:1;transform:scale(1.25)}}
+@keyframes ccCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes ccIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (max-height:700px){
+  .cc-portrait{width:104px;height:140px}
+  .cc-title{font-size:20px}
+  .cc-reward{font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -878,7 +967,7 @@ img,svg{display:block;max-width:100%}
       </svg>
       <span class="dt">
         <b>第 <span id="dayNum">1</span> <em>/ 30 天</em></b>
-        <span id="dayHint">点此领取今日生活费</span>
+        <span id="dayHint">进入下一天领取 ¥45-70</span>
       </span>
     </button>
     <div class="top-right">
@@ -937,6 +1026,7 @@ img,svg{display:block;max-width:100%}
         <h1>星轨<br>回响</h1>
         <p class="pool-sub" id="posterSub">STAR7 · 3RD ANNIV.</p>
         <div class="up-chip"><b>UP</b><span id="upName">沈星野 · 星轨回响</span></div>
+        <div class="up-hint">UP 仅对 SSR 生效</div>
       </div>
       <div class="poster-foot">
         <span>56 张限定</span><span>十连必出 SR 以上</span><span>60 抽硬保底</span>
@@ -980,6 +1070,7 @@ img,svg{display:block;max-width:100%}
       <span class="pity-bar"><i id="pityBar"></i></span>
       <button class="mini-link" data-act="rules">概率</button>
     </div>
+    <div class="coupon-row" id="couponRow"></div>
     <div class="pull-row">
       <button class="pull-btn" data-act="pull1" id="pull1Btn">
         <span class="pulse" aria-hidden="true"></span>
@@ -1051,7 +1142,7 @@ img,svg{display:block;max-width:100%}
     </div>
     <div class="pack-body" id="packBody">
       <div class="tear-stage" id="tearStage">
-        <div class="pack-wrap" id="packWrap">
+        <div class="pack-wrap" id="packWrap" role="button" tabindex="0" aria-label="撕开卡包：按回车或空格，或横向滑动">
           <div class="pack-half top">
             <svg class="foil-star" viewBox="0 0 24 24" fill="none"><path d="M12 2.2l2.9 6.2 6.7 1.2-4.7 4.3 1.3 6.5L12 17.2 5.8 20.4l1.3-6.5L2.4 9.6l6.7-1.2z" fill="#fff8e3" opacity=".92"/></svg>
             <div class="brand">STAR7</div>
@@ -1102,6 +1193,12 @@ img,svg{display:block;max-width:100%}
     <div class="ssr-cardname" id="ssrQuote">“这一次，我循着你的光而来。”</div>
     <div class="ssr-tip">轻触任意处继续</div>
   </div>
+  <button class="ssr-deep-btn" data-act="ssr-deep">深读 · 长独白</button>
+  <div class="ssr-deep" id="ssrDeep">
+    <div class="ssr-deep-kicker" id="ssrDeepName"></div>
+    <p class="ssr-deep-text" id="ssrDeepText"></p>
+    <div class="ssr-deep-tip">轻触关闭 · 长独白</div>
+  </div>
 </div>
 
 <div class="settle-overlay" id="settleOverlay">
@@ -1120,6 +1217,7 @@ img,svg{display:block;max-width:100%}
       <p class="sc-desc" id="scDesc">三十天星轨之旅</p>
       <div class="sc-avatar-row" id="scAvatars"></div>
       <div class="sc-stats" id="scStats"></div>
+      <div class="sc-msgs" id="scMsgs"></div>
       <p class="sc-quote" id="scQuote"></p>
       <div class="sc-foot">
         <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#c99a7c"/></svg>
@@ -1279,6 +1377,51 @@ const CARD_QUOTES = {
   gy:['鼓点砸下来，心跳比它还快半拍。','皮夹克被雨淋透，也懒得撑伞。','试音的时候，我偷偷唱了你的名字。','排练室的灯亮到凌晨，副歌还是不够狠。','副歌之前，先让我看你一眼。','唱到沙哑也没关系，你听见就值得。','生日那天的歌，我只唱给一个人。','万人合唱的时候，我在找你的口型。'],
   lq:['午后的篮球场，风把球衣吹得很鼓。','冰淇淋融化得比我的暗恋还快。','笔记最后一页，写满了你的名字。','单车后座的风，是我藏不住的开心。','晒伤了也要笑，因为你在拍我。','毕业那天，校服第二颗扣子没送出去。','操场上喊的那句，被风吹散了一半。','这个夏天限定的，只有我和你。'],
   xz:['镜头外的小动作，才是真正的你。','奶茶三分糖，和你一样刚刚好。','候机厅的广播很吵，我只看你。','海边的帽子被吹跑，你笑得最大声。','偷拍你睡着的样子，存进私密相册。','落日和汽水，都是夏天的滤镜。','取景框很小，刚好装下你。','夏日终章，但我还想再拍一季。']
+};
+
+/* ================= 集齐成员：长独白 / 称号 / 语音 ================= */
+const COLLECT_LINES = {
+  sy:'八张卡。\n从练习室的灯，到最后的星轨回响。\n我本来以为，有些话永远不会说出口。\n但你把它们都收集齐了。\n……那就当作，我亲口告诉过你吧。',
+  ja:'甜度从低糖到全糖，你好像都试过了。\n其实我最喜欢的，是你把我所有味道都记得的样子。\n星期天可以续杯，喜欢也可以。',
+  bl:'八首歌。\n有的写给夜，有的写给雨，有的只写给一个人。\n现在它们都在你手里了。\n那我……是不是也可以稍微任性一点？',
+  wy:'镜子前的第七次，谢幕后的沉默，黑天鹅终于落地。\n原来被完整看见的感觉，比独舞更让人腿软。',
+  gy:'从鼓点到万人合唱，你都在。\n嗓子哑了也没关系，反正我最想让你听见的，已经都唱过了。',
+  lq:'冰淇淋化了，扣子没送出去，操场上的告白被风吹走了一半。\n但你把它们都收好了。\n那这个夏天，就不算结束。',
+  xz:'镜头里的你，镜头外的你，我好像都拍到了。\n可还是贪心。\n夏日终章之后，能不能……再给我一季？'
+};
+const COLLECT_TITLE = key => (MEMBER_BY_KEY[key] ? MEMBER_BY_KEY[key].name + '的完整星轨' : '完整星轨');
+
+/* SSR 深读长独白（80–130 字，语气贴合角色） */
+const SSR_LONG = {
+  sy:'星轨很长，长到我曾经以为，有些人注定只能隔着舞台看。\n可你一抽一抽地把我拼回来。\n练习室的灯、没寄出的信、只对你的温柔……\n原来我一直在等的，不是完美的舞台，是有人愿意把这些不完美的部分也收进卡册。\n这一次，换我朝你的方向走过来。',
+  ja:'甜度从低糖到全糖，你好像都试过了。\n其实我最喜欢的，是你把我所有味道都记得的样子。\n烤箱前的手套、周三的便利店、共享耳机里的歌——原来这些平常的日子，被你一张一张收进了卡册。\n星期天可以续杯，喜欢也可以。',
+  bl:'八首歌，有的写给夜，有的写给雨，有的只写给一个人。\n谱纸上的猫、旧钢琴、耳机里的雨，那些没发表的 demo，你都听完了。\n现在它们都在你手里了。\n那我……是不是也可以稍微任性一点，把下一首只写给你？',
+  wy:'镜子前的第七次，谢幕后的沉默，黑天鹅终于落地。\n丝带、舞鞋、后台那杯凉掉的薄荷茶，你都记得。\n原来被完整看见的感觉，比独舞更让人腿软。\n这一支，我只跳给你看。',
+  gy:'从鼓点到万人合唱，你都在。\n皮夹克被雨淋透的夜里，试音时偷偷唱你的名字，副歌之前那一眼——嗓子哑了也没关系，反正我最想让你听见的，已经都唱过了。\n下一场，还来吗？',
+  lq:'冰淇淋化了，扣子没送出去，操场上的告白被风吹走了一半。\n可你把它们都收好了：单车后座的风、晒伤的夏天、毕业那天的校服。\n那这个夏天，就不算结束。\n下一次，换我先开口。',
+  xz:'镜头里的你，镜头外的你，我好像都拍到了。\n奶茶三分糖、候机厅的广播、被吹跑的海边帽子，全在取景框里。\n可还是贪心。\n夏日终章之后，能不能……再给我一季？这次我想站在镜头里面。'
+};
+
+/* 语音分层台词（浏览器 TTS 朗读；无语音资源时静默降级） */
+const VOICE_LINES = {
+  sy:{ ssr:'这一次，我循着你的光而来。', collect:'八张卡，你都收好了。……谢谢。', birthday:'今天是我的生日，可以只看着我吗？', idle:'跟着我，别掉队。' },
+  ja:{ ssr:'今天的甜度，由你决定。', collect:'甜度刚好，和你一样。', birthday:'生日愿望，是再见到你。', idle:'要记得好好吃饭。' },
+  bl:{ ssr:'这首歌，只写给你。', collect:'八首歌，现在都在你手里了。', birthday:'今天，能听我弹一首吗？', idle:'新写的副歌，你先听听。' },
+  wy:{ ssr:'这一支，只跳一次。', collect:'被你完整看见的感觉，很好。', birthday:'谢幕之后，别急着走。', idle:'看好，这一支只跳一次。' },
+  gy:{ ssr:'音浪够大，就跟我一起喊。', collect:'下一场，还来吗？', birthday:'今天的歌，只唱给一个人。', idle:'嗓子哑了也没关系。' },
+  lq:{ ssr:'水我带了两瓶，给你一瓶。', collect:'这个夏天，不算结束。', birthday:'今天，能陪我跑一圈吗？', idle:'今天也要记得吃饭。' },
+  xz:{ ssr:'别动，这个角度很好看。', collect:'再给我一季，好不好？', birthday:'今天，我想拍你。', idle:'别动，这个角度很好看。' }
+};
+
+/* 终章全员寄语 */
+const FINALE_MSGS = {
+  sy:'三十天，你一次都没掉队。',
+  ja:'每天都记得吃饭了吗？',
+  bl:'最后一首歌，写给你们。',
+  wy:'谢幕之后，灯还为你亮着。',
+  gy:'下一次，也要一起喊。',
+  lq:'补给站永远给你留一瓶水。',
+  xz:'最后一张，我想拍我们。'
 };
 
 const RARITY_ORDER = ['N','R','SR','SSR'];
@@ -1653,7 +1796,11 @@ function defaultState() {
     claimed: {}, mute: false, guideDone: false,
     lines: {},   // 每个成员已解锁的台词序号（按解锁顺序）
     todayPulls: 0, dayIncome: 0, market: null, marketDay: 0,
-    events: [], ended: false, ending: null, lastEvent: null
+    events: [], ended: false, ending: null, lastEvent: null,
+    freeSingles: 0, freeTen: 0, freeTenDay: 0,   // 免费券：单抽 / 当天有效的十连
+    boostDay: 0,                               // 第 25 天 SSR 概率提升标记
+    smallEvents: [], tags: {}, titles: {}, fixedDone: {}, midtermPending: 0,
+    vol: { bgm: .6, sfx: .8, voice: 1 }         // 音量分层
   };
 }
 
@@ -1664,6 +1811,8 @@ let packLocked = false;
 let ssrQueue = [];
 let ssrTimer = null;
 let ssrActive = false;
+let currentSSR = null;
+let deepTypeTimer = null;
 
 let saveWarned = false;
 /* 状态变更即写；写失败（隐私模式 / 配额满）给一次可见提示，并用存档码兜底 */
@@ -1690,6 +1839,18 @@ function normalizeSave(p) {
   s.claimed = (p.claimed && typeof p.claimed === 'object') ? p.claimed : {};
   s.events = Array.isArray(p.events) ? p.events : [];
   s.lines = (p.lines && typeof p.lines === 'object') ? p.lines : {};
+  s.smallEvents = Array.isArray(p.smallEvents) ? p.smallEvents.filter(e => e && Number.isInteger(e.day) && typeof e.key === 'string') : [];
+  s.tags = (p.tags && typeof p.tags === 'object') ? p.tags : {};
+  s.titles = (p.titles && typeof p.titles === 'object') ? p.titles : {};
+  s.fixedDone = (p.fixedDone && typeof p.fixedDone === 'object') ? p.fixedDone : {};
+  s.midtermPending = Math.max(0, Math.round(+s.midtermPending || 0));
+  s.freeSingles = Math.max(0, Math.round(+s.freeSingles || 0));
+  s.freeTen = Math.max(0, Math.round(+s.freeTen || 0));
+  s.freeTenDay = Math.max(0, Math.round(+s.freeTenDay || 0));
+  s.boostDay = Math.max(0, Math.round(+s.boostDay || 0));
+  const vol = p.vol && typeof p.vol === 'object' ? p.vol : {};
+  const vnum = (v, d) => Number.isFinite(+v) ? clamp(+v, 0, 1) : d;
+  s.vol = { bgm: vnum(vol.bgm, .6), sfx: vnum(vol.sfx, .8), voice: vnum(vol.voice, 1) };
   s.day = clamp(Math.round(+s.day || 1), 1, GAME.TOTAL_DAYS);
   s.money = Math.max(0, Math.round(+s.money || 0));
   s.shards = Math.max(0, Math.round(+s.shards || 0));
@@ -1749,20 +1910,35 @@ function syncLineUnlocks() {
   });
 }
 
-/* ---------- 音效（WebAudio 程序化合成，无外部文件） ---------- */
-let actx = null;
+/* ---------- 音效 / BGM / 语音 分层（WebAudio 程序化合成，无外部文件） ---------- */
+let actx = null, bgmGain = null, sfxGain = null;
+const AUDIO = { bgmKind: '', bgmTimer: null };
+const VOL_DEFAULT = { bgm: .6, sfx: .8, voice: 1 };
+const VOICE_PITCH = { sy: .9, ja: 1.06, bl: .96, wy: 1.0, gy: .86, lq: 1.08, xz: 1.02 };
+
+function audioVol(k) {
+  const v = state && state.vol ? state.vol[k] : null;
+  return Number.isFinite(+v) ? clamp(+v, 0, 1) : (VOL_DEFAULT[k] ?? 1);
+}
 function ensureAudio() {
   try {
     if (!actx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       actx = new AC();
+      bgmGain = actx.createGain(); bgmGain.connect(actx.destination);
+      sfxGain = actx.createGain(); sfxGain.connect(actx.destination);
     }
+    applyVol();
     if (actx.state === 'suspended') actx.resume();
   } catch (e) { actx = null; }
   return actx;
 }
-function note(freq, t0, dur, vol, type) {
+function applyVol() {
+  if (bgmGain) bgmGain.gain.value = audioVol('bgm');
+  if (sfxGain) sfxGain.gain.value = audioVol('sfx');
+}
+function note(freq, t0, dur, vol, type, bus) {
   if (!actx) return;
   const o = actx.createOscillator();
   const g = actx.createGain();
@@ -1771,7 +1947,7 @@ function note(freq, t0, dur, vol, type) {
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime(vol || .1, t0 + .012);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  o.connect(g); g.connect(actx.destination);
+  o.connect(g); g.connect(bus || sfxGain || actx.destination);
   o.start(t0); o.stop(t0 + dur + .02);
 }
 function sfx(name) {
@@ -1788,7 +1964,66 @@ function sfx(name) {
     case 'error': note(190, t, .12, .06, 'square'); note(150, t + .1, .16, .05, 'square'); break;
     case 'day': note(440, t, .12, .05, 'sine'); note(660, t + .1, .16, .05, 'sine'); break;
     case 'collect': note(990, t, .2, .07, 'sine'); break;
+    case 'complete': [784, 988, 1175, 1568].forEach((f, i) => note(f, t + i * .12, .6, .08, 'triangle')); break;
+    case 'star': note(1318, t, .5, .05, 'sine'); note(1760, t + .2, .7, .04, 'sine'); break;
   }
+}
+
+/* ---------- 语音（浏览器 TTS，无语音资源时静默降级） ---------- */
+function speak(text, memberKey) {
+  if (!text || !state || state.mute) return;
+  const v = audioVol('voice');
+  if (v <= 0) return;
+  try {
+    if (!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN';
+    u.rate = .94;
+    u.volume = v;
+    u.pitch = VOICE_PITCH[memberKey] || 1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  } catch (e) { /* 忽略不支持的环境 */ }
+}
+function stopVoice() {
+  try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+}
+
+/* ---------- BGM（分层循环，音量走 bgmGain） ---------- */
+const BGM_PATTERNS = {
+  home: { loop: 3.2, vol: .045, type: 'triangle', notes: [[0, 392, .9], [.45, 523, .9], [.9, 659, 1.1], [1.7, 523, .9], [2.35, 392, 1.0]] },
+  tension: { loop: 2.6, vol: .05, type: 'sawtooth', notes: [[0, 262, 1.2], [.6, 330, 1.0], [1.25, 392, 1.2], [2.0, 330, 1.0]] },
+  ssr: { loop: 2.2, vol: .055, type: 'triangle', notes: [[0, 523, .5], [.15, 659, .5], [.3, 784, .6], [.45, 1046, .9], [1.2, 880, .6], [1.65, 1318, 1.0]] },
+  album: { loop: 4.2, vol: .028, type: 'sine', notes: [[0, 330, .8], [.8, 415, .8], [1.6, 349, .8], [2.6, 262, 1.0]] },
+  collect: { loop: 2.8, vol: .05, type: 'triangle', notes: [[0, 440, .7], [.5, 554, .7], [1.0, 659, .9], [1.8, 880, 1.1]] }
+};
+function startBGM(kind) {
+  if (!state || state.mute) return;
+  if (!ensureAudio()) return;
+  if (AUDIO.bgmKind === kind && AUDIO.bgmTimer) return;
+  stopBGM(true);
+  AUDIO.bgmKind = kind;
+  const p = BGM_PATTERNS[kind] || BGM_PATTERNS.home;
+  const tick = () => {
+    if (!actx || AUDIO.bgmKind !== kind) return;
+    const t = actx.currentTime;
+    p.notes.forEach(n => note(n[1], t + n[0], n[2], p.vol, p.type, bgmGain));
+  };
+  tick();
+  AUDIO.bgmTimer = setInterval(tick, p.loop * 1000);
+}
+function stopBGM(keepKind) {
+  if (AUDIO.bgmTimer) { clearInterval(AUDIO.bgmTimer); AUDIO.bgmTimer = null; }
+  if (!keepKind) AUDIO.bgmKind = '';
+}
+function refreshBGM() {
+  if (!state) return;
+  if (state.mute) { stopBGM(); return; }
+  if ($('#ssrOverlay') && $('#ssrOverlay').classList.contains('show')) { startBGM('ssr'); return; }
+  if ($('#modalBack') && $('#modalBack').classList.contains('celebrate')) { startBGM('collect'); return; }
+  if ($('#packOverlay') && $('#packOverlay').classList.contains('show')) { startBGM('tension'); return; }
+  if ($('#screenAlbum') && $('#screenAlbum').classList.contains('show')) { startBGM('album'); return; }
+  startBGM('home');
 }
 
 /* ---------- toast ---------- */
@@ -1811,8 +2046,20 @@ function openModal(html, center) {
   sfx('click');
 }
 function closeModal() {
+  if (typeof stopCollectType === 'function') stopCollectType();
   $('#modalBack').className = 'modal-back';
   $('#modalBox').innerHTML = '';
+  if (typeof refreshBGM === 'function') refreshBGM();
+}
+
+/* 拆包未收下时拦截其他浮层，避免多层叠加 */
+function guardPackBusy() {
+  if ($('#packOverlay').classList.contains('show')) {
+    toast('先收下这次拆到的卡牌吧', true);
+    sfx('error');
+    return true;
+  }
+  return false;
 }
 
 /* ---------- 静音 ---------- */
@@ -1839,7 +2086,9 @@ function render() {
   $('#dayNum').textContent = state.day;
   $('#dayHint').textContent = state.day >= GAME.TOTAL_DAYS
     ? '查看三十天结算报告'
-    : ('今日生活费 +¥' + (state.dayIncome || 0));
+    : (state.dayIncome > 0
+        ? '今日生活费已领 ¥' + state.dayIncome
+        : '进入下一天领取 ¥' + GAME.DAILY_MIN + '-' + GAME.DAILY_MAX);
   if ($('#moneyLabel')) $('#moneyLabel').textContent = state.ended ? '结余 ¥' : '生活费 ¥';
   $('#moneyVal').textContent = fmt(state.money);
   $('#moneyVal2').textContent = fmt(state.money);
@@ -1856,8 +2105,19 @@ function render() {
   $('#albumCount').textContent = u + '/' + GAME.TOTAL_CARDS;
   $('#albumBar').style.width = (u / GAME.TOTAL_CARDS * 100).toFixed(1) + '%';
   if (typeof syncMemberTabs === 'function') syncMemberTabs();
-  $('#pull1Btn').classList.toggle('dim', !canPay(GAME.PRICE1));
-  $('#pull10Btn').classList.toggle('dim', !canPay(GAME.PRICE10));
+  const freeTenOK = state.freeTen > 0 && state.freeTenDay === state.day;
+  const freeOne = state.freeSingles > 0;
+  if ($('#couponRow')) {
+    const chips = [];
+    if (state.midtermPending > 0) chips.push('<button class="coupon-chip claim" data-act="midterm-claim">中期奖励待领 +¥' + state.midtermPending + '</button>');
+    if (freeOne) chips.push('<span class="coupon-chip">免费单抽 ×' + state.freeSingles + '</span>');
+    if (freeTenOK) chips.push('<span class="coupon-chip">免费十连 ×' + state.freeTen + ' · 今日有效</span>');
+    $('#couponRow').innerHTML = chips.join('');
+    $('#couponRow').classList.toggle('show', chips.length > 0);
+  }
+  $('#pull1Btn').classList.toggle('dim', !(freeOne || canPay(GAME.PRICE1)));
+  $('#pull10Btn').classList.toggle('dim', !(freeTenOK || canPay(GAME.PRICE10)));
+  applyVol();
   $('#muteBtn').setAttribute('aria-pressed', state.mute ? 'true' : 'false');
   muteIcon();
   if ($('#screenAlbum').classList.contains('show')) renderAlbum();
@@ -1979,11 +2239,13 @@ function rollOne() {
   if (state.pityLeft <= 1) {
     card = pickSSR();
   } else {
+    /* 第 25 天彩排：仅当天 SSR 基础概率 2% → 3.5%，其余档位顺延，SR 仍为 8% */
+    const ssrRate = state.boostDay === state.day ? .035 : .02;
     const r = Math.random();
     let rar = 'N';
-    if (r < .02) rar = 'SSR';
-    else if (r < .10) rar = 'SR';
-    else if (r < .40) rar = 'R';
+    if (r < ssrRate) rar = 'SSR';
+    else if (r < ssrRate + .08) rar = 'SR';
+    else if (r < ssrRate + .38) rar = 'R';
     else rar = 'N';
     card = rar === 'SSR' ? pickSSR() : pickCard(rar);
   }
@@ -2027,8 +2289,11 @@ function applyResults(results) {
 
 function doPull(n) {
   if (state.ended) { toast('本局已经结束啦，点「再来一局」重新开始', true); return; }
-  const price = n === 1 ? GAME.PRICE1 : GAME.PRICE10;
-  if (!canPay(price)) {
+  const freeOne = n === 1 && state.freeSingles > 0;
+  const freeTen = n === 10 && state.freeTen > 0 && state.freeTenDay === state.day;
+  const free = freeOne || freeTen;
+  const price = free ? 0 : (n === 1 ? GAME.PRICE1 : GAME.PRICE10);
+  if (!free && !canPay(price)) {
     sfx('error');
     const btn = n === 1 ? $('#pull1Btn') : $('#pull10Btn');
     btn.style.transform = 'scale(.94)';
@@ -2037,8 +2302,14 @@ function doPull(n) {
     return;
   }
   hideCoach();
-  state.money -= price;
-  state.stats.spent += price;
+  if (freeOne) state.freeSingles--;
+  else if (freeTen) state.freeTen--;
+  if (!free) {
+    state.money -= price;
+    state.stats.spent += price;
+  } else {
+    toast(n === 1 ? '已使用免费单抽券' : '已使用免费十连券（仅今天有效）');
+  }
   const results = rollBatch(n);
   const applied = applyResults(results);
   pendingPull = { n: n, results: results, applied: applied, flipped: new Array(n).fill(false), flipCount: 0 };
@@ -2049,6 +2320,10 @@ function doPull(n) {
 
 /* ---------- 拆包 ---------- */
 function openPack(n) {
+  /* 浮层互斥：拆包开启前关掉同级卡册/集市与残留弹窗 */
+  closeModal();
+  $('#screenAlbum').classList.remove('show');
+  $('#screenMarket').classList.remove('show');
   const ov = $('#packOverlay');
   ov.classList.add('show');
   $('#packTitle').textContent = n === 1 ? '拆 1 包' : '拆 10 包';
@@ -2073,6 +2348,7 @@ function openPack(n) {
   ssrQueue = [];
   ssrActive = false;
   sfx('click');
+  startBGM(state.pityLeft <= 10 ? 'tension' : 'home');
 }
 
 function tearStep() {
@@ -2124,7 +2400,7 @@ function showCards(instant) {
   const n = pendingPull.n;
   grid.className = 'pack-grid ' + (n === 1 ? 'n1' : 'n10');
   grid.innerHTML = pendingPull.applied.entries.map((r, i) => `
-    <div class="flip" data-flip="${i}" style="animation-delay:${instant ? 0 : (i * .045)}s">
+    <div class="flip" data-flip="${i}" role="button" tabindex="0" aria-label="翻开第 ${i + 1} 张卡" aria-pressed="false" style="animation-delay:${instant ? 0 : (i * .045)}s">
       <div class="flipper">${backHTML()}${frontHTML(r)}</div>
     </div>`).join('');
   $('#packTally').innerHTML = '';
@@ -2134,7 +2410,7 @@ function showCards(instant) {
   $('#collectBtn').textContent = n === 1 ? '先翻开卡牌' : '先翻开全部卡牌';
   $('#cardsHint').innerHTML = n === 1 ? '点击卡背翻开这张卡' : '点击卡背逐张翻开 · <b>全部翻开</b> 可一次揭晓';
   if (instant) {
-    $$('.flip', grid).forEach((el, i) => { el.classList.add('flipped'); pendingPull.flipped[i] = true; });
+    $$('.flip', grid).forEach((el, i) => { el.classList.add('flipped'); el.setAttribute('aria-pressed', 'true'); pendingPull.flipped[i] = true; });
     pendingPull.flipCount = n;
     finishReveal(true);
   }
@@ -2160,6 +2436,7 @@ function flipOne(el) {
   pendingPull.flipped[i] = true;
   pendingPull.flipCount++;
   el.classList.add('flipped');
+  el.setAttribute('aria-pressed', 'true');
   const r = pendingPull.applied.entries[i];
   sfx('flip');
   if (r.card.rarity === 'SSR') {
@@ -2176,6 +2453,7 @@ function flipAll(instant, noSSR) {
       pendingPull.flipped[i] = true;
       pendingPull.flipCount++;
       el.classList.add('flipped');
+      el.setAttribute('aria-pressed', 'true');
     }
   });
   sfx('flip');
@@ -2204,21 +2482,52 @@ function nextSSR() {
   if (!ssrQueue.length) { ssrActive = false; return; }
   ssrActive = true;
   const c = ssrQueue.shift();
+  currentSSR = c;
   const m = MEMBER_BY_KEY[c.member];
   $('#ssrPortrait').innerHTML = artHTML(c);
   $('#ssrMember').textContent = m.name;
   $('#ssrCardName').textContent = c.name;
   $('#ssrQuote').textContent = '“' + c.quote + '”';
+  $('#ssrOverlay').classList.remove('deep');
   $('#ssrOverlay').classList.add('show');
+  startBGM('ssr');
   sfx('ssr');
+  speak(VOICE_LINES[c.member] && VOICE_LINES[c.member].ssr, c.member);
   try { if (navigator.vibrate) navigator.vibrate([18, 40, 26]); } catch (e) {}
   if (ssrTimer) clearTimeout(ssrTimer);
+  /* 原演出时长保持 1.6s；点击「深读」可中断并展开长独白 */
   ssrTimer = setTimeout(() => { ssrTimer = null; closeSSR(); }, 1600);
 }
+
+/* 深读：背景变暗，长独白逐行打字机，同步语音 */
+function showSSRDeep() {
+  if (!currentSSR) return;
+  if (ssrTimer) { clearTimeout(ssrTimer); ssrTimer = null; }
+  const c = currentSSR, m = MEMBER_BY_KEY[c.member];
+  const text = SSR_LONG[c.member] || c.quote;
+  const ov = $('#ssrOverlay');
+  ov.classList.add('deep');
+  $('#ssrDeepName').textContent = m.name + ' · ' + c.name;
+  $('#ssrDeepText').textContent = '';
+  startBGM('ssr');
+  speak(text.replace(/\n/g, '，'), c.member);
+  sfx('star');
+  clearInterval(deepTypeTimer);
+  let i = 0;
+  deepTypeTimer = setInterval(() => {
+    if (i >= text.length) { clearInterval(deepTypeTimer); deepTypeTimer = null; return; }
+    $('#ssrDeepText').textContent += text[i++];
+  }, 38);
+}
+
 function closeSSR() {
   if (ssrTimer) { clearTimeout(ssrTimer); ssrTimer = null; }
-  $('#ssrOverlay').classList.remove('show');
+  if (deepTypeTimer) { clearInterval(deepTypeTimer); deepTypeTimer = null; }
+  $('#ssrOverlay').classList.remove('show', 'deep');
+  if ($('#ssrDeepText')) $('#ssrDeepText').textContent = '';
+  currentSSR = null;
   ssrActive = false;
+  refreshBGM();
   setTimeout(() => { if (ssrQueue.length) nextSSR(); }, 140);
 }
 
@@ -2237,11 +2546,13 @@ function collectPack() {
   save();
   render();
   hideCoach();
+  refreshBGM();
   setTimeout(checkCollectRewards, 260);
 }
 function closePack() {
   $('#packOverlay').classList.remove('show');
   pendingPull = null;
+  refreshBGM();
 }
 
 /* ---------- 撕包手势 ---------- */
@@ -2281,10 +2592,14 @@ function initTearDrag() {
 let albumMember = 'sy';
 
 function openAlbum() {
+  if (guardPackBusy()) return;
+  closeModal();
+  $('#screenMarket').classList.remove('show');
   $('#screenAlbum').classList.add('show');
   buildMemberTabs();
   renderAlbum();
   sfx('click');
+  startBGM('album');
   setTimeout(checkCollectRewards, 220);
 }
 function closeAlbum() {
@@ -2292,6 +2607,7 @@ function closeAlbum() {
   state.fresh = {};
   save();
   render();
+  refreshBGM();
 }
 
 function buildMemberTabs() {
@@ -2323,6 +2639,7 @@ function openProfile(key) {
         <small>${m.en}</small>
         <h3>${m.name}</h3>
         <p>${m.role}</p>
+        ${state.titles[key] ? `<div class="profile-title" style="border-color:${m.color};color:${m.color}">称号 · ${COLLECT_TITLE(key)}</div>` : ''}
       </div>
     </div>
     <div class="profile-meta">
@@ -2332,7 +2649,10 @@ function openProfile(key) {
     <p class="profile-intro">“${m.selfIntro}”</p>
     <div class="profile-lines-h">台词收藏 <i>${unlocked.length}/8</i><small>抽到他的新卡即可解锁一句</small></div>
     <div class="profile-lines">${unlocked.map(i => { const c = cards.find(x => x.idx === i); return c ? lineHTML(c, true) : ''; }).join('')}${locked.map(c => lineHTML(c, false)).join('')}</div>
-    <div class="actions"><button class="btn ghost" data-act="close-modal">收起档案</button></div>
+    <div class="actions">
+      <button class="btn ghost" data-act="voice-play" data-member="${key}">语音</button>
+      <button class="btn ghost" data-act="close-modal">收起档案</button>
+    </div>
   </div>`);
 }
 
@@ -2358,6 +2678,14 @@ function renderAlbum() {
   if (!state) return;
   const m = MEMBER_BY_KEY[albumMember] || MEMBERS[0];
   syncMemberTabs();
+  /* 集齐成员后，该成员页背景永久替换为专属星轨 */
+  const done = memberOwned(m.key) === 8;
+  const sc = $('#screenAlbum');
+  if (sc) {
+    sc.classList.toggle('member-done', done);
+    sc.style.setProperty('--mc', m.color);
+    sc.style.setProperty('--mc2', m.color2);
+  }
   const list = CARDS_BY_MEMBER[m.key].slice().sort((a, b) => a.idx - b.idx);
   $('#albumGrid').innerHTML = list.map(c => cardHTML(c, {
     act: 'detail',
@@ -2390,7 +2718,7 @@ function showCardDetail(id) {
     <p class="detail-text">${have ? '“' + c.quote + '”' : '这张卡还没有被你拆到。收集重复卡获得的碎片，可以在这里兑换指定卡。'}</p>
     <div class="detail-actions">
       ${have
-        ? `<button class="btn ghost" data-act="close-modal">关闭</button><div class="hint">已收入星轨卡册 · 共 ${state.dupes[id] || 0} 次重复记录</div>`
+        ? `<button class="btn ghost" data-act="voice-play" data-member="${c.member}">语音</button><button class="btn ghost" data-act="close-modal">关闭</button><div class="hint">已收入星轨卡册 · 共 ${state.dupes[id] || 0} 次重复记录</div>`
         : `<button class="btn gold" data-act="exchange-buy" data-id="${id}" ${state.shards < cost ? 'disabled' : ''}>用 ${cost} 碎片兑换</button>
            <div class="hint">当前碎片 ${state.shards} 枚 · 重复卡自动折算碎片</div>`}
     </div>
@@ -2415,30 +2743,64 @@ function buyCardWithShards(id) {
   setTimeout(checkCollectRewards, 240);
 }
 
-/* ---------- 集齐成员奖励 ---------- */
+/* ---------- 集齐成员：正式庆祝序列 ---------- */
+let collectTypeTimer = null;
+function stopCollectType() {
+  if (collectTypeTimer) { clearInterval(collectTypeTimer); collectTypeTimer = null; }
+}
+function typeCollect(text) {
+  const el = $('#ccType');
+  if (!el) return;
+  stopCollectType();
+  el.textContent = '';
+  let i = 0;
+  collectTypeTimer = setInterval(() => {
+    if (i >= text.length) { stopCollectType(); return; }
+    el.textContent += text[i++];
+  }, 30);
+}
 function pendingReward() {
   return MEMBERS.find(m => memberOwned(m.key) === 8 && !state.claimed[m.key]);
 }
 function checkCollectRewards() {
   const m = pendingReward();
   if (!m) return;
+  if ($('#modalBack').classList.contains('celebrate')) return;
   const done = MEMBERS.filter(x => memberOwned(x.key) === 8).length;
-  openModal(`<div class="modal-wrap">
+  const stat = memberOwned(m.key);
+  openModal(`<div class="modal-wrap cc-wrap" style="--mc:${m.color};--mc2:${m.color2};--mink:${m.ink}">
     <button class="x" data-act="close-modal">×</button>
-    <div class="event-art"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#e8b45e"/></svg></div>
-    <h3 class="event-name">${m.name} · 全员收集达成</h3>
-    <p class="event-desc">你收齐了 ${m.name} 的 8 张卡，星轨为他亮起一整圈。<br>第 ${done} / 7 位成员完成收集。</p>
-    <div class="reward-line"><div class="amt">¥${GAME.COLLECT_REWARD_MONEY}</div><span>生活费<br>+${GAME.COLLECT_REWARD_SHARD} 碎片</span></div>
-    <div class="actions">
-      <button class="btn gold" data-act="claim-reward" data-member="${m.key}">领取奖励</button>
-      <button class="btn ghost" data-act="close-modal">稍后再领</button>
+    <div class="cc-stage">
+      <div class="cc-glow"></div>
+      <span class="cc-star s1"></span><span class="cc-star s2"></span><span class="cc-star s3"></span>
+      <div class="cc-portrait"><img src="${ART_SSR[m.key]}" alt="${m.name}"></div>
+      <div class="cc-kicker">STARTRACK COMPLETE · ${done}/7 · ${stat}/8</div>
+      <h3 class="cc-title">${m.name}的星轨，已全部点亮</h3>
+      <div class="cc-quote">“${m.selfIntro}”</div>
+      <p class="cc-type" id="ccType"></p>
+      <div class="cc-reward">
+        <b>¥${GAME.COLLECT_REWARD_MONEY}</b> 生活费 · <b>+${GAME.COLLECT_REWARD_SHARD}</b> 碎片<br>
+        称号「${COLLECT_TITLE(m.key)}」 · 成员页星轨背景永久点亮
+      </div>
+      <div class="actions">
+        <button class="btn gold" data-act="claim-reward" data-member="${m.key}">领取奖励</button>
+        <button class="btn ghost" data-act="close-modal">稍后再领</button>
+      </div>
+      <div class="cc-share"><button class="btn ghost sm" data-act="save-collect" data-member="${m.key}">保存纪念海报</button></div>
     </div>
   </div>`, true);
+  $('#modalBack').classList.add('celebrate');
+  $('#modalBox').classList.add('celebrate-box');
+  typeCollect(COLLECT_LINES[m.key] || '');
+  startBGM('collect');
+  sfx('complete');
+  speak(VOICE_LINES[m.key] && VOICE_LINES[m.key].collect, m.key);
 }
 function claimReward(key) {
   const m = MEMBER_BY_KEY[key];
   if (!m || state.claimed[key] || memberOwned(key) !== 8) { closeModal(); return; }
   state.claimed[key] = true;
+  state.titles[key] = 1;
   state.money = Math.max(0, state.money + GAME.COLLECT_REWARD_MONEY);
   state.stats.income += GAME.COLLECT_REWARD_MONEY;
   state.shards += GAME.COLLECT_REWARD_SHARD;
@@ -2447,7 +2809,8 @@ function claimReward(key) {
   render();
   if ($('#screenAlbum').classList.contains('show')) renderAlbum();
   sfx('reward');
-  toast(m.name + ' 收集奖励已到账：¥' + GAME.COLLECT_REWARD_MONEY + ' + ' + GAME.COLLECT_REWARD_SHARD + ' 碎片');
+  refreshBGM();
+  toast(m.name + ' 收集奖励已到账：¥' + GAME.COLLECT_REWARD_MONEY + ' + ' + GAME.COLLECT_REWARD_SHARD + ' 碎片 · 称号已点亮');
   setTimeout(checkCollectRewards, 300);
 }
 
@@ -2471,6 +2834,9 @@ function ensureMarket() {
 }
 
 function openMarket() {
+  if (guardPackBusy()) return;
+  closeModal();
+  $('#screenAlbum').classList.remove('show');
   ensureMarket();
   $('#screenMarket').classList.add('show');
   renderMarket();
@@ -2561,8 +2927,15 @@ function openMore() {
     <div class="rule-list">
       <div class="rule-item"><div class="ri">市</div><div><b>星光集市</b><p>用生活费收别人的重复卡，也可把碎片寄卖换钱。</p></div></div>
       <div class="rule-item"><div class="ri">兑</div><div><b>碎片兑换</b><p>卡册里点未获得的剪影，可用碎片直接兑换指定卡。</p></div></div>
-      <div class="rule-item"><div class="ri">奖</div><div><b>全员收集</b><p>集齐某位成员的 8 张卡，领取 ¥188 + 30 碎片。已完成 ${done}/7。</p></div></div>
-      <div class="rule-item"><div class="ri">音</div><div><b>音效与存档</b><p>音效默认开启，可在右上角静音；进度在状态变化时立即写入本机。隐私模式或空间不足时，可用下方存档码备份。</p></div></div>
+      <div class="rule-item"><div class="ri">奖</div><div><b>全员收集</b><p>集齐某位成员的 8 张卡，触发完整星轨庆祝，领取 ¥188 + 30 碎片与专属称号。已完成 ${done}/7。</p></div></div>
+      <div class="rule-item"><div class="ri">事</div><div><b>旅程事件</b><p>第 5/10/15/20/25/30 天触发固定剧情；每天进入下一天另有 30% 概率遇到小事件。路人缘 ${state.tags.passerby || 0}。</p></div></div>
+      <div class="rule-item"><div class="ri">音</div><div><b>声音分层</b><p>BGM、音效、语音三条独立滑条；语音使用系统中文 TTS，不支持时静默降级。进度在状态变化时立即写入本机。</p></div></div>
+    </div>
+    <div class="vol-set">
+      <div class="vol-h">音量分层</div>
+      <label><span>BGM</span><input type="range" min="0" max="100" value="${Math.round(state.vol.bgm * 100)}" data-vol="bgm" aria-label="BGM 音量"><i>${Math.round(state.vol.bgm * 100)}%</i></label>
+      <label><span>音效</span><input type="range" min="0" max="100" value="${Math.round(state.vol.sfx * 100)}" data-vol="sfx" aria-label="音效音量"><i>${Math.round(state.vol.sfx * 100)}%</i></label>
+      <label><span>语音</span><input type="range" min="0" max="100" value="${Math.round(state.vol.voice * 100)}" data-vol="voice" aria-label="语音音量"><i>${Math.round(state.vol.voice * 100)}%</i></label>
     </div>
     <div class="actions">
       <button class="btn gold" data-act="go-market">去星光集市</button>
@@ -2659,6 +3032,199 @@ function maybeEvent() {
   return DAILY_EVENTS[rand(DAILY_EVENTS.length)];
 }
 
+/* ---------- 固定事件日（写死在第 30 天日历里） ---------- */
+const FIXED_EVENTS = {
+  5:  { key:'practice', name:'练习室加练', member:'sy' },
+  10: { key:'bday-sy',  name:'沈星野生日', member:'sy' },
+  15: { key:'midterm',  name:'中期考核' },
+  20: { key:'bday-ja',  name:'江予安生日', member:'ja' },
+  25: { key:'rehearsal', name:'演唱会彩排' },
+  30: { key:'finale',   name:'星轨终章' }
+};
+
+function triggerFixedEvent(day) {
+  const ev = FIXED_EVENTS[day];
+  if (!ev) return false;
+  if (state.fixedDone[day]) return false;
+  state.fixedDone[day] = 1;
+  if (day === 5) state.freeSingles += 1;
+  if (day === 10 || day === 20) {
+    state.shards += 30;
+    speak(VOICE_LINES[ev.member] && VOICE_LINES[ev.member].birthday, ev.member);
+  }
+  if (day === 15) {
+    const u = uniqueCount();
+    const gain = u < 21 ? 80 : (u <= 35 ? 120 : 180);
+    /* 考核奖励不混入当天生活费，进入待领取，按钮领取后才入账 */
+    state.midtermPending = gain;
+    ev.reward = gain;
+  }
+  if (day === 25) {
+    state.boostDay = 25;
+    state.freeTen = 1;
+    state.freeTenDay = 25;
+  }
+  save();
+  render();
+  if (day !== 30) setTimeout(() => showFixedEvent(day), 460);
+  return true;
+}
+
+function showFixedEvent(day) {
+  const ev = FIXED_EVENTS[day];
+  if (!ev) return;
+  const m = ev.member ? MEMBER_BY_KEY[ev.member] : null;
+  if (day === 5) {
+    openModal(`<div class="modal-wrap story-wrap" style="--mc:${m.color}">
+      <button class="x" data-act="close-modal">×</button>
+      <div class="story-art"><img src="${ART.sy}" alt="沈星野"></div>
+      <div class="story-kicker">DAY 05 · 练习室加练</div>
+      <p class="story-text">练习室的灯还亮着。<br>沈星野把毛巾扔给你，声音有点哑：<br>“他们先走了。你……再陪我练最后一遍？”</p>
+      <div class="story-choices">
+        <button class="choice" data-act="story-choice" data-member="sy" data-choice="stay">好，再陪你练一遍</button>
+        <button class="choice" data-act="story-choice" data-member="sy" data-choice="rest">你先回去休息</button>
+      </div>
+      <div class="event-effect">免费单抽 ×1 已到账</div>
+    </div>`, true);
+    sfx('collect');
+    return;
+  }
+  if (day === 10 || day === 20) {
+    openModal(`<div class="modal-wrap bday-wrap" style="--mc:${m.color};--mc2:${m.color2}">
+      <button class="x" data-act="close-modal">×</button>
+      <div class="bday-glow"></div>
+      <div class="story-art"><img src="${ART_SSR[m.key]}" alt="${m.name}"></div>
+      <div class="story-kicker">DAY ${day} · BIRTHDAY UP</div>
+      <h3 class="story-title">${m.name} · ${m.birthday}</h3>
+      <p class="story-text">舞台下的灯牌一块块亮起。<br>他朝你的方向看了一眼，像是只看见了这一块。</p>
+      <button class="light-stick" data-act="light-stick" data-member="${m.key}">点亮应援灯牌</button>
+      <div class="event-effect">生日语音已播放 · 碎片 +30</div>
+      <div class="actions"><button class="btn primary" data-act="close-modal">收下这份生日</button></div>
+    </div>`, true);
+    sfx('reward');
+    return;
+  }
+  if (day === 15) {
+    const u = uniqueCount();
+    const line = u < 21 ? '还早。但至少你没缺席。' : (u <= 35 ? '进度不错，星轨已经亮了一半。' : '……你比我想象中认真。');
+    openModal(`<div class="modal-wrap story-wrap">
+      <button class="x" data-act="close-modal">×</button>
+      <div class="story-kicker">DAY 15 · 中期考核</div>
+      <p class="story-text">教练翻完你的记录，停了几秒。</p>
+      <p class="story-quote">“${line}”</p>
+      <p class="story-text">当前图鉴 ${u}/${GAME.TOTAL_CARDS}。</p>
+      <div class="event-effect">中期考核奖励：生活费 +¥${ev.reward}（待领取）</div>
+      <div class="actions">
+        <button class="btn gold" data-act="midterm-claim" data-amount="${ev.reward}">领取 +¥${ev.reward}</button>
+        <button class="btn ghost" data-act="close-modal">继续</button>
+      </div>
+    </div>`, true);
+    sfx('reward');
+    return;
+  }
+  if (day === 25) {
+    openModal(`<div class="modal-wrap story-wrap">
+      <button class="x" data-act="close-modal">×</button>
+      <div class="story-kicker">DAY 25 · 演唱会彩排</div>
+      <p class="story-text">舞台灯光全开，星轨投影在幕布上缓缓转动。<br>今天的抽卡手感，似乎比平时更亮一点。</p>
+      <div class="event-effect">今日 SSR 基础概率 2% → 3.5%<br>免费十连券 ×1（仅今天有效）</div>
+      <div class="actions"><button class="btn primary" data-act="close-modal">趁着灯光还在</button></div>
+    </div>`, true);
+    sfx('reward');
+    return;
+  }
+}
+
+function claimMidterm() {
+  const gain = state.midtermPending;
+  if (!gain) { closeModal(); return; }
+  state.midtermPending = 0;
+  state.money = Math.max(0, state.money + gain);
+  state.stats.income += gain;
+  save();
+  render();
+  closeModal();
+  sfx('reward');
+  toast('中期考核奖励到账：生活费 +¥' + gain);
+}
+
+/* 第 5 天对话选项：两条分支都回到同一句收尾 */
+function chooseStory(key, choice) {
+  const stay = choice === 'stay';
+  openModal(`<div class="modal-wrap story-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <div class="story-kicker">DAY 05 · 练习室加练</div>
+    <p class="story-text">${stay ? '“那就最后一遍。”他把灯调暗了一点，音乐重新响起。' : '“行。路上小心。”他别过头，声音比刚才更哑。'}</p>
+    <p class="story-quote">“${stay ? '……谢了。' : '……谢了。明天别迟到。'}”</p>
+    <div class="event-effect">免费单抽 ×1 已到账</div>
+    <div class="actions"><button class="btn primary" data-act="close-modal">离开练习室</button></div>
+  </div>`, true);
+  sfx('reward');
+  speak('谢了。', key);
+}
+
+/* ---------- 随机小事件：每天 30% 概率，一天最多 1 次 ---------- */
+const SMALL_EVENTS = [
+  { key:'lamp', name:'练习室留灯', desc:'夜深了，练习室还亮着一盏灯。桌上留了瓶没开封的水。', money:50 },
+  { key:'dm', name:'成员私信', desc:'手机亮了，是他发来的消息：“今天也要记得吃饭。”', shard:6 },
+  { key:'street', name:'公司楼下偶遇', desc:'刚出地铁口就撞见结束行程的他。他把墨镜往上推了推。', free:1 },
+  { key:'fan', name:'被粉丝认出来', desc:'有人小声叫住你，递来一张手幅：“请问……你也是 STAR7 的粉丝吗？”', tag:'passerby' },
+  { key:'rain', name:'雨天共伞', desc:'雨忽然变大。有人把伞移到了你这边，半边肩膀都淋湿了。', shard:10, rainOnly:true },
+  { key:'coffee', name:'便利店的咖啡', desc:'你在货架前犹豫时，店员把最后一杯热咖啡推给了你。', money:-20, shard:12 },
+  { key:'photo', name:'旧照片', desc:'相册翻到一张没发出去的合照，背面写着日期和他的名字。', shard:6 },
+  { key:'store', name:'周边补货', desc:'官方店突然补了货，你顺手把多出来的一份挂上了二手平台。', money:30 },
+  { key:'radio', name:'深夜电台', desc:'他在电台里点了一首没公开的 demo，说“给一个人听”。', shard:8 },
+  { key:'lost', name:'捡到一张票根', desc:'地铁座位下压着一张旧票根，背面是熟悉的字迹。你把它收进卡册夹层。', money:25 },
+  { key:'group', name:'群聊红包', desc:'粉丝群突然下起了红包雨，你抢到最小的一份，却最好运。', money:10, shard:5 },
+  { key:'walk', name:'收工夜路', desc:'演出结束，你沿着江边走了一段。风把应援旗吹得很响。', money:40 }
+];
+const RAINY_DAYS = [3, 9, 14, 22, 28];
+function isRainyDay(day) { return RAINY_DAYS.includes(day); }
+
+function maybeSmallEvent() {
+  if (Math.random() > .30) return null;
+  const recent = state.smallEvents
+    .filter(e => state.day - e.day >= 0 && state.day - e.day < 7)
+    .map(e => e.key);
+  let pool = SMALL_EVENTS.filter(e => !recent.includes(e.key) && (!e.rainOnly || isRainyDay(state.day)));
+  if (!pool.length) pool = SMALL_EVENTS.filter(e => !e.rainOnly);
+  return pool[rand(pool.length)];
+}
+
+function applySmallEvent(ev) {
+  state.lastEvent = ev.key;
+  state.events.push({ day: state.day, key: ev.key });
+  if (state.events.length > 40) state.events.shift();
+  state.smallEvents.push({ day: state.day, key: ev.key });
+  if (state.smallEvents.length > 30) state.smallEvents.shift();
+  if (ev.money) {
+    state.money = Math.max(0, state.money + ev.money);
+    if (ev.money > 0) state.stats.income += ev.money;
+  }
+  if (ev.shard) state.shards += ev.shard;
+  if (ev.free) state.freeSingles += ev.free;
+  if (ev.tag) state.tags[ev.tag] = (state.tags[ev.tag] || 0) + 1;
+  let eff = '';
+  if (ev.money > 0) eff = '生活费 +¥' + ev.money;
+  else if (ev.money < 0) eff = '生活费 −¥' + Math.abs(ev.money);
+  if (ev.shard) eff += (eff ? ' · ' : '') + '碎片 +' + ev.shard;
+  if (ev.free) eff += (eff ? ' · ' : '') + '免费单抽 ×' + ev.free;
+  if (ev.tag) eff += (eff ? ' · ' : '') + '称号进度「路人缘」+1';
+  return eff || '心情值 +1';
+}
+
+function showSmallEvent(ev, eff) {
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <div class="event-art"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#e8a45e"/></svg></div>
+    <p class="event-name">${ev.name}</p>
+    <p class="event-desc">${ev.desc}</p>
+    <div class="event-effect">${eff}</div>
+    <div class="actions"><button class="btn primary" data-act="close-modal">收下这份日常</button></div>
+  </div>`, true);
+  sfx('click');
+}
+
 function nextDay() {
   if (state.ended || state.day >= GAME.TOTAL_DAYS) { openSettlement(); return; }
   state.day++;
@@ -2681,16 +3247,22 @@ function nextDay() {
     if (nextBd) showCoach('明天是 ' + MEMBER_BY_KEY[nextBd].name + ' 的生日，限定池只开一天，记得攒钱呀～', 6500);
   }
   if (state.day >= GAME.TOTAL_DAYS) {
-    toast('第 30 天 · 星轨到站，准备结算');
+    triggerFixedEvent(30);
+    toast('第 30 天 · 星轨终章，准备结算');
     setTimeout(openSettlement, 900);
     return;
   }
-  const ev = maybeEvent();
+  /* 固定事件日优先，当天不再掷随机小事件 */
+  if (triggerFixedEvent(state.day)) {
+    toast('第 ' + state.day + ' 天 · 固定剧情事件');
+    return;
+  }
+  const ev = maybeSmallEvent();
   if (ev) {
-    applyEvent(ev);
+    const eff = applySmallEvent(ev);
     save();
     render();
-    setTimeout(() => showEvent(ev), 480);
+    setTimeout(() => showSmallEvent(ev, eff), 480);
   } else {
     toast('第 ' + state.day + ' 天 · 今日生活费 +¥' + inc);
   }
@@ -2759,6 +3331,11 @@ function openSettlement() {
     box('剩余生活费', '¥' + fmt(state.money)),
     box('收集率', rate + '<em>%</em>')
   ].join('');
+  if ($('#scMsgs')) {
+    $('#scMsgs').innerHTML = '<div class="sc-msg-h">全员寄语 · 星轨终章</div>' + MEMBERS.map(m =>
+      `<div class="sc-msg" style="--mc:${m.color}"><b>${m.name}</b><span>${FINALE_MSGS[m.key] || '谢谢你陪我们走完这三十天。'}</span></div>`
+    ).join('');
+  }
   $('#settleTip').textContent = (u / GAME.TOTAL_CARDS >= .88)
     ? '收集率已过 88%，这张卡值得长按收藏'
     : '手机端可长按结算卡直接保存 / 截图分享';
@@ -2780,10 +3357,14 @@ function restartGame() {
   const keepCards = state.cards || {};
   const keepClaimed = state.claimed || {};
   const keepMute = !!state.mute;
+  const keepTitles = state.titles || {};
+  const keepVol = state.vol;
   state = defaultState();
   state.cards = keepCards;
   state.claimed = keepClaimed;
   state.mute = keepMute;
+  state.titles = keepTitles;
+  if (keepVol) state.vol = keepVol;
   state.guideDone = true;
   /* 卡册保留则台词解锁一并保留，避免档案页与已点亮卡数脱节 */
   syncLineUnlocks();
@@ -2843,6 +3424,8 @@ function openRules() {
       <div class="rule-item"><div class="ri">60</div><div><b>60 抽 SSR 硬保底</b><p>每抽累加计数，60 抽内必出 SSR；出 SSR 后计数重置为 60。</p></div></div>
       <div class="rule-item"><div class="ri">UP</div><div><b>限定 UP</b><p>出 SSR 时，有 50% 概率为当天 UP 成员；平时是沈星野「星轨回响」，生日当天换成寿星，其余均分给另外 6 张 SSR。</p></div></div>
       <div class="rule-item"><div class="ri">生</div><div><b>生日限定池</b><p>第 10 天（3/14）是沈星野生日，第 20 天（3/24）是江予安生日；当天海报与 UP 换成寿星，只开一天，概率与保底完全不变。</p></div></div>
+      <div class="rule-item"><div class="ri">日</div><div><b>固定事件日</b><p>第 5 天练习室加练（免费单抽 ×1）、第 10/20 天生日（额外 30 碎片 + 生日语音）、第 15 天中期考核（按进度发 ¥80/120/180）、第 25 天彩排（当天 SSR 2%→3.5%，送免费十连券）、第 30 天全员寄语结算。</p></div></div>
+      <div class="rule-item"><div class="ri">随</div><div><b>随机小事件</b><p>每天进入下一天有 30% 概率触发 1 次小事件，事件池 12 个，最近 7 天不重复；雨天限定「雨天共伞」。</p></div></div>
       <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥19，十连 ¥169；每天点「进入下一天」发放 ¥45–70 生活费，第 30 天结束自动结算，余额永不为负。</p></div></div>
       <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡。</p></div></div>
     </div>
@@ -3021,17 +3604,97 @@ function drawSettlementCanvas() {
   return cv;
 }
 
-function showImagePreview(dataUrl, name) {
+function showImagePreview(dataUrl, name, title) {
   openModal(`<div class="modal-wrap">
     <button class="x" data-act="close-modal">×</button>
-    <h3 style="text-align:center">结算卡已生成</h3>
+    <h3 style="text-align:center">${title || '结算卡已生成'}</h3>
     <p class="msub" style="text-align:center">若浏览器未自动下载，可长按下方图片保存到相册</p>
-    <img src="${dataUrl}" alt="STAR7 三十天结算卡" style="display:block;width:100%;max-width:300px;margin:0 auto 12px;border-radius:16px;border:1px solid #efce9b;box-shadow:0 12px 30px rgba(90,42,62,.18)">
+    <img src="${dataUrl}" alt="STAR7 纪念海报" style="display:block;width:100%;max-width:300px;margin:0 auto 12px;border-radius:16px;border:1px solid #efce9b;box-shadow:0 12px 30px rgba(90,42,62,.18)">
     <div class="actions">
       <a class="btn gold" href="${dataUrl}" download="${name}" style="text-decoration:none">再存一次</a>
       <button class="btn ghost" data-act="close-modal">关闭</button>
     </div>
   </div>`, true);
+}
+
+/* 集齐成员：星轨纪念海报 */
+function drawCollectCanvas(key) {
+  const m = MEMBER_BY_KEY[key];
+  if (!m) return null;
+  const W = 720, H = 1040;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#1a1026'); bg.addColorStop(.55, m.color); bg.addColorStop(1, '#120b1d');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  const glow = ctx.createRadialGradient(W / 2, 300, 10, W / 2, 300, 500);
+  glow.addColorStop(0, 'rgba(255,255,255,.35)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, 700);
+
+  /* 星轨装饰 */
+  for (let i = 0; i < 46; i++) {
+    const x = (i * 137) % W, y = (i * 251) % H;
+    ctx.globalAlpha = .25 + (i % 5) * .1;
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, 1 + (i % 3), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(W / 2, 310, 128, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W / 2, 310, 152, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.18)';
+  ctx.beginPath(); ctx.arc(W / 2, 310, 118, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '900 52px "Songti SC","Microsoft YaHei",serif';
+  ctx.fillText(m.name, W / 2, 300);
+  ctx.font = '600 18px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('STARTRACK COMPLETE · 8/8', W / 2, 352);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '900 46px "Songti SC","Microsoft YaHei",serif';
+  ctx.fillText(m.name + '的星轨', W / 2, 520);
+  ctx.fillText('已全部点亮', W / 2, 580);
+
+  ctx.fillStyle = 'rgba(255,255,255,.92)';
+  ctx.font = '400 24px "Songti SC","Microsoft YaHei",serif';
+  const lines = (COLLECT_LINES[key] || '').split('\n').slice(0, 6);
+  lines.forEach((ln, i) => ctx.fillText(ln, W / 2, 660 + i * 38));
+
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  ctx.font = '500 18px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('¥' + GAME.COLLECT_REWARD_MONEY + ' 生活费 · +' + GAME.COLLECT_REWARD_SHARD + ' 碎片 · 称号「' + COLLECT_TITLE(key) + '」', W / 2, 930);
+
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.font = '500 15px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('拆小卡模拟器 · 星轨回响 · 虚构企划', W / 2, 976);
+  ctx.fillText('本游戏纯属虚构，不涉及真实充值', W / 2, 1002);
+  return cv;
+}
+
+function saveCollectImage(key) {
+  let cv;
+  try { cv = drawCollectCanvas(key); }
+  catch (e) { toast('生成失败，请直接截图保存', true); return; }
+  if (!cv) return;
+  const m = MEMBER_BY_KEY[key];
+  const name = 'STAR7-集齐-' + (m ? m.name : key) + '.png';
+  try {
+    cv.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} a.remove(); }, 600);
+      showImagePreview(cv.toDataURL('image/png'), name, '星轨纪念海报已生成');
+    }, 'image/png');
+  } catch (e) {
+    try { showImagePreview(cv.toDataURL('image/png'), name, '星轨纪念海报已生成'); }
+    catch (e2) { toast('生成失败，请长按截图保存', true); }
+  }
+  sfx('reward');
 }
 
 function saveSettlementImage() {
@@ -3077,8 +3740,8 @@ function bindEvents() {
       case 'mute': {
         state.mute = !state.mute;
         save(); render();
-        if (!state.mute) { ensureAudio(); sfx('click'); toast('音效已开启'); }
-        else toast('已静音，点击右上角可恢复');
+        if (!state.mute) { ensureAudio(); refreshBGM(); sfx('click'); toast('声音已开启'); }
+        else { stopVoice(); stopBGM(); toast('已静音，点击右上角可恢复'); }
         break;
       }
       case 'album': ensureAudio(); openAlbum(); break;
@@ -3100,6 +3763,17 @@ function bindEvents() {
       case 'flip-all': ensureAudio(); flipAll(false, false); break;
       case 'collect': collectPack(); break;
       case 'close-ssr': closeSSR(); break;
+      case 'ssr-deep': ensureAudio(); showSSRDeep(); break;
+      case 'story-choice': chooseStory(el.dataset.member, el.dataset.choice); break;
+      case 'midterm-claim': claimMidterm(); break;
+      case 'light-stick': {
+        el.classList.toggle('on');
+        sfx('star');
+        speak(VOICE_LINES[el.dataset.member] && VOICE_LINES[el.dataset.member].birthday, el.dataset.member);
+        break;
+      }
+      case 'voice-play': ensureAudio(); speak(VOICE_LINES[el.dataset.member] && VOICE_LINES[el.dataset.member].idle, el.dataset.member); break;
+      case 'save-collect': ensureAudio(); saveCollectImage(el.dataset.member); break;
       case 'profile': ensureAudio(); openProfile(el.dataset.member); sfx('click'); break;
       case 'tab': {
         albumMember = el.dataset.member;
@@ -3139,7 +3813,22 @@ function bindEvents() {
   $('#modalBack').addEventListener('click', e => {
     if (e.target === $('#modalBack')) closeModal();
   });
-  $('#ssrOverlay').addEventListener('click', closeSSR);
+  $('#ssrOverlay').addEventListener('click', e => {
+    if (e.target.closest('[data-act="ssr-deep"]')) return;
+    closeSSR();
+  });
+  /* 音量分层滑条 */
+  document.addEventListener('input', e => {
+    const r = e.target.closest('[data-vol]');
+    if (!r || !state) return;
+    const k = r.dataset.vol;
+    state.vol[k] = clamp(+r.value / 100, 0, 1);
+    const i = r.parentElement.querySelector('i');
+    if (i) i.textContent = Math.round(state.vol[k] * 100) + '%';
+    applyVol();
+    if (k === 'bgm') refreshBGM();
+    save();
+  });
   $('#settleOverlay').addEventListener('click', e => {
     if (e.target === $('#settleOverlay')) closeSettlement();
   });
@@ -3150,6 +3839,18 @@ function bindEvents() {
       $('#screenMarket').classList.remove('show');
       $('#settleOverlay').classList.remove('show');
     }
+  });
+
+  /* 键盘可达：role="button" 控件支持 Enter/Space 触发（原生 button 由浏览器处理） */
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const t = e.target;
+    if (!t || !(t instanceof Element)) return;
+    if (t.closest('button,a,input,select,textarea,[contenteditable="true"]')) return;
+    const rb = t.closest('[role="button"]');
+    if (!rb) return;
+    e.preventDefault();
+    rb.click();
   });
   /* 切后台 / 离开页面时兜底落盘，避免最后一帧状态丢失 */
   document.addEventListener('visibilitychange', () => {
@@ -3168,7 +3869,7 @@ function init() {
   initPoster();
   initTearDrag();
   bindEvents();
-  const unlock = () => { ensureAudio(); };
+  const unlock = () => { ensureAudio(); refreshBGM(); };
   document.addEventListener('pointerdown', unlock, { once: true });
   if (state.guideDone) $('#guide').classList.remove('show');
   else $('#guide').classList.add('show');
@@ -3200,7 +3901,9 @@ function init() {
       CARDS.forEach(c => { if (!owned(c.id)) { state.cards[c.id] = 1; state.fresh[c.id] = true; } });
       syncLineUnlocks(); save(); render();
     },
-    openProfile, upKeyNow, gameDate, birthdayKeyForDay
+    openProfile, upKeyNow, gameDate, birthdayKeyForDay,
+    showSSRDeep, triggerFixedEvent, maybeSmallEvent, speak,
+    dataExtra: { FIXED_EVENTS, SMALL_EVENTS, SSR_LONG, COLLECT_LINES, VOICE_LINES }
   };
 }
 
