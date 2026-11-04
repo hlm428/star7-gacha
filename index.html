@@ -620,6 +620,10 @@ img,svg{display:block;max-width:100%}
 .rule-item .ri{width:30px;height:30px;flex:0 0 30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ffd7e9,#ffe6c9);color:#a44e76;font-size:10px;font-weight:900}
 .rule-item b{display:block;font-size:12px;color:#63394f;margin-bottom:2px}
 .rule-item p{margin:0;font-size:10px;color:#957084;line-height:1.6}
+.save-code{width:100%;height:92px;margin:2px 0 0;padding:9px 10px;border-radius:12px;border:1px solid #f0cfdd;
+  background:rgba(255,255,255,.82);font:11px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#63394f;resize:none;word-break:break-all}
+.save-actions{display:flex;gap:8px;margin-top:10px}
+.save-actions .btn{flex:1;min-height:44px;font-size:12px}
 .rules-table{width:100%;border-collapse:collapse;font-size:11px;color:#74495f}
 .rules-table th,.rules-table td{padding:7px 6px;border-bottom:1px solid #f3dbe6;text-align:left}
 .rules-table th{color:#a15479;font-weight:800}
@@ -1661,8 +1665,40 @@ let ssrQueue = [];
 let ssrTimer = null;
 let ssrActive = false;
 
+let saveWarned = false;
+/* 状态变更即写；写失败（隐私模式 / 配额满）给一次可见提示，并用存档码兜底 */
 function save() {
-  try { localStorage.setItem(GAME.SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+  try {
+    localStorage.setItem(GAME.SAVE_KEY, JSON.stringify(state));
+    return true;
+  } catch (e) {
+    if (!saveWarned) {
+      saveWarned = true;
+      try { toast('本机存储不可用（隐私模式或空间不足），进度仅在本次页面有效；请到「更多玩法」导出存档码备份', true); } catch (e2) {}
+    }
+    return false;
+  }
+}
+/* 存档校验 / 迁移：本地存档与存档码导入共用，杜绝脏字段 */
+function normalizeSave(p) {
+  const base = defaultState();
+  const s = Object.assign(base, p);
+  s.stats = Object.assign(base.stats, p.stats || {});
+  s.cards = (p.cards && typeof p.cards === 'object') ? p.cards : {};
+  s.dupes = (p.dupes && typeof p.dupes === 'object') ? p.dupes : {};
+  s.fresh = (p.fresh && typeof p.fresh === 'object') ? p.fresh : {};
+  s.claimed = (p.claimed && typeof p.claimed === 'object') ? p.claimed : {};
+  s.events = Array.isArray(p.events) ? p.events : [];
+  s.lines = (p.lines && typeof p.lines === 'object') ? p.lines : {};
+  s.day = clamp(Math.round(+s.day || 1), 1, GAME.TOTAL_DAYS);
+  s.money = Math.max(0, Math.round(+s.money || 0));
+  s.shards = Math.max(0, Math.round(+s.shards || 0));
+  s.pityLeft = clamp(Math.round(+s.pityLeft || GAME.PITY_MAX), 1, GAME.PITY_MAX);
+  s.todayPulls = Math.max(0, Math.round(+s.todayPulls || 0));
+  Object.keys(s.cards).forEach(id => {
+    if (!CARD_BY_ID[id]) delete s.cards[id];
+  });
+  return s;
 }
 function load() {
   try {
@@ -1670,23 +1706,7 @@ function load() {
     if (!raw) return false;
     const p = JSON.parse(raw);
     if (!p || typeof p !== 'object') return false;
-    const base = defaultState();
-    const s = Object.assign(base, p);
-    s.stats = Object.assign(base.stats, p.stats || {});
-    s.cards = (p.cards && typeof p.cards === 'object') ? p.cards : {};
-    s.dupes = (p.dupes && typeof p.dupes === 'object') ? p.dupes : {};
-    s.fresh = (p.fresh && typeof p.fresh === 'object') ? p.fresh : {};
-    s.claimed = (p.claimed && typeof p.claimed === 'object') ? p.claimed : {};
-    s.events = Array.isArray(p.events) ? p.events : [];
-    s.day = clamp(Math.round(+s.day || 1), 1, GAME.TOTAL_DAYS);
-    s.money = Math.max(0, Math.round(+s.money || 0));
-    s.shards = Math.max(0, Math.round(+s.shards || 0));
-    s.pityLeft = clamp(Math.round(+s.pityLeft || GAME.PITY_MAX), 1, GAME.PITY_MAX);
-    s.todayPulls = Math.max(0, Math.round(+s.todayPulls || 0));
-    Object.keys(s.cards).forEach(id => {
-      if (!CARD_BY_ID[id]) delete s.cards[id];
-    });
-    state = s;
+    state = normalizeSave(p);
     syncLineUnlocks();
     save();   // 迁移/补齐台词后立即落盘，避免刷新回退
     return true;
@@ -2290,6 +2310,8 @@ function openProfile(key) {
   const cards = CARDS_BY_MEMBER[key].slice().sort((a, b) => a.idx - b.idx);
   const got = (state.lines && Array.isArray(state.lines[key])) ? state.lines[key] : [];
   const unlocked = got.filter(i => cards.some(c => c.idx === i));
+  /* 已点亮的卡必定计入台词收藏，避免成员页与卡册计数脱节 */
+  cards.filter(c => owned(c.id)).forEach(c => { if (!unlocked.includes(c.idx)) unlocked.push(c.idx); });
   const locked = cards.filter(c => !unlocked.includes(c.idx));
   const lineHTML = (c, on) => `<div class="pline${on ? ' on' : ''}">
       <b>${on ? '0' + (c.idx + 1) : '??'}</b><span>${on ? '“' + c.quote + '”' : '？？？'}</span></div>`;
@@ -2540,13 +2562,85 @@ function openMore() {
       <div class="rule-item"><div class="ri">市</div><div><b>星光集市</b><p>用生活费收别人的重复卡，也可把碎片寄卖换钱。</p></div></div>
       <div class="rule-item"><div class="ri">兑</div><div><b>碎片兑换</b><p>卡册里点未获得的剪影，可用碎片直接兑换指定卡。</p></div></div>
       <div class="rule-item"><div class="ri">奖</div><div><b>全员收集</b><p>集齐某位成员的 8 张卡，领取 ¥188 + 30 碎片。已完成 ${done}/7。</p></div></div>
-      <div class="rule-item"><div class="ri">音</div><div><b>音效与存档</b><p>音效默认开启，可在右上角静音；进度自动保存在本机。</p></div></div>
+      <div class="rule-item"><div class="ri">音</div><div><b>音效与存档</b><p>音效默认开启，可在右上角静音；进度在状态变化时立即写入本机。隐私模式或空间不足时，可用下方存档码备份。</p></div></div>
     </div>
     <div class="actions">
       <button class="btn gold" data-act="go-market">去星光集市</button>
       <button class="btn ghost" data-act="close-modal">返回</button>
     </div>
+    <div class="save-actions">
+      <button class="btn ghost" data-act="export-save">导出存档码</button>
+      <button class="btn ghost" data-act="import-save">导入存档码</button>
+    </div>
   </div>`);
+}
+
+/* 存档码：本机存储不可用（隐私模式 / 配额满）时的兜底备份与迁移 */
+function exportSaveCode() {
+  let code = '';
+  try { code = btoa(unescape(encodeURIComponent(JSON.stringify(state)))); } catch (e) { code = ''; }
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3>导出存档码</h3>
+    <p class="msub">复制保存这段文字。换设备、清缓存或隐私模式下，可用「导入存档码」恢复卡册与进度。</p>
+    <textarea class="save-code" id="saveCodeBox" readonly>${code}</textarea>
+    <div class="save-actions">
+      <button class="btn gold" data-act="copy-save-code">复制存档码</button>
+      <button class="btn ghost" data-act="close-modal">关闭</button>
+    </div>
+  </div>`);
+}
+function copySaveCode() {
+  const box = $('#saveCodeBox');
+  if (!box) return;
+  let ok = false;
+  try { box.focus(); box.select(); ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  if (ok) { toast('存档码已复制'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(box.value).then(() => toast('存档码已复制'), () => toast('复制失败，请长按文本手动复制', true));
+  } else {
+    toast('复制失败，请长按文本手动复制', true);
+  }
+}
+function importSaveCode() {
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3>导入存档码</h3>
+    <p class="msub">粘贴之前导出的整段存档码，导入后会覆盖当前进度与卡册。</p>
+    <textarea class="save-code" id="saveCodeInput" placeholder="在此粘贴存档码"></textarea>
+    <div class="save-actions">
+      <button class="btn gold" data-act="apply-save-code">确认导入</button>
+      <button class="btn ghost" data-act="close-modal">取消</button>
+    </div>
+  </div>`);
+}
+function applySaveCode() {
+  const box = $('#saveCodeInput');
+  const txt = box ? box.value.replace(/\s+/g, '') : '';
+  if (!txt) { toast('请先粘贴存档码', true); return; }
+  let p = null;
+  try { p = JSON.parse(decodeURIComponent(escape(atob(txt)))); } catch (e) { p = null; }
+  if (!p || typeof p !== 'object' || !p.cards || typeof p.cards !== 'object') {
+    toast('存档码无效或不完整，请核对后重试', true);
+    return;
+  }
+  state = normalizeSave(p);
+  syncLineUnlocks();
+  pendingPull = null;
+  ssrQueue = [];
+  ssrActive = false;
+  if (ssrTimer) { clearTimeout(ssrTimer); ssrTimer = null; }
+  albumMember = 'sy';
+  closeModal();
+  $('#settleOverlay').classList.remove('show');
+  $('#packOverlay').classList.remove('show');
+  $('#ssrOverlay').classList.remove('show');
+  buildMemberTabs();
+  save();
+  render();
+  if ($('#screenAlbum').classList.contains('show')) renderAlbum();
+  initPoster();
+  toast('存档已导入：图鉴 ' + uniqueCount() + '/' + GAME.TOTAL_CARDS + ' · 第 ' + state.day + ' 天');
 }
 
 /* ===== 03d_end.js ===== */
@@ -2691,6 +2785,8 @@ function restartGame() {
   state.claimed = keepClaimed;
   state.mute = keepMute;
   state.guideDone = true;
+  /* 卡册保留则台词解锁一并保留，避免档案页与已点亮卡数脱节 */
+  syncLineUnlocks();
   state.dayIncome = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
   state.money = GAME.START_MONEY + state.dayIncome;
   state.stats.income = state.dayIncome;
@@ -2989,6 +3085,10 @@ function bindEvents() {
       case 'close-album': closeAlbum(); break;
       case 'rules': openRules(); break;
       case 'more': openMore(); break;
+      case 'export-save': exportSaveCode(); break;
+      case 'import-save': importSaveCode(); break;
+      case 'copy-save-code': copySaveCode(); break;
+      case 'apply-save-code': applySaveCode(); break;
       case 'pull1': ensureAudio(); doPull(1); break;
       case 'pull10': ensureAudio(); doPull(10); break;
       case 'skip-pack': {
@@ -3051,6 +3151,11 @@ function bindEvents() {
       $('#settleOverlay').classList.remove('show');
     }
   });
+  /* 切后台 / 离开页面时兜底落盘，避免最后一帧状态丢失 */
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && state) save();
+  });
+  window.addEventListener('pagehide', () => { if (state) save(); });
 }
 
 function init() {
