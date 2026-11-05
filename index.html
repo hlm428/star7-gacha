@@ -949,6 +949,7 @@ img,svg{display:block;max-width:100%}
 .story-quote{margin:8px 0;padding:9px 12px;border-left:3px solid #d8a25e;background:#fff7ea;border-radius:0 10px 10px 0;font-family:"Songti SC",serif;font-size:13px;line-height:1.8;color:#7a4526}
 .story-choices{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .story-choices .choice{min-height:44px;border-radius:999px;border:1px solid #e6bd8f;background:linear-gradient(180deg,#fff7e8,#ffe3bd);color:#6a3a22;font-size:12px;font-weight:700;cursor:pointer}
+.story-choices .choice small{display:block;font-size:10px;font-weight:400;opacity:.78;margin-top:1px}
 .bday-wrap{text-align:center;position:relative;overflow:hidden;padding-top:50px}
 .bday-glow{position:absolute;top:-20px;left:50%;width:260px;height:260px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,var(--mc) 0%,transparent 66%);opacity:.28}
 .light-stick{position:relative;z-index:1;height:42px;min-width:180px;padding:0 20px;border-radius:999px;border:1px solid #e9c08c;background:linear-gradient(180deg,#fff8ec,#ffe1ba);color:#6a3a22;font-size:12px;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:box-shadow .3s,transform .2s}
@@ -3050,8 +3051,8 @@ function showFixedEvent(day) {
       <div class="story-kicker">DAY 05 · 练习室加练</div>
       <p class="story-text">练习室的灯还亮着。<br>沈星野把毛巾扔给你，声音有点哑：<br>“他们先走了。你……再陪我练最后一遍？”</p>
       <div class="story-choices">
-        <button class="choice" data-act="story-choice" data-member="sy" data-choice="stay">好，再陪你练一遍</button>
-        <button class="choice" data-act="story-choice" data-member="sy" data-choice="rest">你先回去休息</button>
+        <button class="choice" data-act="story-choice" data-member="sy" data-choice="stay">好，再陪你练一遍<small>（碎片 +15）</small></button>
+        <button class="choice" data-act="story-choice" data-member="sy" data-choice="rest">你先回去休息<small>（生活费 +¥40）</small></button>
       </div>
     </div>`, true);
     sfx('collect');
@@ -3207,6 +3208,12 @@ function nextDay() {
   state.stats.income += inc;
   state.marketDay = 0;
   state.market = null;
+  /* v4 · P-04：免费十连券仅当天有效，跨天清理并提示，避免脏数据残留 */
+  if (state.freeTen > 0 && state.freeTenDay !== state.day) {
+    state.freeTen = 0;
+    state.freeTenDay = 0;
+    toast('免费十连券已过期（仅当天有效）', true);
+  }
   save();
   render();
   initPoster();
@@ -3374,7 +3381,7 @@ function openRules() {
     <div class="rule-list" style="margin-top:12px">
       <div class="rule-item"><div class="ri">十</div><div><b>十连 SR 保底</b><p>十连中若没有 SR / SSR，系统会把最后一张升级为 SR，真实生效。</p></div></div>
       <div class="rule-item"><div class="ri">60</div><div><b>60 抽 SSR 硬保底</b><p>每抽累加计数，60 抽内必出 SSR；出 SSR 后计数重置为 60。</p></div></div>
-      <div class="rule-item"><div class="ri">UP</div><div><b>限定 UP</b><p>出 SSR 时，有 50% 概率为当天 UP 成员；平时是沈星野「星轨回响」，生日当天换成寿星，其余均分给另外 6 张 SSR。若抽到的 SSR 不是 UP，则下一个 SSR 必定为 UP（大保底，抽出 UP 后重置）。</p></div></div>
+      <div class="rule-item"><div class="ri">UP</div><div><b>限定 UP</b><p>出 SSR 时，有 50% 概率为当天 UP 成员；平时是沈星野「星轨回响」，生日当天换成寿星，其余均分给另外 6 张 SSR。若抽到的 SSR 不是 UP，则下一个 SSR 必定为 UP（大保底，抽出 UP 后重置）。综合下来，连续抽卡时约 2/3 的 SSR 会是 UP 成员。</p></div></div>
       <div class="rule-item"><div class="ri">生</div><div><b>生日限定池</b><p>第 10 天（3/14）是沈星野生日，第 20 天（3/24）是江予安生日；当天海报与 UP 换成寿星，只开一天，概率与保底完全不变。</p></div></div>
       <div class="rule-item"><div class="ri">日</div><div><b>固定事件日</b><p>第 5 天练习室加练（免费单抽 ×1）、第 10/20 天生日（额外 30 碎片 + 生日语音）、第 15 天中期考核（按进度发 ¥80/120/180）、第 25 天彩排（当天 SSR 2%→3.5%，送免费十连券）、第 30 天星轨终章（当天仍可继续抽卡，结束旅程后再结算）。</p></div></div>
       <div class="rule-item"><div class="ri">随</div><div><b>随机小事件</b><p>每天进入下一天有 30% 概率触发 1 次小事件，事件池 12 个，最近 7 天不重复；雨天限定「雨天共伞」。</p></div></div>
@@ -3400,7 +3407,7 @@ function openExchange() {
   openModal(`<div class="modal-wrap">
     <button class="x" data-act="close-modal">×</button>
     <h3>碎片兑换 · ${m.name}</h3>
-    <p class="msub">当前碎片 <b style="color:#b23c72">${state.shards}</b> 枚 · 重复卡自动折算，碎片不会过期</p>
+    <p class="msub">当前碎片 <b style="color:#b23c72">${state.shards}</b> 枚 · 重复卡自动折算，碎片不会过期<br>※ SSR 兑换为长线目标，通常需要多周目积累</p>
     <div class="rule-list">${rows}</div>
     <div class="actions"><button class="btn ghost" data-act="close-modal">返回</button></div>
   </div>`);
