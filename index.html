@@ -2,8 +2,15 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1a0f26">
+<meta name="version" content="v3.2">
+<meta name="description" content="三十天星轨旅程，拆开 56 张 STAR7 限定小卡，集齐七位成员的完整星轨。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="拆小卡模拟器 · STAR7 星轨回响">
+<meta property="og:description" content="三十天星轨旅程，拆开 56 张限定小卡，集齐七位成员的完整星轨。">
+<meta property="og:image" content="assets/sy_ssr.webp">
+<link rel="icon" type="image/webp" href="assets/sy_avatar.webp">
 <title>拆小卡模拟器 · STAR7 星轨回响</title>
 <style>
 :root{
@@ -464,6 +471,8 @@ img,svg{display:block;max-width:100%}
   flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;
   padding:2px 2px calc(76px + var(--safe-b));scrollbar-width:none;overscroll-behavior:contain}
 .pack-grid.n10::-webkit-scrollbar{display:none}
+.pack-scroll-hint{display:none;align-self:center;font-size:11px;font-weight:700;color:#c3a3b6;letter-spacing:.6px;text-align:center;padding:2px 12px;border-radius:999px;background:rgba(255,255,255,.07)}
+.pack-scroll-hint.on{display:block}
 .flip{
   position:relative;aspect-ratio:.68;perspective:900px;cursor:pointer;min-width:0;
   animation:cardIn .5s ease both
@@ -592,10 +601,20 @@ img,svg{display:block;max-width:100%}
 }
 .btn.primary{background:linear-gradient(135deg,#ff9ec6,#ff629c 70%,#e94888);color:#fff;box-shadow:0 8px 20px rgba(235,79,139,.3),inset 0 1px 0 rgba(255,255,255,.4)}
 .btn.ghost{background:#fff;color:#8f5c7b;border:1px solid #f0c7d9}
+.voice-btn{position:relative;overflow:hidden;padding-bottom:11px}
+.voice-btn .vbar{position:absolute;left:14px;right:14px;bottom:7px;height:2px;border-radius:2px;background:rgba(155,110,140,.22);overflow:hidden}
+.voice-btn .vbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff8fbe,#b06fd6);transition:width .15s linear}
+.sell-box{margin-top:14px;padding:14px;border-radius:14px;background:rgba(255,255,255,.55);border:1px solid #f4d7e5}
+.sell-line{font-size:13px;color:#8f5c7b;text-align:center;margin-bottom:8px}
+.sell-line b{font-size:22px;color:#b23c72;margin:0 2px}
+.sell-line em{font-style:normal;color:#b4862c;font-weight:800}
+.sell-range{width:100%;height:30px;accent-color:#ff6ba6}
+.sell-scale{display:flex;justify-content:space-between;font-size:10px;color:#b78ba1}
 .btn.gold{background:linear-gradient(135deg,#ffe6b9,#eab86c);color:#60380f;box-shadow:0 8px 20px rgba(220,170,90,.25)}
 .btn.danger{background:#fff;color:#c24768;border:1px solid #f1bfd0}
 .btn:disabled{filter:grayscale(.5) brightness(.86);box-shadow:none}
 .modal .x{position:absolute;right:14px;top:12px;z-index:20;width:32px;height:32px;border-radius:50%;background:rgba(95,50,82,.08);display:flex;align-items:center;justify-content:center;color:#9b7089;font-size:16px}
+.modal .x.sticky{position:sticky;top:0;left:auto;right:auto;margin:0 0 -32px auto;background:rgba(255,255,255,.82);backdrop-filter:blur(6px);box-shadow:0 4px 12px rgba(120,60,90,.12)}
 .modal-wrap{position:relative}
 /* 详情 / 规则弹窗共用同一套顶部安全带：× 独占 58px，正文整体下移，标题与按钮零重叠 */
 .detail-wrap,.rules-wrap{padding-top:58px}
@@ -807,6 +826,8 @@ img,svg{display:block;max-width:100%}
 .mtab .pbtn{position:absolute;top:-6px;right:-4px;z-index:3;padding:2px 5px;border-radius:8px;
   background:linear-gradient(135deg,#ffd9ec,#f59ac4);color:#6d2448;font-size:8px;font-style:normal;font-weight:900;line-height:1.4;
   border:1px solid #fff;box-shadow:0 2px 6px rgba(120,30,70,.25);cursor:pointer}
+/* 视觉保持 28×17，仅用透明伪元素把命中区扩到约 48×35，避免手指点空滑到头像 */
+.mtab .pbtn::before{content:"";position:absolute;inset:-12px -10px -6px -10px;border-radius:12px}
 
 /* 成员档案 */
 .profile-wrap{padding-top:58px}
@@ -845,9 +866,7 @@ img,svg{display:block;max-width:100%}
 @keyframes vw{0%,100%{height:4px}50%{height:12px}}
 .vplaying .vw{display:inline-flex}
 
-/* 概率表「碎片兑换」列：按钮等宽右对齐 */
-.rules-table th:last-child{text-align:right}
-.rules-table .ex-btn{min-width:66px;min-height:30px;justify-content:center;padding:0 8px;font-size:10px}
+/* ============ 卡册语音：切换播放 + 进度条 ============ */
 
 @media (max-width:370px){
   .detail-title h3{font-size:15px}
@@ -1186,8 +1205,9 @@ img,svg{display:block;max-width:100%}
       <div class="cards-stage hidden" id="cardsStage">
         <div class="cards-hint" id="cardsHint">点击卡背翻开 · <b>全部翻开</b> 可一次揭晓</div>
         <div class="pack-grid" id="packGrid"></div>
+        <div class="pack-scroll-hint" id="packScrollHint" aria-live="polite"></div>
         <div class="pack-tally" id="packTally"></div>
-        <div style="display:flex;gap:8px;width:100%;max-width:330px">
+        <div id="packBottomBar" style="display:flex;gap:8px;width:100%;max-width:330px">
           <button class="skip-btn" data-act="flip-all" id="flipAllBtn" style="flex:1;min-height:46px;font-size:13px">全部翻开</button>
           <button class="pack-collect" data-act="collect" id="collectBtn" style="flex:1.5;min-height:46px">收下卡牌</button>
         </div>
@@ -1447,10 +1467,10 @@ const FINALE_MSGS = {
 
 const RARITY_ORDER = ['N','R','SR','SSR'];
 const RARITY_INFO = {
-  N:{ rate:.60, shard:1,  exchange:4,   label:'N',  glow:'#efe9f0' },
-  R:{ rate:.30, shard:3,  exchange:10, label:'R',  glow:'#8fc2ff' },
-  SR:{ rate:.08, shard:8, exchange:30, label:'SR', glow:'#c495ff' },
-  SSR:{ rate:.02, shard:30, exchange:70, label:'SSR', glow:'#ffd98b' }
+  N:{ rate:.60, shard:1,  exchange:10,  label:'N',  glow:'#efe9f0' },
+  R:{ rate:.30, shard:3,  exchange:25,  label:'R',  glow:'#8fc2ff' },
+  SR:{ rate:.08, shard:8, exchange:80,  label:'SR', glow:'#c495ff' },
+  SSR:{ rate:.02, shard:30, exchange:200, label:'SSR', glow:'#ffd98b' }
 };
 const RARITY_LAYOUT = [['N','N','N','R','R','SR','SR','SSR']];
 
@@ -1504,7 +1524,7 @@ const TITLES = {
 };
 
 /* ===== 02_svg.js ===== */
-/* ================= 内联 SVG 立绘（7 位成员 · 统一手绘风） ================= */
+/* ================= 内联 SVG 工具（头像渲染） ================= */
 function hexMix(hex, target, p) {
   const a = parseInt(hex.slice(1), 16), b = parseInt(target.slice(1), 16);
   const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
@@ -1515,285 +1535,6 @@ function hexMix(hex, target, p) {
 const dark = (h, p) => hexMix(h, '#120b1a', p);
 const light = (h, p) => hexMix(h, '#ffffff', p);
 
-const EYES = {
-  cool:    { w:11.2, h:5.2, ir:5.4, irh:6.4, lash:3.2, flick:4, lid:0.5 },
-  soft:    { w:11.6, h:6.4, ir:6.0, irh:7.2, lash:3.0, flick:1, lid:0 },
-  lazy:    { w:11.0, h:5.6, ir:5.7, irh:6.8, lash:3.2, flick:1, lid:2 },
-  elegant: { w:11.8, h:4.6, ir:5.1, irh:6.0, lash:2.6, flick:4, lid:0.5 },
-  bold:    { w:12.0, h:6.4, ir:6.0, irh:7.0, lash:3.8, flick:4, lid:0 },
-  bright:  { w:12.0, h:7.0, ir:6.5, irh:7.8, lash:3.0, flick:2, lid:0 },
-  sweet:   { w:11.4, h:6.6, ir:6.2, irh:7.4, lash:3.4, flick:3, lid:0, lashes:1 }
-};
-
-function eyeSVG(ix, iy, s, u, side) {
-  const dir = side === 'r' ? 1 : -1;
-  const ox = ix + dir * s.w;
-  const irisCy = iy + s.h * 0.12;
-  const top = iy - s.h;
-  let lashes = '';
-  if (s.lashes) {
-    lashes = `<path d="M${ox} ${iy - 1} l${dir * 3.4} ${-1.6}" stroke="#2a1a2e" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>`;
-  }
-  return `<g>
-    <path d="M${ix - s.w} ${iy} C${ix - s.w * .55} ${iy - s.h * .95} ${ix + s.w * .55} ${iy - s.h * .95} ${ox} ${iy} C${ix + s.w * .55} ${iy + s.h * .82} ${ix - s.w * .55} ${iy + s.h * .85} ${ix - s.w} ${iy} Z" fill="#fff8fb"/>
-    <ellipse cx="${ix}" cy="${irisCy}" rx="${s.ir}" ry="${s.irh}" fill="url(#eye-${u})"/>
-    <ellipse cx="${ix}" cy="${irisCy}" rx="${s.ir * .58}" ry="${s.irh * .62}" fill="#1a1322" opacity=".92"/>
-    <ellipse cx="${ix}" cy="${irisCy}" rx="${s.ir * .28}" ry="${s.irh * .34}" fill="#090610"/>
-    <circle cx="${ix - s.ir * .36}" cy="${irisCy - s.irh * .34}" r="${s.ir * .33}" fill="#ffffff" opacity=".96"/>
-    <circle cx="${ix + s.ir * .32}" cy="${irisCy + s.irh * .34}" r="${s.ir * .15}" fill="#ffffff" opacity=".7"/>
-    <path d="M${ix - s.w} ${iy} C${ix - s.w * .5} ${top - s.lid} ${ix + s.w * .62} ${top - s.lid} ${ox + dir * 1} ${iy - s.flick}" fill="none" stroke="#2a1a2e" stroke-width="${s.lash}" stroke-linecap="round"/>
-    <path d="M${ix - s.w * .82} ${iy + s.h * .62} C${ix - s.w * .3} ${iy + s.h * .95} ${ix + s.w * .35} ${iy + s.h * .92} ${ix + s.w * .78} ${iy + s.h * .5}" fill="none" stroke="#9b6f7d" stroke-width=".8" opacity=".55"/>
-    ${lashes}
-  </g>`;
-}
-
-/* ---- 后发 ---- */
-function hairBack(m) {
-  const u = m.key, H = `url(#hair-${u})`;
-  switch (m.hairStyle) {
-    case 'wolf':
-      return `<path d="M60 120 C52 82 70 48 100 46 C130 48 148 82 140 122 C152 140 158 170 152 204 L140 190 C138 172 136 158 132 148 L68 148 C64 160 62 176 60 192 L44 206 C46 172 52 142 60 120 Z" fill="${H}"/>
-      <path d="M126 150 C138 162 142 180 140 200 C136 184 132 170 126 160 Z" fill="${dark(m.hair, .18)}" opacity=".6"/>`;
-    case 'curtain':
-      return `<path d="M60 116 C52 78 72 48 100 46 C128 48 148 78 140 116 C148 138 150 166 144 190 C138 178 136 160 132 150 L68 150 C64 162 62 178 56 190 C50 166 52 136 60 116 Z" fill="${H}"/>
-      <path d="M56 168 C60 180 62 188 68 194 C64 182 62 172 62 164 Z" fill="${dark(m.hair, .22)}" opacity=".7"/>
-      <path d="M144 168 C140 180 138 188 132 194 C136 182 138 172 138 164 Z" fill="${dark(m.hair, .22)}" opacity=".7"/>`;
-    case 'longwave':
-      return `<path d="M58 118 C50 76 70 44 100 42 C130 44 150 76 142 118 C152 142 160 186 164 246 C152 236 144 216 140 198 C146 168 138 146 132 136 L68 136 C62 148 54 170 58 198 C54 218 44 238 32 246 C38 186 48 140 58 118 Z" fill="${H}"/>
-      <path d="M44 200 C50 216 54 232 50 244 C44 230 40 214 40 200 Z" fill="${dark(m.hair, .2)}" opacity=".65"/>
-      <path d="M156 200 C150 216 146 232 150 244 C156 230 160 214 160 200 Z" fill="${dark(m.hair, .2)}" opacity=".65"/>
-      <path d="M62 152 C68 172 70 190 68 206" stroke="${light(m.hair, .35)}" stroke-width="1.2" fill="none" opacity=".5"/>`;
-    case 'hime':
-      return `<path d="M60 120 C52 80 72 48 100 46 C128 48 148 80 140 120 L145 176 L138 176 L136 204 L64 204 L62 176 L55 176 Z" fill="${H}"/>
-      <path d="M62 94 L60 188 L76 188 L74 102 Z" fill="${H}"/>
-      <path d="M138 94 L140 188 L124 188 L126 102 Z" fill="${H}"/>`;
-    case 'slick':
-      return `<path d="M66 112 C62 80 78 54 100 52 C122 54 138 80 134 112 L140 150 L60 150 Z" fill="${H}"/>
-      <path d="M60 136 L140 136 L141 150 L59 150 Z" fill="${dark(m.hair, .4)}" opacity=".8"/>`;
-    case 'crop':
-      return `<path d="M64 112 C60 82 76 52 100 50 C124 52 140 82 136 112 L142 144 L58 144 Z" fill="${H}"/>
-      <path d="M60 128 L140 128 L142 144 L58 144 Z" fill="${dark(m.hair, .25)}" opacity=".65"/>`;
-    case 'airwave':
-      return `<path d="M58 120 C50 78 70 44 100 42 C130 44 150 78 142 120 C152 146 158 192 152 242 C144 222 138 200 136 184 L64 184 C62 202 56 222 48 242 C42 192 48 146 58 120 Z" fill="${H}"/>
-      <path d="M48 196 C54 214 56 230 52 242 C46 228 42 210 42 196 Z" fill="${dark(m.hair, .2)}" opacity=".6"/>
-      <path d="M152 196 C146 214 144 230 148 242 C154 228 158 210 158 196 Z" fill="${dark(m.hair, .2)}" opacity=".6"/>`;
-  }
-  return '';
-}
-
-/* ---- 前发 ---- */
-function hairFront(m) {
-  const u = m.key, H = `url(#hair-${u})`;
-  switch (m.hairStyle) {
-    case 'wolf':
-      return `<path d="M64 108 C66 74 82 54 100 54 C120 54 136 74 137 106 C130 92 122 82 114 78 L111 100 L104 76 L100 98 L95 74 L89 96 L84 80 L78 104 C72 96 68 92 64 108 Z" fill="${H}"/>
-      <path d="M133 92 C140 110 140 132 136 152 C132 134 130 116 128 100 Z" fill="${H}" opacity=".92"/>
-      <path d="M76 80 C86 66 106 60 122 66" fill="none" stroke="${light(m.hair, .55)}" stroke-width="2" opacity=".65"/>`;
-    case 'curtain':
-      return `<path d="M100 54 C82 54 70 70 67 98 C74 84 84 76 98 70 C96 86 92 100 86 112 C98 100 100 84 100 68 C100 84 103 100 114 112 C108 100 104 86 102 70 C116 76 126 84 133 98 C130 70 118 54 100 54 Z" fill="${H}"/>
-      <path d="M68 96 C64 114 66 132 72 148 C72 130 70 112 68 96 Z" fill="${H}" opacity=".9"/>
-      <path d="M132 96 C136 114 134 132 128 148 C128 130 130 112 132 96 Z" fill="${H}" opacity=".9"/>
-      <path d="M80 66 C92 58 108 58 120 66" fill="none" stroke="${light(m.hair, .5)}" stroke-width="2" opacity=".5"/>`;
-    case 'longwave':
-      return `<path d="M100 52 C78 52 66 70 64 100 C70 84 80 74 94 68 C88 90 86 112 90 138 C98 122 100 102 100 84 C108 104 120 118 134 126 C130 100 120 66 100 52 Z" fill="${H}"/>
-      <path d="M132 100 C142 124 144 160 138 196 C134 166 132 130 130 108 Z" fill="${H}" opacity=".92"/>
-      <path d="M78 72 C88 60 102 56 114 60" fill="none" stroke="${light(m.hair, .5)}" stroke-width="1.8" opacity=".55"/>`;
-    case 'hime':
-      return `<path d="M65 106 C65 74 80 54 100 54 C120 54 135 74 135 106 L129 94 L124 108 L118 94 L112 108 L106 94 L100 108 L94 94 L88 108 L82 94 L76 108 L71 94 Z" fill="${H}"/>
-      <path d="M72 70 C84 58 116 58 128 70" fill="none" stroke="${light(m.hair, .5)}" stroke-width="2" opacity=".55"/>`;
-    case 'slick':
-      return `<path d="M67 100 C72 70 84 50 102 50 C120 50 132 64 135 92 C127 72 113 64 100 64 C86 64 76 76 67 100 Z" fill="${H}"/>
-      <path d="M86 64 C82 78 79 94 81 110 C86 100 88 86 90 74 Z" fill="${H}" opacity=".95"/>
-      <path d="M124 62 C132 68 136 78 137 90" fill="none" stroke="${light(m.hair, .45)}" stroke-width="1.8" opacity=".6"/>`;
-    case 'crop':
-      return `<path d="M64 102 C68 72 82 52 100 52 C118 52 132 70 136 96 C128 84 118 76 106 74 L111 90 L100 74 L92 92 L86 76 L78 94 C72 90 68 94 64 102 Z" fill="${H}"/>
-      <path d="M104 50 C112 34 122 32 128 38 C119 40 112 48 108 60 Z" fill="${H}"/>
-      <path d="M62 100 C56 110 54 124 58 138 C60 124 61 112 64 104 Z" fill="${H}" opacity=".9"/>
-      <path d="M80 68 C90 58 108 56 120 62" fill="none" stroke="${light(m.hair, .5)}" stroke-width="1.8" opacity=".5"/>`;
-    case 'airwave':
-      return `<path d="M66 104 C68 72 82 52 100 52 C118 52 133 72 135 104 C128 90 120 82 112 78 L108 96 L102 78 L96 96 L90 78 L83 88 L78 102 Z" fill="${H}"/>
-      <path d="M134 96 C142 118 144 150 138 184 C134 154 132 122 130 104 Z" fill="${H}" opacity=".92"/>
-      <path d="M64 100 C58 116 58 138 62 158 C64 136 64 116 66 104 Z" fill="${H}" opacity=".85"/>
-      <path d="M80 66 C92 56 110 56 122 64" fill="none" stroke="${light(m.hair, .55)}" stroke-width="2" opacity=".55"/>`;
-  }
-  return '';
-}
-
-/* ---- 服装 ---- */
-function outfitSVG(m) {
-  const u = m.key, C = `url(#cloth-${u})`, C2 = `url(#cloth2-${u})`;
-  const base = `<path d="M22 302 C24 248 46 214 78 202 L100 228 L122 202 C154 214 176 248 178 302 Z" fill="${C}"/>
-    <path d="M78 202 L100 228 L122 202 L130 208 C118 220 108 232 100 240 C92 232 82 220 70 208 Z" fill="${C2}"/>
-    <path d="M34 302 C36 266 46 238 62 220" stroke="${light(m.cloth, .3)}" stroke-width="1.2" fill="none" opacity=".55"/>
-    <path d="M166 302 C164 266 154 238 138 220" stroke="${light(m.cloth, .3)}" stroke-width="1.2" fill="none" opacity=".55"/>`;
-  switch (m.accessory) {
-    case 'starcuff':
-      return base + `<path d="M84 196 L100 214 L116 196 L122 202 L100 228 L78 202 Z" fill="${C2}" opacity=".9"/>
-      <path d="M100 214 L100 302" stroke="${dark(m.cloth, .35)}" stroke-width="1.2" opacity=".7"/>
-      <circle cx="100" cy="246" r="2.1" fill="${m.trim}"/>
-      <circle cx="100" cy="264" r="2.1" fill="${m.trim}"/>
-      <path d="M100 250 l2.4 6 6 .8-4.4 4.2 1 6-5-2.8-5 2.8 1-6-4.4-4.2 6-.8z" fill="${m.trim}" opacity=".95" transform="translate(-3 6) scale(.62)"/>
-      <path d="M132 190 C138 198 140 208 138 218" stroke="${m.trim}" stroke-width="1.4" fill="none" opacity=".8"/>`;
-    case 'scarf':
-      return base + `<path d="M80 184 C88 198 112 198 120 184 C132 190 138 202 134 218 L122 212 C114 224 86 224 78 212 L66 218 C62 202 68 190 80 184 Z" fill="${C2}"/>
-      <path d="M120 196 L132 260 L120 266 L112 204 Z" fill="${C2}"/>
-      <path d="M86 206 C94 214 106 214 114 206" stroke="${light(m.trim, .3)}" stroke-width="1.4" fill="none" opacity=".8"/>
-      <path d="M112 246 l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="${m.trim}" opacity=".9" transform="scale(.8) translate(28 60)"/>`;
-    case 'headphone':
-      return base + `<path d="M70 214 C64 200 66 186 78 178 L84 190 C76 196 74 204 76 214 Z" fill="${dark(m.cloth2, .3)}"/>
-      <path d="M130 214 C136 200 134 186 122 178 L116 190 C124 196 126 204 124 214 Z" fill="${dark(m.cloth2, .3)}"/>
-      <circle cx="70" cy="218" r="9" fill="${C2}" stroke="${light(m.cloth2, .35)}" stroke-width="1"/>
-      <circle cx="130" cy="218" r="9" fill="${C2}" stroke="${light(m.cloth2, .35)}" stroke-width="1"/>
-      <path d="M86 202 L100 220 L114 202 L118 206 L100 230 L82 206 Z" fill="${C2}"/>
-      <path d="M100 222 L100 302" stroke="${dark(m.cloth2, .25)}" stroke-width="1" opacity=".5"/>`;
-    case 'pearl':
-      return base + `<path d="M82 190 C88 200 112 200 118 190 C120 196 118 202 112 206 C106 212 94 212 88 206 C82 202 80 196 82 190 Z" fill="${dark(m.cloth, .3)}"/>
-      <path d="M84 204 C90 216 110 216 116 204" fill="none" stroke="${m.trim}" stroke-width="1" opacity=".7"/>
-      <g fill="${m.trim}"><circle cx="90" cy="214" r="2"/><circle cx="96" cy="218" r="2"/><circle cx="103" cy="219" r="2"/><circle cx="110" cy="216" r="2"/><circle cx="116" cy="211" r="2"/></g>
-      <path d="M68 226 L100 250 L132 226" fill="none" stroke="${dark(m.cloth, .2)}" stroke-width="1.2" opacity=".5"/>`;
-    case 'chain':
-      return base + `<path d="M80 198 L100 226 L120 198 L126 204 L100 236 L74 204 Z" fill="${dark(m.cloth2, .25)}"/>
-      <path d="M100 226 L100 302" stroke="${m.trim}" stroke-width="1.4" opacity=".75"/>
-      <path d="M84 224 C90 244 110 244 116 224" fill="none" stroke="${m.trim}" stroke-width="1.6" stroke-dasharray="2.6 2.2" opacity=".9"/>
-      <path d="M128 210 L124 262" stroke="${light(m.cloth2, .5)}" stroke-width="2" opacity=".8"/>
-      <path d="M96 202 L104 202 L104 208 L96 208 Z" fill="${m.trim}" opacity=".75"/>`;
-    case 'band':
-      return base + `<path d="M78 204 L100 232 L122 204 L128 210 L100 242 L72 210 Z" fill="${C2}"/>
-      <path d="M40 258 L52 254 L60 302 L46 302 Z" fill="${light(m.cloth, .35)}" opacity=".9"/>
-      <path d="M160 258 L148 254 L140 302 L154 302 Z" fill="${light(m.cloth, .35)}" opacity=".9"/>
-      <path d="M96 226 L104 226 L104 302 L96 302 Z" fill="${light(m.cloth, .5)}" opacity=".6"/>`;
-    case 'clip':
-      return base + `<path d="M84 198 C92 210 108 210 116 198 C118 206 114 214 106 218 C100 222 100 222 94 218 C86 214 82 206 84 198 Z" fill="#fff6ef" stroke="${light(m.cloth2, .3)}" stroke-width=".8"/>
-      <path d="M100 226 L100 302" stroke="${dark(m.cloth2, .2)}" stroke-width="1" opacity=".4"/>
-      <g fill="${light(m.cloth, .4)}"><circle cx="94" cy="240" r="1.5"/><circle cx="106" cy="252" r="1.5"/><circle cx="96" cy="268" r="1.5"/></g>`;
-  }
-  return base;
-}
-
-/* ---- 配件 ---- */
-function accessorySVG(m) {
-  switch (m.accessory) {
-    case 'starcuff':
-      return `<g stroke="${m.trim}" fill="none"><path d="M64 108 C60 104 60 100 64 98" stroke-width="1.6"/><path d="M65 124 C60 124 58 120 58 116" stroke-width="1.4"/></g>
-      <path d="M141 104 l1.6 4 4 .5-3 2.8.7 4-3.3-2-3.3 2 .7-4-3-2.8 4-.5z" fill="${m.trim}"/>`;
-    case 'scarf':
-      return `<circle cx="65" cy="120" r="2.2" fill="${m.trim}"/><circle cx="135" cy="120" r="2.2" fill="${m.trim}"/>
-      <ellipse cx="72" cy="129" rx="7" ry="3.2" fill="#ff9fae" opacity=".18"/><ellipse cx="128" cy="129" rx="7" ry="3.2" fill="#ff9fae" opacity=".18"/>`;
-    case 'headphone':
-      return `<path d="M67 112 C61 108 60 102 64 98" stroke="${light(m.cloth2, .4)}" stroke-width="1.4" fill="none"/>
-      <path d="M133 112 C139 108 140 102 136 98" stroke="${light(m.cloth2, .4)}" stroke-width="1.4" fill="none"/>`;
-    case 'pearl':
-      return `<circle cx="66" cy="122" r="1.8" fill="${m.trim}"/><circle cx="66" cy="127" r="1.8" fill="${m.trim}"/>
-      <circle cx="134" cy="122" r="1.8" fill="${m.trim}"/><circle cx="134" cy="127" r="1.8" fill="${m.trim}"/>
-      <ellipse cx="79" cy="132" rx="1.2" ry="1.6" fill="#a86a74" opacity=".55"/>`;
-    case 'chain':
-      return `<circle cx="64" cy="120" r="1.6" fill="${m.trim}"/><circle cx="136" cy="120" r="1.6" fill="${m.trim}"/>
-      <path d="M137 108 C142 112 142 118 138 122" stroke="${m.trim}" stroke-width="1.1" fill="none" opacity=".8"/>`;
-    case 'band':
-      return `<path d="M66 96 C74 90 86 88 100 88 C114 88 126 90 134 96 L132 101 C122 96 112 94 100 94 C88 94 78 96 68 101 Z" fill="${m.trim}" opacity=".95"/>
-      <circle cx="135" cy="118" r="1.6" fill="${m.trim}"/>`;
-    case 'clip':
-      return `<g transform="translate(126 74) rotate(18)"><path d="M0 0 C6 -4 12 0 10 6 C8 12 0 12 -3 6 C-5 2 -3 -1 0 0 Z" fill="#ff9d86"/><circle cx="4" cy="5" r="2.6" fill="#ffe4c4"/></g>
-      <circle cx="134" cy="124" r="1.6" fill="${m.trim}"/><circle cx="66" cy="124" r="1.6" fill="${m.trim}"/>`;
-  }
-  return '';
-}
-
-/* ---- 背景纹样（按卡牌 scene 变化） ---- */
-function motifSVG(scene, m) {
-  const c = light(m.color, .5);
-  if (scene === 1) {
-    return `<g fill="${c}" opacity=".2">
-      <circle cx="34" cy="46" r="15"/><circle cx="62" cy="26" r="8"/><circle cx="18" cy="88" r="6"/>
-      <circle cx="168" cy="216" r="13"/><circle cx="184" cy="186" r="7"/><circle cx="38" cy="252" r="9"/></g>
-      <g fill="#fff3d6" opacity=".45"><circle cx="150" cy="34" r="1.5"/><circle cx="20" cy="180" r="1.4"/></g>`;
-  }
-  if (scene === 2) {
-    return `<g stroke="${c}" fill="none" opacity=".26">
-      <path d="M-4 26 L52 108" stroke-width="2"/><path d="M28 18 L86 104" stroke-width="1.4"/>
-      <path d="M74 14 L128 96" stroke-width="1.8"/><path d="M124 20 L180 108" stroke-width="1.2"/>
-      <path d="M168 12 L212 86" stroke-width="1.6"/></g>
-      <g fill="${c}" opacity=".38"><circle cx="30" cy="150" r="2"/><circle cx="176" cy="168" r="1.6"/></g>`;
-  }
-  if (scene === 3) {
-    return `<g fill="${c}" opacity=".16">
-      <path d="M112 0 L200 0 L200 118 Z"/><path d="M0 0 L58 0 L0 104 Z"/></g>
-      <g stroke="${c}" fill="none" opacity=".5">
-      <path d="M22 60 C26 54 30 54 34 60 C38 54 42 54 46 60" stroke-width="1.3"/>
-      <path d="M160 44 C164 38 168 38 172 44 C176 38 180 38 184 44" stroke-width="1.3" opacity=".7"/></g>
-      <g fill="#fff3d6" opacity=".45"><circle cx="148" cy="236" r="1.8"/><circle cx="182" cy="150" r="1.2"/></g>`;
-  }
-  return `<g fill="#fff3d6" opacity=".55">
-    <path d="M34 40 l1.6 5 5 1.6-5 1.6-1.6 5-1.6-5-5-1.6 5-1.6z"/>
-    <path d="M168 210 l1.4 4.6 4.6 1.4-4.6 1.4-1.4 4.6-1.4-4.6-4.6-1.4 4.6-1.4z" opacity=".75"/>
-    <circle cx="164" cy="48" r="1.8"/><circle cx="28" cy="254" r="1.6"/><circle cx="90" cy="24" r="1.2" opacity=".65"/></g>
-    <path d="M154 40 a18 18 0 1 0 20 22 a14 14 0 0 1 -20 -22" fill="${light(m.color, .8)}" opacity=".22"/>`;
-}
-
-/* ---- 完整立绘 ---- */
-function portraitSVG(m, scene) {
-  const u = m.key;
-  const eyeStyle = EYES[m.eyeStyle] || EYES.soft;
-  const sc = (scene === undefined ? 0 : scene) % 4;
-  return `<svg viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${m.name}立绘">
-  <defs>
-    <linearGradient id="bg-${u}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${m.bg1}"/><stop offset="55%" stop-color="${dark(m.bg1, .35)}"/><stop offset="100%" stop-color="${m.bg2}"/>
-    </linearGradient>
-    <radialGradient id="halo-${u}" cx="50%" cy="28%" r="60%">
-      <stop offset="0" stop-color="${m.color}" stop-opacity=".62"/><stop offset="60%" stop-color="${m.color}" stop-opacity=".16"/><stop offset="100%" stop-color="${m.color}" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="hair-${u}" x1="0" y1="0" x2=".7" y2="1">
-      <stop offset="0" stop-color="${light(m.hair, .22)}"/><stop offset="48%" stop-color="${m.hair}"/><stop offset="100%" stop-color="${m.hair2}"/>
-    </linearGradient>
-    <linearGradient id="skin-${u}" x1=".3" y1="0" x2=".8" y2="1">
-      <stop offset="0" stop-color="${light(m.skin, .12)}"/><stop offset="62%" stop-color="${m.skin}"/><stop offset="100%" stop-color="${m.skin2}"/>
-    </linearGradient>
-    <linearGradient id="cloth-${u}" x1="0" y1="0" x2=".4" y2="1">
-      <stop offset="0" stop-color="${light(m.cloth, .2)}"/><stop offset="46%" stop-color="${m.cloth}"/><stop offset="100%" stop-color="${dark(m.cloth, .35)}"/>
-    </linearGradient>
-    <linearGradient id="cloth2-${u}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${light(m.cloth2, .18)}"/><stop offset="100%" stop-color="${m.cloth2}"/>
-    </linearGradient>
-    <linearGradient id="eye-${u}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${dark(m.eye, .32)}"/><stop offset="55%" stop-color="${m.eye}"/><stop offset="100%" stop-color="${light(m.eye, .35)}"/>
-    </linearGradient>
-    <linearGradient id="bgfade-${u}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="58%" stop-color="#120b1a" stop-opacity="0"/><stop offset="100%" stop-color="#120b1a" stop-opacity=".55"/>
-    </linearGradient>
-  </defs>
-  <rect width="200" height="300" fill="url(#bg-${u})"/>
-  <rect width="200" height="300" fill="${['rgba(0,0,0,0)','rgba(255,170,110,.10)','rgba(74,140,255,.12)','rgba(196,108,255,.11)'][sc]}"/>
-  <circle cx="100" cy="104" r="92" fill="url(#halo-${u})"/>
-  <path d="M-10 260 C40 236 70 248 104 238 C140 228 170 244 210 222" stroke="${light(m.color, .3)}" stroke-width="1" fill="none" opacity=".35"/>
-  ${motifSVG(sc, m)}
-  ${hairBack(m)}
-  ${outfitSVG(m)}
-  <path d="M90 146 L90 188 C90 198 110 198 110 188 L110 146 Z" fill="url(#skin-${u})"/>
-  <path d="M90 158 C95 172 105 172 110 158 L110 146 L90 146 Z" fill="${dark(m.skin2, .12)}" opacity=".55"/>
-  <ellipse cx="66.5" cy="114" rx="4.4" ry="8" fill="url(#skin-${u})"/>
-  <ellipse cx="133.5" cy="114" rx="4.4" ry="8" fill="url(#skin-${u})"/>
-  <path d="M65 110 C68 112 68 119 65 121" stroke="${dark(m.skin2, .2)}" stroke-width=".8" fill="none" opacity=".7"/>
-  <path d="M135 110 C132 112 132 119 135 121" stroke="${dark(m.skin2, .2)}" stroke-width=".8" fill="none" opacity=".7"/>
-  <path d="M68 106 C68 74 82 54 100 54 C118 54 132 74 132 106 C132 136 118 160 100 160 C82 160 68 136 68 106 Z" fill="url(#skin-${u})"/>
-  <path d="M68 104 C68 128 80 150 94 159 C82 144 74 126 72 104 Z" fill="${dark(m.skin2, .1)}" opacity=".22"/>
-  <path d="M118 77 C126 84 131 93 132 106 C132 128 122 148 110 157 C126 150 136 130 136 108 C136 94 129 82 118 77 Z" fill="#ffffff" opacity=".08"/>
-  ${hairFront(m)}
-  ${eyeSVG(82, 117, eyeStyle, u, 'l')}
-  ${eyeSVG(118, 117, eyeStyle, u, 'r')}
-  <path d="M72 100 C78 96 87 96 93 99" stroke="${dark(m.hair2, .35)}" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".85"/>
-  <path d="M107 99 C113 96 122 96 128 100" stroke="${dark(m.hair2, .35)}" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".85"/>
-  <path d="M99 126 C97 130 98 132 101 132" stroke="${dark(m.skin2, .28)}" stroke-width="1" fill="none" stroke-linecap="round"/>
-  <path d="M94 141 C97 145 103 145 106 141" stroke="#c97488" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-  <ellipse cx="77" cy="133" rx="7" ry="3.2" fill="#ff98ae" opacity=".2"/>
-  <ellipse cx="123" cy="133" rx="7" ry="3.2" fill="#ff98ae" opacity=".2"/>
-  ${accessorySVG(m)}
-  <g opacity=".7"><circle cx="168" cy="84" r="2" fill="${light(m.color, .6)}"/><circle cx="34" cy="120" r="1.6" fill="#fff3d6"/><circle cx="154" cy="176" r="1.4" fill="${light(m.color, .5)}"/></g>
-  <rect width="200" height="300" fill="url(#bgfade-${u})" opacity=".7"/>
-</svg>`;
-}
-
-/* ---- 小头像（卡册 tab / 结算）：使用 AI 立绘裁切 ---- */
 function avatarSVG(m) {
   const src = (typeof ART_AV !== 'undefined' && ART_AV[m.key]) || '';
   if (!src) return `<span class="av-fallback" style="background:${m.color}"></span>`;
@@ -1821,6 +1562,7 @@ function defaultState() {
     freeSingles: 0, freeTen: 0, freeTenDay: 0,   // 免费券：单抽 / 当天有效的十连
     boostDay: 0,                               // 第 25 天 SSR 概率提升标记
     smallEvents: [], tags: {}, titles: {}, fixedDone: {}, midtermPending: 0,
+    best: { unique: 0, titles: {} },            // 历史最高图鉴数 / 已得称号（跨局保留）
     vol: { bgm: .6, sfx: .8, voice: 1 }         // 音量分层
   };
 }
@@ -1863,6 +1605,11 @@ function normalizeSave(p) {
   s.smallEvents = Array.isArray(p.smallEvents) ? p.smallEvents.filter(e => e && Number.isInteger(e.day) && typeof e.key === 'string') : [];
   s.tags = (p.tags && typeof p.tags === 'object') ? p.tags : {};
   s.titles = (p.titles && typeof p.titles === 'object') ? p.titles : {};
+  const bp = p.best && typeof p.best === 'object' ? p.best : {};
+  s.best = {
+    unique: Math.max(0, Math.round(+bp.unique || 0)),
+    titles: (bp.titles && typeof bp.titles === 'object') ? bp.titles : {}
+  };
   s.fixedDone = (p.fixedDone && typeof p.fixedDone === 'object') ? p.fixedDone : {};
   s.midtermPending = Math.max(0, Math.round(+s.midtermPending || 0));
   s.freeSingles = Math.max(0, Math.round(+s.freeSingles || 0));
@@ -1880,6 +1627,12 @@ function normalizeSave(p) {
   s.todayPulls = Math.max(0, Math.round(+s.todayPulls || 0));
   Object.keys(s.cards).forEach(id => {
     if (!CARD_BY_ID[id]) delete s.cards[id];
+  });
+  Object.keys(s.dupes).forEach(id => {
+    if (!CARD_BY_ID[id]) delete s.dupes[id];
+  });
+  Object.keys(s.fresh).forEach(id => {
+    if (!CARD_BY_ID[id]) delete s.fresh[id];
   });
   return s;
 }
@@ -1991,31 +1744,46 @@ function sfx(name) {
 }
 
 /* ---------- 语音（预录配音 assets/voice/<成员>_<类型>.mp3；文件不存在时静默，不回退机器朗读） ---------- */
-let curVoice = null;
-function playVoice(memberKey, type) {
-  if (!state || state.mute) return;
+let curVoice = null, curVoiceMember = '';
+function playVoice(memberKey, type, onDone) {
+  if (!state || state.mute) return null;
   const v = audioVol('voice');
-  if (v <= 0) return;
+  if (v <= 0) return null;
   try {
     stopVoice();
     const a = new Audio('assets/voice/' + memberKey + '_' + type + '.mp3');
     a.volume = v;
     curVoice = a;
+    curVoiceMember = memberKey;
     const btn = document.querySelector('[data-act="voice-play"][data-member="' + memberKey + '"]');
+    const prog = btn ? btn.querySelector('.vbar i') : null;
+    const paint = () => {
+      if (!prog || curVoice !== a) return;
+      const d = a.duration;
+      prog.style.width = (Number.isFinite(d) && d > 0 ? Math.min(100, a.currentTime / d * 100) : 0) + '%';
+    };
     const done = () => {
-      if (curVoice === a) curVoice = null;
+      if (curVoice === a) { curVoice = null; curVoiceMember = ''; }
       if (btn) btn.classList.remove('vplaying');
+      if (prog) prog.style.width = '0%';
+      if (typeof onDone === 'function') { try { onDone(a); } catch (e) {} }
     };
     a.addEventListener('ended', done);
     a.addEventListener('error', done);   /* 无对应音频文件：静默 */
+    a.addEventListener('timeupdate', paint);
+    a.addEventListener('loadedmetadata', paint);
     const p = a.play();
     if (p && p.catch) p.catch(done);
     if (btn) btn.classList.add('vplaying');
-  } catch (e) { /* 无音频环境时静默 */ }
+    if (prog) prog.style.width = '0%';
+    return a;
+  } catch (e) { return null; }
 }
 function stopVoice() {
   try { if (curVoice) { curVoice.pause(); curVoice.currentTime = 0; curVoice = null; } } catch (e) {}
+  curVoiceMember = '';
   $$('.vplaying').forEach(b => b.classList.remove('vplaying'));
+  $$('.vbar i').forEach(p => { p.style.width = '0%'; });
 }
 
 /* ---------- BGM（分层循环，音量走 bgmGain） ---------- */
@@ -2119,7 +1887,7 @@ function render() {
   if (!state) return;
   $('#dayNum').textContent = state.day;
   $('#dayHint').textContent = state.day >= GAME.TOTAL_DAYS
-    ? '查看三十天结算报告'
+    ? '结束旅程 · 去结算'
     : (state.dayIncome > 0
         ? '今日生活费已领 ¥' + state.dayIncome
         : '进入下一天领取 ¥' + GAME.DAILY_MIN + '-' + GAME.DAILY_MAX);
@@ -2184,7 +1952,7 @@ function initPoster() {
   if ($('#poolTagText')) $('#poolTagText').textContent = isBirthday ? '生日限定' : '三周年限定';
   if ($('#posterSub')) $('#posterSub').textContent = isBirthday
     ? ('HAPPY BIRTHDAY · ' + gameDate(state.day).m + '/' + gameDate(state.day).d)
-    : 'SEVENTEEN STARS · ONE STAGE';
+    : 'SEVEN STARS · ONE STAGE';
 }
 
 /* ---------- 稀有度 / 卡片渲染 ---------- */
@@ -2461,6 +2229,9 @@ function showCards(instant) {
     </div>`).join('');
   $('#packTally').innerHTML = '';
   $('#resultSummary').textContent = '';
+  grid.onscroll = updatePackScrollHint;
+  syncPackGridPad();
+  setTimeout(updatePackScrollHint, 60);
   $('#flipAllBtn').style.display = n === 1 ? 'none' : '';
   $('#collectBtn').disabled = true;
   $('#collectBtn').textContent = n === 1 ? '先翻开卡牌' : '先翻开全部卡牌';
@@ -2469,6 +2240,30 @@ function showCards(instant) {
     $$('.flip', grid).forEach((el, i) => { revealCard(el, i); el.classList.add('flipped'); el.setAttribute('aria-pressed', 'true'); pendingPull.flipped[i] = true; });
     pendingPull.flipCount = n;
     finishReveal(true);
+  }
+}
+
+/* 十连网格底部留出与按钮栏等高的 padding，并提示还差几张没滑到 */
+function syncPackGridPad() {
+  const grid = $('#packGrid'), bar = $('#packBottomBar');
+  if (!grid || !bar) return;
+  const h = Math.round(bar.getBoundingClientRect().height);
+  grid.style.paddingBottom = (h > 0 ? h : 76) + 'px';
+}
+function updatePackScrollHint() {
+  const grid = $('#packGrid'), hint = $('#packScrollHint');
+  if (!grid || !hint) return;
+  const gb = grid.getBoundingClientRect();
+  let n = 0;
+  $$('.flip', grid).forEach(el => {
+    if (el.getBoundingClientRect().bottom > gb.bottom - 1) n++;
+  });
+  const overflow = grid.scrollHeight > grid.clientHeight + 2;
+  if (n > 0 && overflow) {
+    hint.textContent = '下滑还有 ' + n + ' 张';
+    hint.classList.add('on');
+  } else {
+    hint.classList.remove('on');
   }
 }
 
@@ -2550,11 +2345,15 @@ function nextSSR() {
   $('#ssrOverlay').classList.add('show');
   startBGM('ssr');
   sfx('ssr');
-  playVoice(c.member, 'ssr');
   try { if (navigator.vibrate) navigator.vibrate([18, 40, 26]); } catch (e) {}
-  if (ssrTimer) clearTimeout(ssrTimer);
-  /* 原演出时长保持 1.6s；点击「深读」可中断并展开长独白 */
-  ssrTimer = setTimeout(() => { ssrTimer = null; closeSSR(); }, 1600);
+  if (ssrTimer) { clearTimeout(ssrTimer); ssrTimer = null; }
+  /* 不再 1.6s 自动关闭：点击任意处关闭，或语音播完后延迟 1 秒自动关闭 */
+  playVoice(c.member, 'ssr', () => {
+    if (currentSSR !== c) return;
+    if ($('#ssrOverlay').classList.contains('deep')) return;
+    if (ssrTimer) clearTimeout(ssrTimer);
+    ssrTimer = setTimeout(() => { ssrTimer = null; if (currentSSR === c) closeSSR(); }, 1000);
+  });
 }
 
 /* 深读：背景变暗，长独白逐行打字机，同步语音 */
@@ -2568,19 +2367,41 @@ function showSSRDeep() {
   $('#ssrDeepName').textContent = m.name + ' · ' + c.name;
   $('#ssrDeepText').textContent = '';
   startBGM('ssr');
-  playVoice(c.member, 'long');
+  const audio = playVoice(c.member, 'long');
   sfx('star');
   clearInterval(deepTypeTimer);
-  let i = 0;
-  deepTypeTimer = setInterval(() => {
-    if (i >= text.length) { clearInterval(deepTypeTimer); deepTypeTimer = null; return; }
-    $('#ssrDeepText').textContent += text[i++];
-  }, 38);
+  deepTypeTimer = null;
+  const typeAt = ms => {
+    clearInterval(deepTypeTimer);
+    let i = 0;
+    deepTypeTimer = setInterval(() => {
+      if (currentSSR !== c || i >= text.length) { clearInterval(deepTypeTimer); deepTypeTimer = null; return; }
+      $('#ssrDeepText').textContent += text[i++];
+    }, ms);
+  };
+  /* 打字速度 = 语音总时长 ÷ 字数；读不到时长时 38ms/字 */
+  const perChar = a => {
+    const d = a && Number.isFinite(a.duration) ? a.duration : 0;
+    return d > 0 ? clamp(Math.round(d * 1000 / Math.max(1, text.length)), 12, 260) : 38;
+  };
+  if (audio && !(Number.isFinite(audio.duration) && audio.duration > 0)) {
+    let started = false;
+    const go = () => {
+      if (started || currentSSR !== c) return;
+      started = true;
+      typeAt(perChar(audio));
+    };
+    audio.addEventListener('loadedmetadata', go, { once: true });
+    setTimeout(go, 700);
+  } else {
+    typeAt(perChar(audio));
+  }
 }
 
 function closeSSR() {
   if (ssrTimer) { clearTimeout(ssrTimer); ssrTimer = null; }
   if (deepTypeTimer) { clearInterval(deepTypeTimer); deepTypeTimer = null; }
+  stopVoice();
   $('#ssrOverlay').classList.remove('show', 'deep');
   if ($('#ssrDeepText')) $('#ssrDeepText').textContent = '';
   currentSSR = null;
@@ -2698,7 +2519,7 @@ function openProfile(key) {
         <small>${m.en}</small>
         <h3>${m.name}</h3>
         <p>${m.role}</p>
-        ${state.titles[key] ? `<div class="profile-title" style="border-color:${m.color};color:${m.color}">称号 · ${COLLECT_TITLE(key)}</div>` : ''}
+        ${(state.titles[key] || (state.best && state.best.titles && state.best.titles[key])) ? `<div class="profile-title" style="border-color:${m.color};color:${m.color}">称号 · ${COLLECT_TITLE(key)}</div>` : ''}
       </div>
     </div>
     <div class="profile-meta">
@@ -2709,7 +2530,7 @@ function openProfile(key) {
     <div class="profile-lines-h">台词收藏 <i>${unlocked.length}/8</i><small>抽到他的新卡即可解锁一句</small></div>
     <div class="profile-lines">${unlocked.map(i => { const c = cards.find(x => x.idx === i); return c ? lineHTML(c, true) : ''; }).join('')}${locked.map(c => lineHTML(c, false)).join('')}</div>
     <div class="actions">
-      <button class="btn ghost" data-act="voice-play" data-member="${key}">语音<i class="vw"><b></b><b></b><b></b></i></button>
+      <button class="btn ghost voice-btn" data-act="voice-play" data-member="${key}"><span>语音</span><i class="vw"><b></b><b></b><b></b></i><span class="vbar"><i></i></span></button>
       <button class="btn ghost" data-act="close-modal">收起档案</button>
     </div>
   </div>`);
@@ -2777,8 +2598,8 @@ function showCardDetail(id) {
     <p class="detail-text">${have ? '“' + c.quote + '”' : '这张卡还没有被你拆到。收集重复卡获得的碎片，可以在这里兑换指定卡。'}</p>
     <div class="detail-actions">
       ${have
-        ? `<button class="btn ghost" data-act="voice-play" data-member="${c.member}">语音<i class="vw"><b></b><b></b><b></b></i></button><button class="btn ghost" data-act="close-modal">关闭</button><div class="hint">已收入星轨卡册 · 共 ${state.dupes[id] || 0} 次重复记录</div>`
-        : `<button class="btn gold" data-act="exchange-buy" data-id="${id}" ${state.shards < cost ? 'disabled' : ''}>用 ${cost} 碎片兑换</button>
+        ? `<button class="btn ghost voice-btn" data-act="voice-play" data-member="${c.member}"><span>语音</span><i class="vw"><b></b><b></b><b></b></i><span class="vbar"><i></i></span></button><button class="btn ghost" data-act="close-modal">关闭</button><div class="hint">已收入星轨卡册 · 共 ${state.dupes[id] || 0} 次重复记录</div>`
+        : `<button class="btn gold" data-act="exchange-buy" data-id="${id}" ${state.shards < cost ? 'disabled' : ''}>${state.shards < cost ? '还差 ' + (cost - state.shards) + ' 碎片' : '用 ' + cost + ' 碎片兑换'}</button>
            <div class="hint">当前碎片 ${state.shards} 枚 · 重复卡自动折算碎片</div>`}
     </div>
   </div>`, true);
@@ -2799,26 +2620,6 @@ function buyCardWithShards(id) {
   sfx('reward');
   render();
   renderAlbum();
-  setTimeout(checkCollectRewards, 240);
-}
-
-/* 概率表按稀有度直兑：兑换全池中第一张未拥有的该稀有度卡 */
-function exchangeRarity(rarity) {
-  const info = RARITY_INFO[rarity];
-  if (!info) return;
-  const cost = info.exchange;
-  if (state.shards < cost) { toast('碎片不够，还差 ' + (cost - state.shards) + ' 枚', true); sfx('error'); return; }
-  const c = CARDS.find(x => x.rarity === rarity && !owned(x.id));
-  if (!c) { toast(rarity + ' 卡已经全部收齐啦'); return; }
-  state.shards -= cost;
-  state.cards[c.id] = 1;
-  state.fresh[c.id] = true;
-  unlockLine(c);
-  save();
-  toast('兑换成功：' + c.name);
-  sfx('reward');
-  render();
-  openRules();
   setTimeout(checkCollectRewards, 240);
 }
 
@@ -2989,22 +2790,54 @@ function buyMarketCard(id) {
 
 function sellShards() {
   if (state.shards <= 0) { toast('还没有碎片可以寄卖', true); return; }
-  const gain = state.shards * GAME.SHARD_SELL_RATE;
-  state.shards = 0;
+  const keep = RARITY_INFO.SR.exchange;
+  const max = state.shards;
+  const def = Math.max(0, max - keep);
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3>碎片寄卖</h3>
+    <p class="msub">1 枚碎片 = ¥${GAME.SHARD_SELL_RATE}。默认保留 ${keep} 枚，够在卡册兑换一张 SR。</p>
+    <div class="sell-box">
+      <div class="sell-line">卖出 <b id="sellQty">${def}</b> 枚 <em id="sellGain">→ ¥${def * GAME.SHARD_SELL_RATE}</em></div>
+      <input class="sell-range" type="range" id="sellRange" min="0" max="${max}" step="1" value="${def}" aria-label="卖出碎片数量">
+      <div class="sell-scale"><span>0</span><span id="sellKeep">保留 ${max - def} 枚</span><span>${max}</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn gold" id="sellConfirm" data-act="confirm-sell-shards" ${def <= 0 ? 'disabled' : ''}>确认卖出</button>
+      <button class="btn ghost" data-act="close-modal">再想想</button>
+    </div>
+  </div>`);
+  const r = $('#sellRange');
+  if (r) r.addEventListener('input', () => {
+    const n = Math.max(0, Math.min(state.shards, Math.round(+r.value || 0)));
+    $('#sellQty').textContent = n;
+    $('#sellGain').textContent = '→ ¥' + n * GAME.SHARD_SELL_RATE;
+    $('#sellKeep').textContent = '保留 ' + (state.shards - n) + ' 枚';
+    $('#sellConfirm').disabled = n <= 0;
+  });
+}
+
+function confirmSellShards() {
+  const r = $('#sellRange');
+  const n = r ? Math.max(0, Math.min(state.shards, Math.round(+r.value || 0))) : 0;
+  if (n <= 0) { toast('请先选择要卖出的数量', true); return; }
+  const gain = n * GAME.SHARD_SELL_RATE;
+  state.shards -= n;
   state.money = Math.max(0, state.money + gain);
   state.stats.income += gain;
   save();
   render();
   renderMarket();
+  closeModal();
   sfx('reward');
-  toast('碎片寄卖成功，生活费 +¥' + gain);
+  toast('已卖出 ' + n + ' 枚碎片，生活费 +¥' + gain);
 }
 
 /* ---------- 更多玩法 ---------- */
 function openMore() {
   const done = MEMBERS.filter(m => state.claimed[m.key]).length;
   openModal(`<div class="modal-wrap">
-    <button class="x" data-act="close-modal">×</button>
+    <button class="x sticky" data-act="close-modal" aria-label="关闭更多玩法">×</button>
     <h3>更多玩法</h3>
     <p class="msub">主线是拆卡，这些是旅程里的小小支线。</p>
     <div class="rule-list">
@@ -3117,20 +2950,6 @@ function applySaveCode() {
 
 /* ===== 03d_end.js ===== */
 /* ================= 天数 / 事件 / 结算 / 重开 / 规则 ================= */
-const DAILY_EVENTS = [
-  { key:'hot', name:'登上热搜第一', desc:'昨晚的舞台片段被剪成短视频，转发量还在涨。品牌方临时加了一条推广。', money:30, shard:0, tag:'热搜' },
-  { key:'birthday', name:'生日应援车', desc:'粉丝把应援车开到了公司楼下。你路过时，车窗上正好贴着你的手幅。', money:45, shard:0, tag:'应援' },
-  { key:'work', name:'临时打工', desc:'为了下一包限定，你在便利店多顶了一个夜班。', money:60, shard:0, tag:'打工' },
-  { key:'comeback', name:'回归预告', desc:'凌晨十二点，官方放出了 17 秒预告。你把进度条拖了三十遍。', money:0, shard:30, tag:'回归' },
-  { key:'sign', name:'签售抽选', desc:'你居然抽中了签售资格，现场领到了限定小卡和一封手写信。', money:35, shard:10, tag:'签售' },
-  { key:'rumor', name:'一条小绯闻', desc:'营销号发了捕风捉影的图文。你冷静控评，顺手花掉一点钱买奶茶压惊。', money:-25, shard:5, tag:'绯闻' }
-];
-
-function maybeEvent() {
-  if (Math.random() > .42) return null;
-  return DAILY_EVENTS[rand(DAILY_EVENTS.length)];
-}
-
 /* ---------- 固定事件日（写死在第 30 天日历里） ---------- */
 const FIXED_EVENTS = {
   5:  { key:'practice', name:'练习室加练', member:'sy' },
@@ -3156,7 +2975,6 @@ function triggerFixedEvent(day) {
     const gain = u < 21 ? 80 : (u <= 35 ? 120 : 180);
     /* 考核奖励不混入当天生活费，进入待领取，按钮领取后才入账 */
     state.midtermPending = gain;
-    ev.reward = gain;
   }
   if (day === 25) {
     state.boostDay = 25;
@@ -3183,7 +3001,6 @@ function showFixedEvent(day) {
         <button class="choice" data-act="story-choice" data-member="sy" data-choice="stay">好，再陪你练一遍</button>
         <button class="choice" data-act="story-choice" data-member="sy" data-choice="rest">你先回去休息</button>
       </div>
-      <div class="event-effect">免费单抽 ×1 已到账</div>
     </div>`, true);
     sfx('collect');
     return;
@@ -3205,6 +3022,7 @@ function showFixedEvent(day) {
   }
   if (day === 15) {
     const u = uniqueCount();
+    const gain = state.midtermPending || 0;
     const line = u < 21 ? '还早。但至少你没缺席。' : (u <= 35 ? '进度不错，星轨已经亮了一半。' : '……你比我想象中认真。');
     openModal(`<div class="modal-wrap story-wrap">
       <button class="x" data-act="close-modal">×</button>
@@ -3212,9 +3030,9 @@ function showFixedEvent(day) {
       <p class="story-text">教练翻完你的记录，停了几秒。</p>
       <p class="story-quote">“${line}”</p>
       <p class="story-text">当前图鉴 ${u}/${GAME.TOTAL_CARDS}。</p>
-      <div class="event-effect">中期考核奖励：生活费 +¥${ev.reward}（待领取）</div>
+      <div class="event-effect">中期考核奖励：生活费 +¥${gain}（待领取）</div>
       <div class="actions">
-        <button class="btn gold" data-act="midterm-claim" data-amount="${ev.reward}">领取 +¥${ev.reward}</button>
+        <button class="btn gold" data-act="midterm-claim" data-amount="${gain}">领取 +¥${gain}</button>
         <button class="btn ghost" data-act="close-modal">继续</button>
       </div>
     </div>`, true);
@@ -3247,15 +3065,18 @@ function claimMidterm() {
   toast('中期考核奖励到账：生活费 +¥' + gain);
 }
 
-/* 第 5 天对话选项：两条分支都回到同一句收尾 */
+/* 第 5 天对话选项：留陪练 → 碎片 +15；放他休息 → 生活费 +¥40；两边都有免费单抽 */
 function chooseStory(key, choice) {
   const stay = choice === 'stay';
+  if (stay) gainShards(15);
+  else addMoney(40);
+  render();
   openModal(`<div class="modal-wrap story-wrap">
     <button class="x" data-act="close-modal">×</button>
     <div class="story-kicker">DAY 05 · 练习室加练</div>
     <p class="story-text">${stay ? '“那就最后一遍。”他把灯调暗了一点，音乐重新响起。' : '“行。路上小心。”他别过头，声音比刚才更哑。'}</p>
     <p class="story-quote">“${stay ? '……谢了。' : '……谢了。明天别迟到。'}”</p>
-    <div class="event-effect">免费单抽 ×1 已到账</div>
+    <div class="event-effect">免费单抽 ×1 · ${stay ? '碎片 +15' : '生活费 +¥40'}</div>
     <div class="actions"><button class="btn primary" data-act="close-modal">离开练习室</button></div>
   </div>`, true);
   sfx('reward');
@@ -3346,9 +3167,9 @@ function nextDay() {
     if (nextBd) showCoach('明天是 ' + MEMBER_BY_KEY[nextBd].name + ' 的生日，限定池只开一天，记得攒钱呀～', 6500);
   }
   if (state.day >= GAME.TOTAL_DAYS) {
+    /* 第 30 天照常发生活费、触发终章事件；不自动结算，玩家可继续抽卡 */
     triggerFixedEvent(30);
-    toast('第 30 天 · 星轨终章，准备结算');
-    setTimeout(openSettlement, 900);
+    toast('第 30 天 · 星轨终章，今天还能继续抽卡；结束旅程后再去结算');
     return;
   }
   /* 固定事件日优先，当天不再掷随机小事件 */
@@ -3367,42 +3188,18 @@ function nextDay() {
   }
 }
 
-function applyEvent(ev) {
-  state.lastEvent = ev.key;
-  state.events.push({ day: state.day, key: ev.key });
-  if (state.events.length > 40) state.events.shift();
-  if (ev.money) {
-    state.money = Math.max(0, state.money + ev.money);
-    if (ev.money > 0) state.stats.income += ev.money;
-  }
-  if (ev.shard) gainShards(ev.shard);
-}
-
-function showEvent(ev) {
-  const sign = ev.money > 0 ? '生活费 +¥' + ev.money : (ev.money < 0 ? '生活费 −¥' + Math.abs(ev.money) : '');
-  const sh = ev.shard ? (sign ? ' · ' : '') + '碎片 +' + ev.shard : '';
-  openModal(`<div class="modal-wrap">
-    <button class="x" data-act="close-modal">×</button>
-    <div class="event-art"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#e8a45e"/></svg></div>
-    <p class="event-name">${ev.name}</p>
-    <p class="event-desc">${ev.desc}</p>
-    <div class="event-effect">${sign}${sh || '心情值 +1'}</div>
-    <div class="actions"><button class="btn primary" data-act="close-modal">收下这份日常</button></div>
-  </div>`, true);
-  sfx('click');
-}
-
 /* ---------- 结算称号 ---------- */
 function computeEnding() {
   const u = uniqueCount();
   const s = state.stats;
-  const pulls = s.pulls, ssr = s.ssr, spent = s.spent, money = state.money;
-  if (ssr >= 4) return 'emperor';
-  if (u >= 48) return 'collector';
-  if (spent >= 900 && money < 120) return 'poor';
-  if (ssr === 0 && pulls >= 25) return 'unlucky';
-  if (pulls <= 22 && spent <= 500 && u >= 8) return 'calm';
-  if (u >= 30) return 'allround';
+  const pulls = s.pulls || 0, ssr = s.ssr || 0, spent = s.spent || 0, money = state.money;
+  const luck = ssr / Math.max(1, pulls * 0.029);
+  if (luck >= 1.5 && ssr >= 4) return 'emperor';
+  if (u >= 52) return 'collector';
+  if (luck <= 0.5 && pulls >= 40) return 'unlucky';
+  if (u >= 40) return 'allround';
+  if (spent >= 1800 && money < 60) return 'poor';
+  if (pulls <= 60 && u >= 20) return 'calm';
   return 'normal';
 }
 
@@ -3415,6 +3212,12 @@ function openSettlement() {
   if (!state.ending) state.ending = computeEnding();
   const t = TITLES[state.ending] || TITLES.normal;
   const u = uniqueCount();
+  /* 历史最高图鉴与已得称号跨局累计，重开也不会丢 */
+  if (!state.best) state.best = { unique: 0, titles: {} };
+  state.best.unique = Math.max(state.best.unique || 0, u);
+  state.best.titles = Object.assign({}, state.best.titles || {}, state.titles || {});
+  save();
+  const bestU = state.best.unique;
   const rate = (u / GAME.TOTAL_CARDS * 100).toFixed(1);
   $('#scTitle').textContent = t.name;
   $('#scDesc').textContent = t.desc;
@@ -3426,6 +3229,7 @@ function openSettlement() {
     box('拆包总数', state.stats.pulls + ' <em>包</em>'),
     box('本局花费', '¥' + fmt(state.stats.spent)),
     box('永久图鉴', u + '<em>/56</em>'),
+    box('历史最高', bestU + '<em>/56</em>'),
     box('抽到 SSR', state.stats.ssr + ' <em>张</em>'),
     box('领到的生活费总额', '¥' + fmt(state.stats.income)),
     box('获得碎片总数', (state.stats.shards || 0) + ' <em>枚</em>'),
@@ -3454,21 +3258,16 @@ function closeSettlement() {
 }
 
 function restartGame() {
-  /* 双轨存档：本局数据重置，卡册图鉴与集齐奖励永久保留 */
-  const keepCards = state.cards || {};
-  const keepClaimed = state.claimed || {};
+  /* 二周目：卡册 / 台词 / 集齐领取全部清零，只保留历史最高成绩与已得称号 */
   const keepMute = !!state.mute;
-  const keepTitles = state.titles || {};
   const keepVol = state.vol;
+  const bestU = Math.max(state.best ? (state.best.unique || 0) : 0, uniqueCount());
+  const bestTitles = Object.assign({}, (state.best && state.best.titles) || {}, state.titles || {});
   state = defaultState();
-  state.cards = keepCards;
-  state.claimed = keepClaimed;
+  state.best = { unique: bestU, titles: bestTitles };
   state.mute = keepMute;
-  state.titles = keepTitles;
   if (keepVol) state.vol = keepVol;
   state.guideDone = true;
-  /* 卡册保留则台词解锁一并保留，避免档案页与已点亮卡数脱节 */
-  syncLineUnlocks();
   state.dayIncome = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
   state.money = GAME.START_MONEY + state.dayIncome;
   state.stats.income = state.dayIncome;
@@ -3487,7 +3286,7 @@ function restartGame() {
   render();
   initPoster();
   sfx('reward');
-  toast('新的一局开始：第 1 天 · 生活费 +¥' + state.dayIncome);
+  toast('新的一局开始：第 1 天 · 图鉴从 0/56 重新点亮');
   showCoach('新的三十天，从第一包开始～');
 }
 
@@ -3510,14 +3309,14 @@ function startGame() {
 function openRules() {
   const rows = ['N', 'R', 'SR', 'SSR'].map(r => {
     const info = RARITY_INFO[r];
-    return `<tr><td><span class="rar-badge rar-${r}">${r}</span></td><td>${(info.rate * 100).toFixed(0)}%</td><td>重复 +${info.shard} 碎片</td><td><button class="link-btn gold-link ex-btn" data-act="exchange-rarity" data-rarity="${r}" ${state.shards < info.exchange ? 'disabled' : ''}>兑换 ${info.exchange}</button></td></tr>`;
+    return `<tr><td><span class="rar-badge rar-${r}">${r}</span></td><td>${(info.rate * 100).toFixed(0)}%</td><td>重复 +${info.shard} 碎片</td></tr>`;
   }).join('');
   openModal(`<div class="modal-wrap rules-wrap">
     <button class="x" data-act="close-modal">×</button>
     <h3>卡池概率与规则</h3>
     <p class="msub">「STAR7 三周年 · 星轨回响限定池」· 以下数值均真实生效</p>
     <table class="rules-table">
-      <thead><tr><th>稀有度</th><th>单抽概率</th><th>重复折算</th><th>碎片兑换</th></tr></thead>
+      <thead><tr><th>稀有度</th><th>单抽概率</th><th>重复折算</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div class="rule-list" style="margin-top:12px">
@@ -3525,10 +3324,10 @@ function openRules() {
       <div class="rule-item"><div class="ri">60</div><div><b>60 抽 SSR 硬保底</b><p>每抽累加计数，60 抽内必出 SSR；出 SSR 后计数重置为 60。</p></div></div>
       <div class="rule-item"><div class="ri">UP</div><div><b>限定 UP</b><p>出 SSR 时，有 50% 概率为当天 UP 成员；平时是沈星野「星轨回响」，生日当天换成寿星，其余均分给另外 6 张 SSR。若抽到的 SSR 不是 UP，则下一个 SSR 必定为 UP（大保底，抽出 UP 后重置）。</p></div></div>
       <div class="rule-item"><div class="ri">生</div><div><b>生日限定池</b><p>第 10 天（3/14）是沈星野生日，第 20 天（3/24）是江予安生日；当天海报与 UP 换成寿星，只开一天，概率与保底完全不变。</p></div></div>
-      <div class="rule-item"><div class="ri">日</div><div><b>固定事件日</b><p>第 5 天练习室加练（免费单抽 ×1）、第 10/20 天生日（额外 30 碎片 + 生日语音）、第 15 天中期考核（按进度发 ¥80/120/180）、第 25 天彩排（当天 SSR 2%→3.5%，送免费十连券）、第 30 天全员寄语结算。</p></div></div>
+      <div class="rule-item"><div class="ri">日</div><div><b>固定事件日</b><p>第 5 天练习室加练（免费单抽 ×1）、第 10/20 天生日（额外 30 碎片 + 生日语音）、第 15 天中期考核（按进度发 ¥80/120/180）、第 25 天彩排（当天 SSR 2%→3.5%，送免费十连券）、第 30 天星轨终章（当天仍可继续抽卡，结束旅程后再结算）。</p></div></div>
       <div class="rule-item"><div class="ri">随</div><div><b>随机小事件</b><p>每天进入下一天有 30% 概率触发 1 次小事件，事件池 12 个，最近 7 天不重复；雨天限定「雨天共伞」。</p></div></div>
-      <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥19，十连 ¥169；每天点「进入下一天」发放 ¥45–70 生活费，第 30 天结束自动结算，余额永不为负。</p></div></div>
-      <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡。</p></div></div>
+      <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥19，十连 ¥169；每天点「进入下一天」发放 ¥45–70 生活费，第 30 天结束后点「结束旅程 · 去结算」手动结算，余额永不为负。</p></div></div>
+      <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N 10 / R 25 / SR 80 / SSR 200 枚）。</p></div></div>
     </div>
     <div class="actions"><button class="btn primary" data-act="close-modal">明白了</button></div>
   </div>`);
@@ -3543,7 +3342,7 @@ function openExchange() {
     return `<div class="rule-item" style="align-items:center">
       <div class="ri" style="background:${RARITY_INFO[c.rarity].glow};color:#3b2434">${c.rarity}</div>
       <div style="flex:1;min-width:0"><b>${c.name}</b><p>${m.name} · 需 ${cost} 碎片</p></div>
-      <button class="link-btn gold-link" data-act="exchange-buy" data-id="${c.id}" ${state.shards < cost ? 'disabled' : ''} style="min-height:38px">${state.shards < cost ? '碎片不足' : '兑换'}</button>
+      <button class="link-btn gold-link" data-act="exchange-buy" data-id="${c.id}" ${state.shards < cost ? 'disabled' : ''} style="min-height:38px">${state.shards < cost ? '还差 ' + (cost - state.shards) : '兑换'}</button>
     </div>`;
   }).join('') : `<div class="market-empty">${m.name} 的卡已经全部收齐啦</div>`;
   openModal(`<div class="modal-wrap">
@@ -3874,7 +3673,13 @@ function bindEvents() {
         playVoice(el.dataset.member, 'birthday');
         break;
       }
-      case 'voice-play': ensureAudio(); playVoice(el.dataset.member, 'idle'); break;
+      case 'voice-play': {
+        ensureAudio();
+        const key = el.dataset.member;
+        if (curVoice && curVoiceMember === key && !curVoice.paused) stopVoice();
+        else playVoice(key, 'idle');
+        break;
+      }
       case 'save-collect': ensureAudio(); saveCollectImage(el.dataset.member); break;
       case 'profile': ensureAudio(); openProfile(el.dataset.member); sfx('click'); break;
       case 'tab': {
@@ -3885,7 +3690,6 @@ function bindEvents() {
       case 'detail': showCardDetail(el.dataset.card); break;
       case 'exchange': openExchange(); break;
       case 'exchange-buy': ensureAudio(); buyCardWithShards(el.dataset.id); break;
-      case 'exchange-rarity': ensureAudio(); exchangeRarity(el.dataset.rarity); break;
       case 'claim-reward': claimReward(el.dataset.member); break;
       case 'close-modal': closeModal(); break;
       case 'go-market': closeModal(); setTimeout(openMarket, 60); break;
@@ -3893,6 +3697,7 @@ function bindEvents() {
       case 'close-market': closeMarket(); break;
       case 'market-buy': ensureAudio(); buyMarketCard(el.dataset.id); break;
       case 'sell-shards': ensureAudio(); sellShards(); break;
+      case 'confirm-sell-shards': ensureAudio(); confirmSellShards(); break;
       case 'save-img': ensureAudio(); saveSettlementImage(); break;
       case 'close-settle': closeSettlement(); break;
       case 'restart': {
@@ -3900,7 +3705,7 @@ function bindEvents() {
           <button class="x" data-act="close-modal">×</button>
           <div class="event-art"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.6l2.3 6.1 6.1 2.3-6.1 2.3L12 19.4l-2.3-6.1L3.6 11l6.1-2.3z" fill="#e8a45e"/></svg></div>
           <h3 style="text-align:center">确定要再来一局吗？</h3>
-          <p class="event-desc" style="text-align:center">本局天数、生活费、碎片与记录会重置；<b>卡册图鉴与集齐奖励永久保留</b>，每局都在为点亮整片星轨积累。</p>
+          <p class="event-desc" style="text-align:center">本局天数、生活费、碎片、卡册图鉴与台词都会重置，从 0/56 重新点亮；<b>历史最高图鉴数与已得称号会保留</b>。</p>
           <div class="actions">
             <button class="btn danger" data-act="confirm-restart">确认开启新一局</button>
             <button class="btn ghost" data-act="close-modal">再想想</button>
@@ -3972,6 +3777,7 @@ function init() {
   initPoster();
   initTearDrag();
   bindEvents();
+  window.addEventListener('resize', () => { syncPackGridPad(); updatePackScrollHint(); });
   const unlock = () => { ensureAudio(); refreshBGM(); };
   document.addEventListener('pointerdown', unlock, { once: true });
   if (state.guideDone) $('#guide').classList.remove('show');
@@ -3983,6 +3789,7 @@ function init() {
   save();
 
   window.__game = {
+    version: 'v3.2',
     get state() { return state; },
     get lastPull() { return pendingPull; },
     data: { MEMBERS, CARDS, GAME, RARITY_INFO, TITLES, CARD_BY_ID },
