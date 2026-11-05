@@ -1592,48 +1592,91 @@ function save() {
   }
 }
 /* 存档校验 / 迁移：本地存档与存档码导入共用，杜绝脏字段 */
+/* v4 · P-01 存档修复：老存档缺 stats.shards 时按历史重复卡返还回填，杜绝 0/NaN */
 function normalizeSave(p) {
   const base = defaultState();
-  const s = Object.assign(base, p);
-  s.stats = Object.assign(base.stats, p.stats || {});
+  if (!p || typeof p !== 'object') return base;
+
+  // ① 合并到新对象：不污染 base，也不会丢默认字段
+  const s = Object.assign({}, base, p);
+
+  // ② stats 必须先拷默认值再叠加存档，否则会自己合并自己
+  const ps = (p.stats && typeof p.stats === 'object') ? p.stats : {};
+  const st = Object.assign({}, base.stats, ps);
+  const nonNegInt = v => {
+    const n = Math.round(Number(v));
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+  Object.keys(st).forEach(k => { st[k] = nonNegInt(st[k]); });
+  s.stats = st;
+
+  // ③ 容器类字段
   s.cards = (p.cards && typeof p.cards === 'object') ? p.cards : {};
   s.dupes = (p.dupes && typeof p.dupes === 'object') ? p.dupes : {};
   s.fresh = (p.fresh && typeof p.fresh === 'object') ? p.fresh : {};
   s.claimed = (p.claimed && typeof p.claimed === 'object') ? p.claimed : {};
   s.events = Array.isArray(p.events) ? p.events : [];
   s.lines = (p.lines && typeof p.lines === 'object') ? p.lines : {};
-  s.smallEvents = Array.isArray(p.smallEvents) ? p.smallEvents.filter(e => e && Number.isInteger(e.day) && typeof e.key === 'string') : [];
+  s.smallEvents = Array.isArray(p.smallEvents)
+    ? p.smallEvents.filter(e => e && Number.isInteger(e.day) && typeof e.key === 'string')
+    : [];
   s.tags = (p.tags && typeof p.tags === 'object') ? p.tags : {};
   s.titles = (p.titles && typeof p.titles === 'object') ? p.titles : {};
-  const bp = p.best && typeof p.best === 'object' ? p.best : {};
+
+  const bp = (p.best && typeof p.best === 'object') ? p.best : {};
   s.best = {
-    unique: Math.max(0, Math.round(+bp.unique || 0)),
+    unique: nonNegInt(bp.unique),
     titles: (bp.titles && typeof bp.titles === 'object') ? bp.titles : {}
   };
   s.fixedDone = (p.fixedDone && typeof p.fixedDone === 'object') ? p.fixedDone : {};
-  s.midtermPending = Math.max(0, Math.round(+s.midtermPending || 0));
-  s.freeSingles = Math.max(0, Math.round(+s.freeSingles || 0));
-  s.freeTen = Math.max(0, Math.round(+s.freeTen || 0));
-  s.freeTenDay = Math.max(0, Math.round(+s.freeTenDay || 0));
-  s.boostDay = Math.max(0, Math.round(+s.boostDay || 0));
+
+  // ④ 计数类字段统一归一化，老版本缺失的按 0 处理
+  s.midtermPending = nonNegInt(s.midtermPending);
+  s.freeSingles = nonNegInt(s.freeSingles);
+  s.freeTen = nonNegInt(s.freeTen);
+  s.freeTenDay = nonNegInt(s.freeTenDay);
+  s.boostDay = nonNegInt(s.boostDay);
   s.upPity = !!s.upPity;
-  const vol = p.vol && typeof p.vol === 'object' ? p.vol : {};
-  const vnum = (v, d) => Number.isFinite(+v) ? clamp(+v, 0, 1) : d;
+
+  // ⑤ 音量
+  const vol = (p.vol && typeof p.vol === 'object') ? p.vol : {};
+  const vnum = (v, d) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? clamp(n, 0, 1) : d;
+  };
   s.vol = { bgm: vnum(vol.bgm, .6), sfx: vnum(vol.sfx, .8), voice: vnum(vol.voice, 1) };
-  s.day = clamp(Math.round(+s.day || 1), 1, GAME.TOTAL_DAYS);
-  s.money = Math.max(0, Math.round(+s.money || 0));
-  s.shards = Math.max(0, Math.round(+s.shards || 0));
-  s.pityLeft = clamp(Math.round(+s.pityLeft || GAME.PITY_MAX), 1, GAME.PITY_MAX);
-  s.todayPulls = Math.max(0, Math.round(+s.todayPulls || 0));
-  Object.keys(s.cards).forEach(id => {
-    if (!CARD_BY_ID[id]) delete s.cards[id];
-  });
+
+  // ⑥ 基础数值
+  s.day = clamp(Math.round(Number(s.day) || 1), 1, GAME.TOTAL_DAYS);
+  s.money = nonNegInt(s.money);
+  s.shards = nonNegInt(s.shards);
+  s.pityLeft = clamp(Math.round(Number(s.pityLeft) || GAME.PITY_MAX), 1, GAME.PITY_MAX);
+  s.todayPulls = nonNegInt(s.todayPulls);
+
+  // ⑦ 清理无效卡，并按重复卡记录精确重建历史碎片
+  Object.keys(s.cards).forEach(id => { if (!CARD_BY_ID[id]) delete s.cards[id]; });
+  Object.keys(s.fresh).forEach(id => { if (!CARD_BY_ID[id]) delete s.fresh[id]; });
+
+  let dupShardHistory = 0;
   Object.keys(s.dupes).forEach(id => {
-    if (!CARD_BY_ID[id]) delete s.dupes[id];
+    const card = CARD_BY_ID[id];
+    if (!card) { delete s.dupes[id]; return; }
+    const cnt = Math.round(Number(s.dupes[id]));
+    if (!Number.isFinite(cnt) || cnt <= 0) { delete s.dupes[id]; return; }
+    s.dupes[id] = cnt;
+    const info = RARITY_INFO[card.rarity];
+    if (info && info.shard) dupShardHistory += cnt * info.shard;
   });
-  Object.keys(s.fresh).forEach(id => {
-    if (!CARD_BY_ID[id]) delete s.fresh[id];
-  });
+
+  // ⑧ 关键修复：老存档没有 stats.shards 时回填精确下限
+  const rawShards = ps.shards;
+  const shardsUsable =
+    rawShards !== undefined && rawShards !== null && Number.isFinite(Number(rawShards));
+  if (!shardsUsable) {
+    s.stats.shards = dupShardHistory;
+  }
+  s.stats.dupShards = Math.max(nonNegInt(s.stats.dupShards), dupShardHistory);
+
   return s;
 }
 function load() {
@@ -1876,8 +1919,17 @@ function addMoney(n) {
   save();
 }
 function gainShards(n) {
-  state.shards = Math.max(0, state.shards + n);
-  if (n > 0) state.stats.shards += n;
+  const delta = Math.round(Number(n));
+  if (!Number.isFinite(delta)) return;
+
+  const cur = Math.max(0, Math.round(Number(state.shards) || 0));
+  state.shards = Math.max(0, cur + delta);
+
+  if (delta > 0) {
+    if (!state.stats || typeof state.stats !== 'object') state.stats = {};
+    const total = Math.round(Number(state.stats.shards));
+    state.stats.shards = Math.max(0, Number.isFinite(total) ? total : 0) + delta;
+  }
   save();
 }
 function canPay(n) { return state.money >= n; }
@@ -3793,7 +3845,7 @@ function init() {
     get state() { return state; },
     get lastPull() { return pendingPull; },
     data: { MEMBERS, CARDS, GAME, RARITY_INFO, TITLES, CARD_BY_ID },
-    save, render, pull: doPull, nextDay, openSettlement, computeEnding,
+    save, render, pull: doPull, nextDay, openSettlement, computeEnding, gainShards,
     uniqueCount, memberOwned, openAlbum, closeAlbum, openMarket, closeMarket,
     openRules, restart: restartGame, checkCollectRewards,
     collectedSet: () => CARDS.filter(c => owned(c.id)).map(c => c.id),
