@@ -1271,7 +1271,7 @@ img,svg{display:block;max-width:100%}
     </div>
     <div class="settle-actions">
       <button class="btn primary" data-act="restart" style="flex:1.4">再来一局</button>
-      <button class="btn ghost" data-act="close-settle" style="flex:.8">先看看</button>
+      <button class="btn ghost" data-act="close-settle" style="flex:.8">返回继续</button>
     </div>
     <p class="settle-tip" id="settleTip">手机端可长按结算卡直接保存 / 截图分享</p>
   </div>
@@ -1515,6 +1515,9 @@ const GAME = {
   /* v4 P-08：碎片寄卖卖出率 2→4，提高重复卡变现能力 */
   SHARD_SELL_RATE: 4,
   SAVE_KEY: 'star7_chai_xiao_v2',
+  /* v4 P-09：存档码版本号（导入时校验）与导入前自动备份键 */
+  SAVE_VER: 4,
+  SAVE_BACKUP_KEY: 'star7_chai_xiao_v2_backup',
   /* v4 P-07：生活费存款上限，削弱囤钱到 25 天的收益 */
   SAVE_CAP: 600,
   /* v4 P-07：第 25 天彩排加成仅前 20 抽生效，之后回落 2% */
@@ -1561,7 +1564,7 @@ const randRange = (a, b) => a + rand(b - a + 1);
 
 function defaultState() {
   return {
-    v: 2, day: 1, money: GAME.START_MONEY, shards: 0,
+    v: GAME.SAVE_VER, day: 1, money: GAME.START_MONEY, shards: 0,
     cards: {}, dupes: {}, fresh: {},
     pityLeft: GAME.PITY_MAX, upPity: false,
     /* v4 P-08：每日首次单抽半价标记，跨天重置 */
@@ -1690,6 +1693,9 @@ function normalizeSave(p) {
     s.stats.shards = dupShardHistory;
   }
   s.stats.dupShards = Math.max(nonNegInt(s.stats.dupShards), dupShardHistory);
+
+  /* v4 P-09：归一化后统一写入当前版本号 */
+  s.v = GAME.SAVE_VER;
 
   return s;
 }
@@ -1882,12 +1888,28 @@ function refreshBGM() {
 
 /* ---------- toast ---------- */
 let toastTimer = null;
+/* v4 P-09：toast 改为队列顺序播放，避免券过期等提示被后一条覆盖 */
+let toastQueue = [], toastBusy = false, toastWarnLast = false;
 function toast(msg, warn) {
+  if (!msg) return;
+  toastQueue.push({ msg: msg, warn: !!warn });
+  if (toastQueue.length > 8) toastQueue.splice(0, toastQueue.length - 8);
+  if (!toastBusy) showNextToast();
+}
+function showNextToast() {
   const el = $('#toast');
-  el.textContent = msg;
-  el.className = 'toast show' + (warn ? ' warn' : '');
+  const item = toastQueue.shift();
+  if (!item) {
+    toastBusy = false;
+    el.className = 'toast' + (toastWarnLast ? ' warn' : '');
+    return;
+  }
+  toastBusy = true;
+  toastWarnLast = item.warn;
+  el.textContent = item.msg;
+  el.className = 'toast show' + (item.warn ? ' warn' : '');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.className = 'toast' + (warn ? ' warn' : ''); }, 2200);
+  toastTimer = setTimeout(showNextToast, item.warn ? 2400 : 2000);
 }
 
 /* ---------- 弹窗 ---------- */
@@ -2549,6 +2571,7 @@ function initTearDrag() {
 /* ===== 03c_album.js ===== */
 /* ================= 卡册 / 兑换 / 收集奖励 / 星光集市 ================= */
 let albumMember = 'sy';
+let pendingImport = null;   // v4 P-09：已通过校验、等待覆盖确认的导入存档
 
 function openAlbum() {
   if (guardPackBusy()) return;
@@ -2686,6 +2709,8 @@ function showCardDetail(id) {
 }
 
 function buyCardWithShards(id) {
+  /* v4 P-09：本局已结算时禁止任何碎片支出 */
+  if (guardPackBusy()) return;
   const c = CARD_BY_ID[id];
   if (!c || owned(id)) return;
   const cost = RARITY_INFO[c.rarity].exchange;
@@ -2837,6 +2862,8 @@ function renderMarket() {
 
 let marketBusy = false;
 function buyMarketCard(id) {
+  /* v4 P-09：本局已结算时禁止集市消费 */
+  if (guardPackBusy()) return;
   if (marketBusy) return;
   ensureMarket();
   const offer = (state.market || []).find(o => o.id === id);
@@ -2870,6 +2897,8 @@ function buyMarketCard(id) {
 }
 
 function sellShards() {
+  /* v4 P-09：本局已结算时禁止碎片寄卖 */
+  if (guardPackBusy()) return;
   if (state.shards <= 0) { toast('还没有碎片可以寄卖', true); return; }
   const keep = RARITY_INFO.SR.exchange;
   const max = state.shards;
@@ -2899,6 +2928,8 @@ function sellShards() {
 }
 
 function confirmSellShards() {
+  /* v4 P-09：本局已结算时禁止碎片寄卖入账 */
+  if (guardPackBusy()) return;
   const r = $('#sellRange');
   const n = r ? Math.max(0, Math.min(state.shards, Math.round(+r.value || 0))) : 0;
   if (n <= 0) { toast('请先选择要卖出的数量', true); return; }
@@ -3000,18 +3031,53 @@ function importSaveCode() {
     </div>
   </div>`);
 }
-function applySaveCode() {
-  const box = $('#saveCodeInput');
-  const txt = box ? box.value.replace(/\s+/g, '') : '';
-  if (!txt) { toast('请先粘贴存档码', true); return; }
-  let p = null;
-  try { p = JSON.parse(decodeURIComponent(escape(atob(txt)))); } catch (e) { p = null; }
-  if (!p || typeof p !== 'object' || !p.cards || typeof p.cards !== 'object') {
-    toast('存档码无效或不完整，请核对后重试', true);
-    return;
+/* v4 P-09：存档码导入前的严格校验，结构 / 版本 / 字段范围全部拦截 */
+function validateSavePayload(p) {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return '内容不是合法的存档对象';
+  const ver = Number(p.v);
+  if (!Number.isFinite(ver)) return '缺少版本号';
+  if (ver < 1 || ver > GAME.SAVE_VER) return '版本 v' + ver + ' 不受支持（当前上限 v' + GAME.SAVE_VER + '）';
+  if (!p.cards || typeof p.cards !== 'object' || Array.isArray(p.cards)) return '缺少卡册数据';
+  if (!p.dupes || typeof p.dupes !== 'object' || Array.isArray(p.dupes)) return '缺少重复卡数据';
+  if (!p.stats || typeof p.stats !== 'object' || Array.isArray(p.stats)) return '缺少统计数据';
+  const cardIds = Object.keys(p.cards);
+  if (cardIds.some(id => !CARD_BY_ID[id])) return '卡册中存在无效卡 ID';
+  if (Object.keys(p.dupes).some(id => !CARD_BY_ID[id])) return '重复卡记录中存在无效卡 ID';
+  const day = Number(p.day);
+  if (!Number.isFinite(day) || day < 1 || day > GAME.TOTAL_DAYS) return '天数超出范围（1–' + GAME.TOTAL_DAYS + '）';
+  const money = Number(p.money);
+  if (!Number.isFinite(money) || money < 0 || money > 1e7) return '生活费数值非法';
+  const shards = Number(p.shards);
+  if (!Number.isFinite(shards) || shards < 0 || shards > (GAME.MAX_SHARDS || 5000)) return '碎片数值非法';
+  if (p.pityLeft !== undefined && p.pityLeft !== null) {
+    const pl = Number(p.pityLeft);
+    if (!Number.isFinite(pl) || pl < 1 || pl > GAME.PITY_MAX) return '保底计数非法';
   }
-  state = normalizeSave(p);
-  syncLineUnlocks();
+  const badStat = Object.keys(p.stats).find(k => {
+    const n = Number(p.stats[k]);
+    return !Number.isFinite(n) || n < 0;
+  });
+  if (badStat) return '统计字段「' + badStat + '」数值非法';
+  /* 拒绝空壳存档：必须至少有天数推进 / 卡牌 / 抽卡或收入记录 */
+  const hasProgress = cardIds.length > 0 || day > 1
+    || Number(p.stats.pulls) > 0 || Number(p.stats.income) > 0 || shards > 0;
+  if (!hasProgress) return '没有任何可导入的进度';
+  return null;
+}
+function hasLocalProgress() {
+  return (state.day > 1) || uniqueCount() > 0 || (state.stats.pulls || 0) > 0;
+}
+function importedUnique(s) {
+  return CARDS.filter(c => s.cards && s.cards[c.id]).length;
+}
+/* 导入前把当前存档写入独立备份键，供「撤销导入」使用 */
+function backupCurrentSave() {
+  try {
+    localStorage.setItem(GAME.SAVE_BACKUP_KEY, JSON.stringify(state));
+    return true;
+  } catch (e) { return false; }
+}
+function resetTransientUI() {
   pendingPull = null;
   ssrQueue = [];
   ssrActive = false;
@@ -3022,11 +3088,86 @@ function applySaveCode() {
   $('#packOverlay').classList.remove('show');
   $('#ssrOverlay').classList.remove('show');
   buildMemberTabs();
+}
+function applySaveCode() {
+  const box = $('#saveCodeInput');
+  const txt = box ? box.value.replace(/\s+/g, '') : '';
+  if (!txt) { toast('请先粘贴存档码', true); return; }
+  let p = null;
+  try { p = JSON.parse(decodeURIComponent(escape(atob(txt)))); } catch (e) { p = null; }
+  const reason = validateSavePayload(p);
+  if (reason) {
+    toast('存档码无效：' + reason, true);
+    sfx('error');
+    return;
+  }
+  pendingImport = normalizeSave(p);
+  if (hasLocalProgress()) {
+    /* 覆盖当前进度前二次确认，避免误触丢档 */
+    const incU = importedUnique(pendingImport);
+    openModal(`<div class="modal-wrap">
+      <button class="x" data-act="close-modal">×</button>
+      <h3 style="text-align:center">覆盖当前进度？</h3>
+      <p class="event-desc" style="text-align:center">
+        当前：第 ${state.day} 天 · 图鉴 ${uniqueCount()}/${GAME.TOTAL_CARDS} · ¥${fmt(state.money)} · 碎片 ${state.shards}<br>
+        导入：第 ${pendingImport.day} 天 · 图鉴 ${incU}/${GAME.TOTAL_CARDS} · ¥${fmt(pendingImport.money)} · 碎片 ${pendingImport.shards}
+      </p>
+      <p class="event-desc" style="text-align:center">确认后当前进度会被覆盖；导入前会自动备份旧档，可在导入成功后撤销。</p>
+      <div class="actions">
+        <button class="btn danger" data-act="confirm-import-save">确认覆盖导入</button>
+        <button class="btn ghost" data-act="close-modal">取消</button>
+      </div>
+    </div>`, true);
+    return;
+  }
+  commitImportSave();
+}
+function commitImportSave() {
+  const incoming = pendingImport;
+  if (!incoming) return;
+  pendingImport = null;
+  const backedUp = backupCurrentSave();
+  state = incoming;
+  syncLineUnlocks();
+  resetTransientUI();
   save();
   render();
   if ($('#screenAlbum').classList.contains('show')) renderAlbum();
   initPoster();
-  toast('存档已导入：图鉴 ' + uniqueCount() + '/' + GAME.TOTAL_CARDS + ' · 第 ' + state.day + ' 天');
+  sfx('reward');
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3 style="text-align:center">存档已导入</h3>
+    <p class="event-desc" style="text-align:center">第 ${state.day} 天 · 图鉴 ${uniqueCount()}/${GAME.TOTAL_CARDS} · ¥${fmt(state.money)} · 碎片 ${state.shards}</p>
+    <p class="event-desc" style="text-align:center">${backedUp
+      ? '导入前的旧档已自动备份，如需反悔可撤销本次导入。'
+      : '本机存储不可用，未能备份旧档，本次导入无法撤销。'}</p>
+    <div class="actions">
+      ${backedUp ? '<button class="btn ghost" data-act="undo-import-save">撤销导入</button>' : ''}
+      <button class="btn gold" data-act="close-modal">完成</button>
+    </div>
+  </div>`, true);
+}
+function undoImportSave() {
+  let raw = null;
+  try { raw = localStorage.getItem(GAME.SAVE_BACKUP_KEY); } catch (e) { raw = null; }
+  let p = null;
+  if (raw) { try { p = JSON.parse(raw); } catch (e) { p = null; } }
+  if (!p || typeof p !== 'object') {
+    toast('没有可用的备份，无法撤销', true);
+    sfx('error');
+    return;
+  }
+  state = normalizeSave(p);
+  syncLineUnlocks();
+  resetTransientUI();
+  try { localStorage.removeItem(GAME.SAVE_BACKUP_KEY); } catch (e) {}
+  save();
+  render();
+  if ($('#screenAlbum').classList.contains('show')) renderAlbum();
+  initPoster();
+  sfx('reward');
+  toast('已撤销导入，恢复到导入前的存档：第 ' + state.day + ' 天 · 图鉴 ' + uniqueCount() + '/' + GAME.TOTAL_CARDS);
 }
 
 /* ===== 03d_end.js ===== */
@@ -3227,16 +3368,22 @@ function showSmallEvent(ev, eff) {
 }
 
 function nextDay() {
-  if (state.ended || state.day >= GAME.TOTAL_DAYS) { openSettlement(); return; }
+  /* v4 P-09：已结算 → 直接回到结算页；第 30 天 → 先二次确认再结算 */
+  if (state.ended) { openSettlement(); return; }
+  if (state.day >= GAME.TOTAL_DAYS) { confirmEndJourney(); return; }
   state.day++;
   state.todayPulls = 0;
   state.dailyHalfUsed = false;
   const inc = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
-  state.dayIncome = inc;
   /* v4 P-07：生活费设存款上限，削弱囤到 25 天的收益 */
+  /* v4 P-09：按实际到账金额记账，toast 不再显示未截断的数值 */
   const cap = GAME.SAVE_CAP || 600;
-  state.money = Math.min(Math.max(0, state.money + inc), cap);
-  state.stats.income += inc;
+  const before = Math.max(0, state.money);
+  state.money = Math.min(before + inc, cap);
+  const gained = Math.max(0, state.money - before);
+  const spilled = inc - gained;
+  state.dayIncome = gained;
+  state.stats.income += gained;
   state.marketDay = 0;
   state.market = null;
   /* v4 · P-04：免费十连券仅当天有效，跨天清理并提示，避免脏数据残留 */
@@ -3274,7 +3421,9 @@ function nextDay() {
     render();
     setTimeout(() => showSmallEvent(ev, eff), 480);
   } else {
-    toast('第 ' + state.day + ' 天 · 今日生活费 +¥' + inc);
+    /* v4 P-09：截断时提示真实入账数，并说明溢出部分未入账 */
+    toast('第 ' + state.day + ' 天 · 今日生活费 +¥' + gained
+      + (spilled > 0 ? '（存款已达上限 ¥' + cap + '，溢出 ¥' + spilled + ' 未入账）' : ''));
   }
 }
 
@@ -3293,6 +3442,20 @@ function computeEnding() {
   if (u >= 40) return 'allround';
   if (pulls <= 60 && u >= 20) return 'calm';
   return 'normal';
+}
+
+/* v4 P-09：结束旅程前的二次确认，避免误触直接锁定本局 */
+function confirmEndJourney() {
+  const u = uniqueCount();
+  openModal(`<div class="modal-wrap">
+    <button class="x" data-act="close-modal">×</button>
+    <h3 style="text-align:center">结束这趟旅程？</h3>
+    <p class="event-desc" style="text-align:center">确认后本局锁定为第 30 天的记录，<b>无法再抽卡、逛集市或兑换碎片</b>；历史最高图鉴与已得称号会保留。<br>当前：第 30 天 · 图鉴 ${u}/${GAME.TOTAL_CARDS} · 剩余 ¥${fmt(state.money)}</p>
+    <div class="actions">
+      <button class="btn danger" data-act="confirm-end">确认结算</button>
+      <button class="btn ghost" data-act="close-modal">再玩一天</button>
+    </div>
+  </div>`, true);
 }
 
 function openSettlement() {
@@ -3346,6 +3509,13 @@ function openSettlement() {
 
 function closeSettlement() {
   $('#settleOverlay').classList.remove('show');
+  /* v4 P-09：「返回继续」撤销结束标记，第 30 天仍可继续抽卡与消费 */
+  if (state.ended) {
+    state.ended = false;
+    state.ending = null;
+    save();
+    toast('已返回继续，第 ' + state.day + ' 天仍可抽卡');
+  }
   render();
 }
 
@@ -3429,6 +3599,8 @@ function openRules() {
 
 /* ---------- 碎片兑换清单 ---------- */
 function openExchange() {
+  /* v4 P-09：本局已结算时禁止打开碎片兑换 */
+  if (guardPackBusy()) return;
   const list = CARDS_BY_MEMBER[albumMember].filter(c => !owned(c.id));
   const m = MEMBER_BY_KEY[albumMember];
   const rows = list.length ? list.map(c => {
@@ -3747,6 +3919,8 @@ function bindEvents() {
       case 'import-save': importSaveCode(); break;
       case 'copy-save-code': copySaveCode(); break;
       case 'apply-save-code': applySaveCode(); break;
+      case 'confirm-import-save': commitImportSave(); break;
+      case 'undo-import-save': undoImportSave(); break;
       case 'pull1': ensureAudio(); doPull(1); break;
       case 'pull10': ensureAudio(); doPull(10); break;
       case 'skip-pack': {
@@ -3808,6 +3982,7 @@ function bindEvents() {
         break;
       }
       case 'confirm-restart': restartGame(); break;
+      case 'confirm-end': closeModal(); openSettlement(); break;
     }
     if (state) save();
   });
@@ -3839,7 +4014,8 @@ function bindEvents() {
       closeModal();
       $('#screenAlbum').classList.remove('show');
       $('#screenMarket').classList.remove('show');
-      $('#settleOverlay').classList.remove('show');
+      /* v4 P-09：ESC 关闭结算与「返回继续」保持同一语义，撤销 ended 锁定 */
+      if ($('#settleOverlay').classList.contains('show')) closeSettlement();
     }
   });
 
