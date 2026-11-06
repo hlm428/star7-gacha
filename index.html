@@ -1471,7 +1471,7 @@ const RARITY_INFO = {
   N:{ rate:.60, shard:1,  exchange:10,  label:'N',  glow:'#efe9f0' },
   R:{ rate:.30, shard:3,  exchange:25,  label:'R',  glow:'#8fc2ff' },
   SR:{ rate:.08, shard:8, exchange:80,  label:'SR', glow:'#c495ff' },
-  SSR:{ rate:.02, shard:30, exchange:200, label:'SSR', glow:'#ffd98b' }
+  SSR:{ rate:.02, shard:30, exchange:150, label:'SSR', glow:'#ffd98b' }
 };
 const RARITY_LAYOUT = [['N','N','N','R','R','SR','SR','SSR']];
 
@@ -1496,6 +1496,8 @@ MEMBERS.forEach(m => { CARDS_BY_MEMBER[m.key] = CARDS.filter(c => c.member === m
 const GAME = {
   PRICE1: 19,
   PRICE10: 169,
+  /* v4 P-08：每日首次单抽半价，给单抽一个存在理由 */
+  PRICE1_FIRST: 9,
   PITY_MAX: 60,
   START_MONEY: 500,
   TOTAL_DAYS: 30,
@@ -1510,7 +1512,8 @@ const GAME = {
   START_DAY: 5,
   COLLECT_REWARD_MONEY: 188,
   COLLECT_REWARD_SHARD: 30,
-  SHARD_SELL_RATE: 2,
+  /* v4 P-08：碎片寄卖卖出率 2→4，提高重复卡变现能力 */
+  SHARD_SELL_RATE: 4,
   SAVE_KEY: 'star7_chai_xiao_v2',
   /* v4 P-07：生活费存款上限，削弱囤钱到 25 天的收益 */
   SAVE_CAP: 600,
@@ -1561,6 +1564,8 @@ function defaultState() {
     v: 2, day: 1, money: GAME.START_MONEY, shards: 0,
     cards: {}, dupes: {}, fresh: {},
     pityLeft: GAME.PITY_MAX, upPity: false,
+    /* v4 P-08：每日首次单抽半价标记，跨天重置 */
+    dailyHalfUsed: false,
     stats: { spent: 0, pulls: 0, n: 0, r: 0, sr: 0, ssr: 0, dupShards: 0, income: 0, shards: 0 },
     claimed: {}, mute: false, guideDone: false,
     lines: {},   // 每个成员已解锁的台词序号（按解锁顺序）
@@ -1644,6 +1649,7 @@ function normalizeSave(p) {
   s.freeTenDay = nonNegInt(s.freeTenDay);
   s.boostDay = nonNegInt(s.boostDay);
   s.upPity = !!s.upPity;
+  s.dailyHalfUsed = !!s.dailyHalfUsed;
 
   // ⑤ 音量
   const vol = (p.vol && typeof p.vol === 'object') ? p.vol : {};
@@ -1985,8 +1991,10 @@ function render() {
     $('#couponRow').classList.toggle('show', chips.length > 0);
   }
   const p1Price = $('#pull1Btn .price');
-  if (p1Price) p1Price.innerHTML = freeOne ? ('免费 ×' + state.freeSingles) : ('<small>¥</small>' + GAME.PRICE1);
-  $('#pull1Btn').classList.toggle('dim', !(freeOne || canPay(GAME.PRICE1)));
+  /* v4 P-08：每日首次单抽半价时显示 ¥9 并按半价判定可用 */
+  const p1Half = !freeOne && !state.dailyHalfUsed;
+  if (p1Price) p1Price.innerHTML = freeOne ? ('免费 ×' + state.freeSingles) : (p1Half ? ('<small>¥</small>' + GAME.PRICE1_FIRST + ' <s>' + GAME.PRICE1 + '</s>') : ('<small>¥</small>' + GAME.PRICE1));
+  $('#pull1Btn').classList.toggle('dim', !(freeOne || canPay(p1Half ? GAME.PRICE1_FIRST : GAME.PRICE1)));
   $('#pull10Btn').classList.toggle('dim', !(freeTenOK || canPay(GAME.PRICE10)));
   applyVol();
   $('#muteBtn').setAttribute('aria-pressed', state.mute ? 'true' : 'false');
@@ -2169,7 +2177,9 @@ function doPull(n) {
   const freeOne = n === 1 && state.freeSingles > 0;
   const freeTen = n === 10 && state.freeTen > 0 && state.freeTenDay === state.day;
   const free = freeOne || freeTen;
-  const price = free ? 0 : (n === 1 ? GAME.PRICE1 : GAME.PRICE10);
+  /* v4 P-08：每日首次单抽半价 ¥9（免费单抽优先于半价） */
+  const halfOne = n === 1 && !free && !state.dailyHalfUsed;
+  const price = free ? 0 : (halfOne ? GAME.PRICE1_FIRST : (n === 1 ? GAME.PRICE1 : GAME.PRICE10));
   if (!free && !canPay(price)) {
     sfx('error');
     const btn = n === 1 ? $('#pull1Btn') : $('#pull10Btn');
@@ -2184,6 +2194,7 @@ function doPull(n) {
   if (!free) {
     state.money -= price;
     state.stats.spent += price;
+    if (halfOne) state.dailyHalfUsed = true;
   } else {
     toast(n === 1 ? '已使用免费单抽券' : '已使用免费十连券（仅今天有效）');
   }
@@ -2764,7 +2775,8 @@ function claimReward(key) {
 }
 
 /* ---------- 星光集市 ---------- */
-const MARKET_PRICE = { N: 18, R: 48, SR: 190, SSR: 980 };
+/* v4 P-08：集市 SSR 980→650，对齐抽卡期望成本 */
+const MARKET_PRICE = { N: 18, R: 48, SR: 190, SSR: 650 };
 
 function ensureMarket() {
   if (state.market && state.marketDay === state.day) return;
@@ -3218,6 +3230,7 @@ function nextDay() {
   if (state.ended || state.day >= GAME.TOTAL_DAYS) { openSettlement(); return; }
   state.day++;
   state.todayPulls = 0;
+  state.dailyHalfUsed = false;
   const inc = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
   state.dayIncome = inc;
   /* v4 P-07：生活费设存款上限，削弱囤到 25 天的收益 */
@@ -3406,9 +3419,9 @@ function openRules() {
       <div class="rule-item"><div class="ri">生</div><div><b>生日限定池</b><p>第 10 天（3/14）是沈星野生日，第 20 天（3/24）是江予安生日；当天海报与 UP 换成寿星，只开一天，概率与保底完全不变。</p></div></div>
       <div class="rule-item"><div class="ri">日</div><div><b>固定事件日</b><p>第 5 天练习室加练（免费单抽 ×1）、第 10/20 天生日（额外 30 碎片 + 生日语音）、第 15 天中期考核（按进度发 ¥80/120/180）、第 25 天彩排（当天前 20 抽 SSR 2%→3.5%，之后回落 2%，送免费十连券）、第 30 天星轨终章（当天仍可继续抽卡，结束旅程后再结算）。</p></div></div>
       <div class="rule-item"><div class="ri">随</div><div><b>随机小事件</b><p>每天进入下一天有 30% 概率触发 1 次小事件，事件池 12 个，最近 7 天不重复；雨天限定「雨天共伞」。</p></div></div>
-      <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥19，十连 ¥169；每天点「进入下一天」发放 ¥45–70 生活费，存款上限 ¥600，超过不再累计；第 30 天结束后点「结束旅程 · 去结算」手动结算，余额永不为负。</p></div></div>
+      <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥19（每日首次半价 ¥9），十连 ¥169；每天点「进入下一天」发放 ¥45–70 生活费，存款上限 ¥600，超过不再累计；第 30 天结束后点「结束旅程 · 去结算」手动结算，余额永不为负。</p></div></div>
       <div class="rule-item"><div class="ri">概</div><div><b>综合概率说明</b><p>长期来看，综合 SSR 约 2.85%，十连 SR 保底生效后整体 SR 概率约 11.5%（不含 25 天彩排加成）。</p></div></div>
-      <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N 10 / R 25 / SR 80 / SSR 200 枚）。</p></div></div>
+      <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N 10 / R 25 / SR 80 / SSR 150 枚）。</p></div></div>
     </div>
     <div class="actions"><button class="btn primary" data-act="close-modal">明白了</button></div>
   </div>`);
