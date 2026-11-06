@@ -1293,7 +1293,7 @@ img,svg{display:block;max-width:100%}
       你和 STAR7 一起度过三十天。<br>
       每天领取生活费，去拆限定卡包，<br>
       集齐七位成员，就能点亮整片星轨。<br>
-      卡册永久保留，每一局都在为点亮星轨积累。
+      本局卡册和碎片在下一局会清空，但历史最高会保留。
     </p>
     <p class="notice">本游戏纯属虚构，不涉及真实充值。所有卡牌与人物均为虚构，仅作娱乐。</p>
     <button class="guide-start" data-act="start-game">开始三十天</button>
@@ -1511,7 +1511,13 @@ const GAME = {
   COLLECT_REWARD_MONEY: 188,
   COLLECT_REWARD_SHARD: 30,
   SHARD_SELL_RATE: 2,
-  SAVE_KEY: 'star7_chai_xiao_v2'
+  SAVE_KEY: 'star7_chai_xiao_v2',
+  /* v4 P-07：生活费存款上限，削弱囤钱到 25 天的收益 */
+  SAVE_CAP: 600,
+  /* v4 P-07：第 25 天彩排加成仅前 20 抽生效，之后回落 2% */
+  BOOST_25_FREE_PULLS: 20,
+  /* v4 P-07：单局碎片合理上限，防止存档篡改让历史最高失真 */
+  MAX_SHARDS: 5000
 };
 
 const TITLES = {
@@ -1650,7 +1656,8 @@ function normalizeSave(p) {
   // ⑥ 基础数值
   s.day = clamp(Math.round(Number(s.day) || 1), 1, GAME.TOTAL_DAYS);
   s.money = nonNegInt(s.money);
-  s.shards = nonNegInt(s.shards);
+  /* v4 P-07：碎片上限，防止篡改存档让历史最高失真 */
+  s.shards = clamp(nonNegInt(s.shards), 0, GAME.MAX_SHARDS || 5000);
   s.pityLeft = clamp(Math.round(Number(s.pityLeft) || GAME.PITY_MAX), 1, GAME.PITY_MAX);
   s.todayPulls = nonNegInt(s.todayPulls);
 
@@ -1893,10 +1900,15 @@ function closeModal() {
   if (typeof refreshBGM === 'function') refreshBGM();
 }
 
-/* 拆包未收下时拦截其他浮层，避免多层叠加 */
+/* 拆包未收下时拦截其他浮层，避免多层叠加；同时在结算后锁集市与兑换，防止后续操作篡改本局记录 */
 function guardPackBusy() {
   if ($('#packOverlay').classList.contains('show')) {
     toast('先收下这次拆到的卡牌吧', true);
+    sfx('error');
+    return true;
+  }
+  if (state && state.ended) {
+    toast('本局已结束，点「再来一局」重新开始', true);
     sfx('error');
     return true;
   }
@@ -2100,8 +2112,10 @@ function rollOne() {
   if (state.pityLeft <= 1) {
     card = pickSSR();
   } else {
-    /* 第 25 天彩排：仅当天 SSR 基础概率 2% → 3.5%，其余档位顺延，SR 仍为 8% */
-    const ssrRate = state.boostDay === state.day ? .035 : .02;
+    /* 第 25 天彩排：仅当天前 20 抽 SSR 基础概率 2% → 3.5%，之后回落 2%；其余档位顺延，SR 仍为 8% */
+    const boostDay = state.boostDay === state.day;
+    const boostLeft = (state.todayPulls || 0) < (GAME.BOOST_25_FREE_PULLS || 20);
+    const ssrRate = boostDay && boostLeft ? .035 : .02;
     const r = Math.random();
     let rar = 'N';
     if (r < ssrRate) rar = 'SSR';
@@ -2149,6 +2163,8 @@ function applyResults(results) {
 }
 
 function doPull(n) {
+  /* v4 P-07：拆包未收下时禁止再次抽卡，避免翻牌中扣费覆盖结果 */
+  if (pendingPull) { guardPackBusy(); return; }
   if (state.ended) { toast('本局已经结束啦，点「再来一局」重新开始', true); return; }
   const freeOne = n === 1 && state.freeSingles > 0;
   const freeTen = n === 10 && state.freeTen > 0 && state.freeTenDay === state.day;
@@ -3204,7 +3220,9 @@ function nextDay() {
   state.todayPulls = 0;
   const inc = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
   state.dayIncome = inc;
-  state.money = Math.max(0, state.money + inc);
+  /* v4 P-07：生活费设存款上限，削弱囤到 25 天的收益 */
+  const cap = GAME.SAVE_CAP || 600;
+  state.money = Math.min(Math.max(0, state.money + inc), cap);
   state.stats.income += inc;
   state.marketDay = 0;
   state.market = null;
@@ -3254,10 +3272,12 @@ function computeEnding() {
   const pulls = s.pulls || 0, ssr = s.ssr || 0, spent = s.spent || 0, money = state.money;
   const luck = ssr / Math.max(1, pulls * 0.029);
   if (luck >= 1.5 && ssr >= 4) return 'emperor';
-  if (u >= 52) return 'collector';
+  /* v4 P-07：把「吃土也要抽」提前到全能之前，放宽到 spent>=1500 且余钱很少 */
+  if (state.stats.spent >= 1500 && state.money < 100 && u >= 28) return 'poor';
+  /* v4 P-07：卡册收藏家门槛从 52 提到 54，必须在 unlucky 之前（否则 luck 低时会被截胡） */
+  if (u >= 54) return 'collector';
   if (luck <= 0.5 && pulls >= 40) return 'unlucky';
   if (u >= 40) return 'allround';
-  if (spent >= 1800 && money < 60) return 'poor';
   if (pulls <= 60 && u >= 20) return 'calm';
   return 'normal';
 }
@@ -3287,7 +3307,7 @@ function openSettlement() {
   $('#scStats').innerHTML = [
     box('拆包总数', state.stats.pulls + ' <em>包</em>'),
     box('本局花费', '¥' + fmt(state.stats.spent)),
-    box('永久图鉴', u + '<em>/56</em>'),
+    box('本局图鉴', u + '<em>/56</em>'),
     box('历史最高', bestU + '<em>/56</em>'),
     box('抽到 SSR', state.stats.ssr + ' <em>张</em>'),
     box('领到的生活费总额', '¥' + fmt(state.stats.income)),
@@ -3328,7 +3348,8 @@ function restartGame() {
   if (keepVol) state.vol = keepVol;
   state.guideDone = true;
   state.dayIncome = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
-  state.money = GAME.START_MONEY + state.dayIncome;
+  /* v4 P-07：去掉多发的一天生活费，让重开与首局起始资金统一为 ¥500 */
+  state.money = GAME.START_MONEY;
   state.stats.income = state.dayIncome;
   try { localStorage.removeItem(GAME.SAVE_KEY); } catch (e) {}
   albumMember = 'sy';
@@ -3383,9 +3404,10 @@ function openRules() {
       <div class="rule-item"><div class="ri">60</div><div><b>60 抽 SSR 硬保底</b><p>每抽累加计数，60 抽内必出 SSR；出 SSR 后计数重置为 60。</p></div></div>
       <div class="rule-item"><div class="ri">UP</div><div><b>限定 UP</b><p>出 SSR 时，有 50% 概率为当天 UP 成员；平时是沈星野「星轨回响」，生日当天换成寿星，其余均分给另外 6 张 SSR。若抽到的 SSR 不是 UP，则下一个 SSR 必定为 UP（大保底，抽出 UP 后重置）。综合下来，连续抽卡时约 2/3 的 SSR 会是 UP 成员。</p></div></div>
       <div class="rule-item"><div class="ri">生</div><div><b>生日限定池</b><p>第 10 天（3/14）是沈星野生日，第 20 天（3/24）是江予安生日；当天海报与 UP 换成寿星，只开一天，概率与保底完全不变。</p></div></div>
-      <div class="rule-item"><div class="ri">日</div><div><b>固定事件日</b><p>第 5 天练习室加练（免费单抽 ×1）、第 10/20 天生日（额外 30 碎片 + 生日语音）、第 15 天中期考核（按进度发 ¥80/120/180）、第 25 天彩排（当天 SSR 2%→3.5%，送免费十连券）、第 30 天星轨终章（当天仍可继续抽卡，结束旅程后再结算）。</p></div></div>
+      <div class="rule-item"><div class="ri">日</div><div><b>固定事件日</b><p>第 5 天练习室加练（免费单抽 ×1）、第 10/20 天生日（额外 30 碎片 + 生日语音）、第 15 天中期考核（按进度发 ¥80/120/180）、第 25 天彩排（当天前 20 抽 SSR 2%→3.5%，之后回落 2%，送免费十连券）、第 30 天星轨终章（当天仍可继续抽卡，结束旅程后再结算）。</p></div></div>
       <div class="rule-item"><div class="ri">随</div><div><b>随机小事件</b><p>每天进入下一天有 30% 概率触发 1 次小事件，事件池 12 个，最近 7 天不重复；雨天限定「雨天共伞」。</p></div></div>
-      <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥19，十连 ¥169；每天点「进入下一天」发放 ¥45–70 生活费，第 30 天结束后点「结束旅程 · 去结算」手动结算，余额永不为负。</p></div></div>
+      <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥19，十连 ¥169；每天点「进入下一天」发放 ¥45–70 生活费，存款上限 ¥600，超过不再累计；第 30 天结束后点「结束旅程 · 去结算」手动结算，余额永不为负。</p></div></div>
+      <div class="rule-item"><div class="ri">概</div><div><b>综合概率说明</b><p>长期来看，综合 SSR 约 2.85%，十连 SR 保底生效后整体 SR 概率约 11.5%（不含 25 天彩排加成）。</p></div></div>
       <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N 10 / R 25 / SR 80 / SSR 200 枚）。</p></div></div>
     </div>
     <div class="actions"><button class="btn primary" data-act="close-modal">明白了</button></div>
@@ -3407,7 +3429,7 @@ function openExchange() {
   openModal(`<div class="modal-wrap">
     <button class="x" data-act="close-modal">×</button>
     <h3>碎片兑换 · ${m.name}</h3>
-    <p class="msub">当前碎片 <b style="color:#b23c72">${state.shards}</b> 枚 · 重复卡自动折算，碎片不会过期<br>※ SSR 兑换为长线目标，通常需要多周目积累</p>
+    <p class="msub">当前碎片 <b style="color:#b23c72">${state.shards}</b> 枚 · 重复卡自动折算，不会过期</p>
     <div class="rule-list">${rows}</div>
     <div class="actions"><button class="btn ghost" data-act="close-modal">返回</button></div>
   </div>`);
