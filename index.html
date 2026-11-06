@@ -736,6 +736,10 @@ img,svg{display:block;max-width:100%}
 .sc-stat label{display:block;font-size:8.5px;color:#a17c92;letter-spacing:.5px}
 .sc-stat b{display:block;margin-top:1px;font-family:var(--serif);font-size:18px;line-height:1.3;color:#a53d6b;white-space:nowrap}
 .sc-stat b em{font-style:normal;font-size:10px;font-family:var(--sans);color:#a17c92;font-weight:600}
+/* v5 · P-07：收入构成占满一行，四项小字横排 */
+.sc-stat.wide{grid-column:1/-1}
+.sc-stat.wide b{display:flex;flex-wrap:wrap;gap:2px 12px;font-family:var(--sans);font-size:10px;font-weight:700;color:#a53d6b;white-space:normal}
+.sc-stat.wide b em{font-size:10px;color:#966c86}
 .sc-quote{position:relative;z-index:2;text-align:center;font-family:var(--serif);font-size:11.5px;line-height:1.6;color:#9a6b84;margin:10px 8px 8px}
 .sc-foot{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:7px;padding-top:8px;border-top:1px dashed #ebcad9;font-size:8px;letter-spacing:1.5px;color:#b08ba0}
 .sc-foot svg{width:11px;height:11px}
@@ -1551,7 +1555,7 @@ const light = (h, p) => hexMix(h, '#ffffff', p);
 function avatarSVG(m) {
   const src = (typeof ART_AV !== 'undefined' && ART_AV[m.key]) || '';
   if (!src) return `<span class="av-fallback" style="background:${m.color}"></span>`;
-  return `<img class="av-img" src="${src}" alt="${m.name}" draggable="false">`;
+  return `<img class="av-img" src="${src}" alt="${m.name}" draggable="false" loading="lazy" decoding="async">`;
 }
 
 /* ===== 03a_core.js ===== */
@@ -1569,7 +1573,9 @@ function defaultState() {
     pityLeft: GAME.PITY_MAX, upPity: false,
     /* v4 P-08：每日首次单抽半价标记，跨天重置 */
     dailyHalfUsed: false,
-    stats: { spent: 0, pulls: 0, n: 0, r: 0, sr: 0, ssr: 0, dupShards: 0, income: 0, shards: 0 },
+    /* v5 · P-07：income 保留总收入口径，另拆四项收入来源便于结算页展示 */
+    stats: { spent: 0, pulls: 0, n: 0, r: 0, sr: 0, ssr: 0, dupShards: 0, income: 0,
+             incomeDaily: 0, incomeSell: 0, incomeReward: 0, incomeEvent: 0, shards: 0 },
     claimed: {}, mute: false, guideDone: false,
     lines: {},   // 每个成员已解锁的台词序号（按解锁顺序）
     todayPulls: 0, dayIncome: 0, market: null, marketDay: 0,
@@ -1623,6 +1629,9 @@ function normalizeSave(p) {
     return Number.isFinite(n) && n > 0 ? n : 0;
   };
   Object.keys(st).forEach(k => { st[k] = nonNegInt(st[k]); });
+  /* v5 · P-07：老存档没有收入分项时，把未归类余额回填到「每日生活费」，保证四项之和 = 总收入 */
+  const knownIncome = st.incomeSell + st.incomeReward + st.incomeEvent;
+  if (st.incomeDaily + knownIncome < st.income) st.incomeDaily = st.income - knownIncome;
   s.stats = st;
 
   // ③ 容器类字段
@@ -1956,7 +1965,8 @@ function fmt(n) { return Math.max(0, Math.round(n)); }
 
 function addMoney(n) {
   state.money = Math.max(0, state.money + n);
-  if (n > 0) state.stats.income += n;
+  /* v5 · P-07：剧情 / 事件收入单独归类 */
+  if (n > 0) { state.stats.income += n; state.stats.incomeEvent += n; }
   save();
 }
 function gainShards(n) {
@@ -2024,13 +2034,24 @@ function render() {
   if ($('#screenAlbum').classList.contains('show')) renderAlbum();
 }
 
-const ART_IMGS = {}, AV_IMGS = {};
+const AV_IMGS = {};
+/* v5 · P-06：首屏只预载海报关键图，卡面 / 立绘 / 头像全部按需懒加载 */
 function preloadArt() {
+  const key = upKeyNow();
+  const src = (birthdayKeyForDay(state.day) === key ? ART_SSR[key] : ART[key]) || ART[key];
+  if (!src) return;
+  const im = new Image();
+  im.decoding = 'async';
+  im.src = src;
+}
+/* 结算卡需要头像，打开结算页时再预热这 7 张小图；未加载完成时 canvas 回退渐变 */
+function preloadAvatars() {
   MEMBERS.forEach(m => {
-    if (ART[m.key]) { const im = new Image(); im.decoding = 'async'; im.src = ART[m.key]; ART_IMGS[m.key] = im; }
-    if (ART_AV[m.key]) { const im = new Image(); im.decoding = 'async'; im.src = ART_AV[m.key]; AV_IMGS[m.key] = im; }
-    if (ART_SR[m.key]) { const im = new Image(); im.decoding = 'async'; im.src = ART_SR[m.key]; }
-    if (ART_SSR[m.key]) { const im = new Image(); im.decoding = 'async'; im.src = ART_SSR[m.key]; }
+    if (!ART_AV[m.key] || AV_IMGS[m.key]) return;
+    const im = new Image();
+    im.decoding = 'async';
+    im.src = ART_AV[m.key];
+    AV_IMGS[m.key] = im;
   });
 }
 
@@ -2039,7 +2060,7 @@ function initPoster() {
   const up = MEMBER_BY_KEY[key];
   const isBirthday = birthdayKeyForDay(state.day) === key;
   const pa = $('#posterArt');
-  pa.innerHTML = artHTML({ member: key, artKind: isBirthday ? 'ssr' : 'main' });
+  pa.innerHTML = artHTML({ member: key, artKind: isBirthday ? 'ssr' : 'main' }, { eager: true });
   pa.classList.toggle('bday', isBirthday);
   const pt = $('.pool-tag');
   if (pt) pt.classList.toggle('bday', isBirthday);
@@ -2051,7 +2072,7 @@ function initPoster() {
 }
 
 /* ---------- 稀有度 / 卡片渲染 ---------- */
-function artHTML(card) {
+function artHTML(card, opts) {
   const m = MEMBER_BY_KEY[card.member];
   const sc = ((card.scene || 0) % 4 + 4) % 4;
   let src = ART[m.key] || '';
@@ -2064,8 +2085,10 @@ function artHTML(card) {
     /* 同一张 SR 图两种构图：一张偏上半身、一张偏中景，色调也拉开 */
     kind = (card.idx === 6) ? ' sr-split' : ' sr-scene';
   }
+  /* v5 · P-06：首屏海报 eager，其余卡面 / 立绘按需懒加载；容器已有底色，避免白块 */
+  const load = (opts && opts.eager) ? 'eager' : 'lazy';
   return `<div class="pf scene-${sc}${kind}">
-    <img src="${src}" alt="${m.name}" draggable="false">
+    <img src="${src}" alt="${m.name}" draggable="false" loading="${load}" decoding="async">
     <span class="pf-tone"></span>
     <span class="pf-fx"></span>
     <span class="pf-edge"></span>
@@ -2123,49 +2146,79 @@ const RAR_TAG = {
   SSR: ['linear-gradient(135deg,#fff0bf,#e8b45e)', '#5e3813']
 };
 
-function pickCard(rarity) {
-  const pool = CARDS.filter(c => c.rarity === rarity);
-  return pool[rand(pool.length)];
+/* v5 · P-09：抽卡核心 = 可注入 RNG 的纯函数（不读写 state），rollOne / rollBatch 仅做状态接线 */
+function pickCardPure(rarity, rng, pool) {
+  pool = pool || CARDS;
+  const arr = pool.filter(c => c.rarity === rarity);
+  return arr[Math.floor(rng() * arr.length)];
 }
-function pickSSR() {
-  const upId = upKeyNow() + '-7';
+function pickSSRPure(upId, upPity, rng, pool) {
+  pool = pool || CARDS;
   /* 大保底：上次 SSR 歪了（非 UP），这次必出 UP；抽出 UP 后重置 */
-  if (state.upPity || Math.random() < GAME.UP_CHANCE) { state.upPity = false; return CARD_BY_ID[upId]; }
-  state.upPity = true;
-  const ssr = CARDS.filter(c => c.rarity === 'SSR' && c.id !== upId);
-  return ssr[rand(ssr.length)];
+  if (upPity || rng() < GAME.UP_CHANCE) return { card: CARD_BY_ID[upId], upPity: false };
+  const ssr = pool.filter(c => c.rarity === 'SSR' && c.id !== upId);
+  return { card: ssr[Math.floor(rng() * ssr.length)], upPity: true };
 }
-
-/* 单抽：硬保底优先，命中 SSR 后重置 */
-function rollOne() {
-  let card;
-  if (state.pityLeft <= 1) {
-    card = pickSSR();
+/* 单抽：硬保底优先，命中 SSR 后重置；ctx = {pityLeft,todayPulls,boostDay,day,upPity,upId} */
+function rollOnePure(ctx, rng, pool) {
+  pool = pool || CARDS;
+  let card, upPity = ctx.upPity;
+  if (ctx.pityLeft <= 1) {
+    const s = pickSSRPure(ctx.upId, upPity, rng, pool);
+    card = s.card; upPity = s.upPity;
   } else {
     /* 第 25 天彩排：仅当天前 20 抽 SSR 基础概率 2% → 3.5%，之后回落 2%；其余档位顺延，SR 仍为 8% */
-    const boostDay = state.boostDay === state.day;
-    const boostLeft = (state.todayPulls || 0) < (GAME.BOOST_25_FREE_PULLS || 20);
+    const boostDay = ctx.boostDay === ctx.day;
+    const boostLeft = (ctx.todayPulls || 0) < (GAME.BOOST_25_FREE_PULLS || 20);
     const ssrRate = boostDay && boostLeft ? .035 : .02;
-    const r = Math.random();
+    const r = rng();
     let rar = 'N';
     if (r < ssrRate) rar = 'SSR';
     else if (r < ssrRate + .08) rar = 'SR';
     else if (r < ssrRate + .38) rar = 'R';
     else rar = 'N';
-    card = rar === 'SSR' ? pickSSR() : pickCard(rar);
+    if (rar === 'SSR') {
+      const s = pickSSRPure(ctx.upId, upPity, rng, pool);
+      card = s.card; upPity = s.upPity;
+    } else {
+      card = pickCardPure(rar, rng, pool);
+    }
   }
-  if (card.rarity === 'SSR') state.pityLeft = GAME.PITY_MAX;
-  else state.pityLeft = Math.max(1, state.pityLeft - 1);
-  return card;
+  const pityLeft = card.rarity === 'SSR' ? GAME.PITY_MAX : Math.max(1, ctx.pityLeft - 1);
+  return { card, pityLeft, upPity };
+}
+/* 十连：逐抽推进保底 / 大保底；若整包无 SR/SSR，末位补 SR（与旧实现一致） */
+function rollBatchPure(ctx, n, rng, pool) {
+  pool = pool || CARDS;
+  const out = [];
+  let cur = ctx;
+  for (let i = 0; i < n; i++) {
+    const r = rollOnePure(cur, rng, pool);
+    out.push(r.card);
+    cur = Object.assign({}, cur, { pityLeft: r.pityLeft, upPity: r.upPity });
+  }
+  if (n >= 10 && GAME.TEN_MIN_SR && !out.some(c => c.rarity === 'SR' || c.rarity === 'SSR')) {
+    out[out.length - 1] = pickCardPure('SR', rng, pool);
+  }
+  return { cards: out, pityLeft: cur.pityLeft, upPity: cur.upPity };
 }
 
+/* 从 state 取快照，接线到纯函数 */
+function gachaCtx() {
+  return { pityLeft: state.pityLeft, todayPulls: state.todayPulls, boostDay: state.boostDay,
+           day: state.day, upPity: state.upPity, upId: upKeyNow() + '-7' };
+}
+function rollOne() {
+  const r = rollOnePure(gachaCtx(), Math.random);
+  state.pityLeft = r.pityLeft;
+  state.upPity = r.upPity;
+  return r.card;
+}
 function rollBatch(n) {
-  const out = [];
-  for (let i = 0; i < n; i++) out.push(rollOne());
-  if (n >= 10 && GAME.TEN_MIN_SR && !out.some(c => c.rarity === 'SR' || c.rarity === 'SSR')) {
-    out[out.length - 1] = pickCard('SR');
-  }
-  return out;
+  const r = rollBatchPure(gachaCtx(), n, Math.random);
+  state.pityLeft = r.pityLeft;
+  state.upPity = r.upPity;
+  return r.cards;
 }
 
 function applyResults(results) {
@@ -2788,6 +2841,7 @@ function claimReward(key) {
   state.titles[key] = 1;
   state.money = Math.max(0, state.money + GAME.COLLECT_REWARD_MONEY);
   state.stats.income += GAME.COLLECT_REWARD_MONEY;
+  state.stats.incomeReward += GAME.COLLECT_REWARD_MONEY;
   gainShards(GAME.COLLECT_REWARD_SHARD);
   save();
   closeModal();
@@ -2937,6 +2991,7 @@ function confirmSellShards() {
   state.shards -= n;
   state.money = Math.max(0, state.money + gain);
   state.stats.income += gain;
+  state.stats.incomeSell += gain;
   save();
   render();
   renderMarket();
@@ -3280,6 +3335,7 @@ function claimMidterm() {
   state.midtermPending = 0;
   state.money = Math.max(0, state.money + gain);
   state.stats.income += gain;
+  state.stats.incomeReward += gain;
   save();
   render();
   closeModal();
@@ -3341,7 +3397,7 @@ function applySmallEvent(ev) {
   if (state.smallEvents.length > 30) state.smallEvents.shift();
   if (ev.money) {
     state.money = Math.max(0, state.money + ev.money);
-    if (ev.money > 0) state.stats.income += ev.money;
+    if (ev.money > 0) { state.stats.income += ev.money; state.stats.incomeEvent += ev.money; }
   }
   if (ev.shard) gainShards(ev.shard);
   if (ev.free) state.freeSingles += ev.free;
@@ -3384,6 +3440,7 @@ function nextDay() {
   const spilled = inc - gained;
   state.dayIncome = gained;
   state.stats.income += gained;
+  state.stats.incomeDaily += gained;
   state.marketDay = 0;
   state.market = null;
   /* v4 · P-04：免费十连券仅当天有效，跨天清理并提示，避免脏数据残留 */
@@ -3459,6 +3516,8 @@ function confirmEndJourney() {
 }
 
 function openSettlement() {
+  /* v5 · P-06：结算页才需要 7 张头像，这里再预热 */
+  preloadAvatars();
   if (!state.ended) {
     state.ended = true;
     state.ending = computeEnding();
@@ -3487,6 +3546,12 @@ function openSettlement() {
     box('历史最高', bestU + '<em>/56</em>'),
     box('抽到 SSR', state.stats.ssr + ' <em>张</em>'),
     box('领到的生活费总额', '¥' + fmt(state.stats.income)),
+    /* v5 · P-07：收入构成四项，合计 = 上方总收入口径 */
+    `<div class="sc-stat wide"><label>收入构成</label><b class="sc-income">${
+      [['每日生活费', state.stats.incomeDaily], ['碎片寄卖', state.stats.incomeSell],
+       ['收集/考核奖励', state.stats.incomeReward], ['事件/剧情', state.stats.incomeEvent]]
+        .map(it => `<em>${it[0]} ¥${fmt(it[1])}</em>`).join('')
+    }</b></div>`,
     box('获得碎片总数', (state.stats.shards || 0) + ' <em>枚</em>'),
     box('剩余生活费', '¥' + fmt(state.money)),
     box('收集率', rate + '<em>%</em>')
@@ -3534,6 +3599,7 @@ function restartGame() {
   /* v4 P-07：去掉多发的一天生活费，让重开与首局起始资金统一为 ¥500 */
   state.money = GAME.START_MONEY;
   state.stats.income = state.dayIncome;
+  state.stats.incomeDaily = state.dayIncome;
   try { localStorage.removeItem(GAME.SAVE_KEY); } catch (e) {}
   albumMember = 'sy';
   pendingPull = null;
@@ -3560,6 +3626,7 @@ function startGame() {
   state.dayIncome = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
   state.money = Math.max(0, state.money + state.dayIncome);
   state.stats.income += state.dayIncome;
+  state.stats.incomeDaily += state.dayIncome;
   save();
   hideGuide();
   render();
@@ -4063,6 +4130,8 @@ function init() {
     get state() { return state; },
     get lastPull() { return pendingPull; },
     data: { MEMBERS, CARDS, GAME, RARITY_INFO, TITLES, CARD_BY_ID },
+    /* v5 · P-09：可注入 RNG 的抽卡纯函数，供单测使用 */
+    gacha: { pickCardPure, pickSSRPure, rollOnePure, rollBatchPure },
     save, render, pull: doPull, nextDay, openSettlement, computeEnding, gainShards,
     uniqueCount, memberOwned, openAlbum, closeAlbum, openMarket, closeMarket,
     openRules, restart: restartGame, checkCollectRewards,
