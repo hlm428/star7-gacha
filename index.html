@@ -3249,7 +3249,7 @@ function triggerFixedEvent(day) {
   }
   if (day === 15) {
     const u = uniqueCount();
-    const gain = u < 21 ? 80 : (u <= 35 ? 120 : 180);
+    const gain = u < 20 ? 80 : (u <= 35 ? 120 : 180);
     /* 考核奖励不混入当天生活费，进入待领取，按钮领取后才入账 */
     state.midtermPending = gain;
   }
@@ -3300,7 +3300,7 @@ function showFixedEvent(day) {
   if (day === 15) {
     const u = uniqueCount();
     const gain = state.midtermPending || 0;
-    const line = u < 21 ? '还早。但至少你没缺席。' : (u <= 35 ? '进度不错，星轨已经亮了一半。' : '……你比我想象中认真。');
+    const line = u < 20 ? '还早。但至少你没缺席。' : (u <= 35 ? '进度不错，星轨已经亮了一半。' : '……你比我想象中认真。');
     openModal(`<div class="modal-wrap story-wrap">
       <button class="x" data-act="close-modal">×</button>
       <div class="story-kicker">DAY 15 · 中期考核</div>
