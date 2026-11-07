@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1a0f26">
-<meta name="version" content="v3.2">
+<meta name="version" content="v5.0">
 <meta name="description" content="三十天星轨旅程，拆开 56 张 STAR7 限定小卡，集齐七位成员的完整星轨。">
 <meta property="og:type" content="website">
 <meta property="og:title" content="拆小卡模拟器 · STAR7 星轨回响">
@@ -260,6 +260,7 @@ img,svg{display:block;max-width:100%}
 .pull-btn .price small{font-size:10px;font-family:var(--sans);font-weight:700}
 .pull-btn.dim{filter:grayscale(.35) brightness(.72);box-shadow:none}
 .pull-btn.dim::after{display:none}
+.day-btn.dim{filter:grayscale(.4) brightness(.75)}
 .pull-btn:active{filter:brightness(1.06)}
 .pull-btn .pulse{
   position:absolute;right:10px;top:8px;width:5px;height:5px;border-radius:50%;background:#fff4d5;
@@ -743,6 +744,7 @@ img,svg{display:block;max-width:100%}
 .sc-quote{position:relative;z-index:2;text-align:center;font-family:var(--serif);font-size:11.5px;line-height:1.6;color:#9a6b84;margin:10px 8px 8px}
 .sc-foot{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:7px;padding-top:8px;border-top:1px dashed #ebcad9;font-size:8px;letter-spacing:1.5px;color:#b08ba0}
 .sc-foot svg{width:11px;height:11px}
+.settle-dock{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
 .settle-actions{width:min(100% - 14px,354px);display:flex;gap:8px}
 .settle-actions .btn{min-height:50px;font-size:14px}
 .settle-tip{font-size:9px;color:#b08ba0;text-align:center;letter-spacing:1px;margin-top:1px}
@@ -887,6 +889,12 @@ img,svg{display:block;max-width:100%}
   .sc-stat b{font-size:16px}
   .sc-desc{font-size:10px;margin-bottom:5px}
   .sc-quote{margin:7px 6px 6px}
+  /* v5：矮屏（320×568 等）把结算操作区固定在底部，保存图片按钮首屏可见 */
+  .settle-wrap{justify-content:flex-start;padding-bottom:calc(128px + var(--safe-b))}
+  .settle-dock{position:fixed;left:0;right:0;bottom:0;z-index:6;margin:0 auto;max-width:430px;
+    padding:10px 14px calc(10px + var(--safe-b));gap:8px;
+    background:linear-gradient(180deg,rgba(22,11,30,0),rgba(22,11,30,.9) 26%,#160b1e 62%)}
+  .settle-dock .settle-tip{color:#e8cfe0}
 }
 @media (min-width:431px){
   body{background:#0d0814}
@@ -1270,14 +1278,16 @@ img,svg{display:block;max-width:100%}
         拆小卡模拟器 · 星轨回响 · 虚构企划
       </div>
     </div>
-    <div class="settle-actions">
-      <button class="btn gold" data-act="save-img" id="saveImgBtn">保存图片</button>
+    <div class="settle-dock">
+      <div class="settle-actions">
+        <button class="btn gold" data-act="save-img" id="saveImgBtn">保存图片</button>
+      </div>
+      <div class="settle-actions">
+        <button class="btn primary" data-act="restart" style="flex:1.4">再来一局</button>
+        <button class="btn ghost" data-act="close-settle" style="flex:.8">返回继续</button>
+      </div>
+      <p class="settle-tip" id="settleTip">手机端可长按结算卡直接保存 / 截图分享</p>
     </div>
-    <div class="settle-actions">
-      <button class="btn primary" data-act="restart" style="flex:1.4">再来一局</button>
-      <button class="btn ghost" data-act="close-settle" style="flex:.8">返回继续</button>
-    </div>
-    <p class="settle-tip" id="settleTip">手机端可长按结算卡直接保存 / 截图分享</p>
   </div>
 </div>
 
@@ -1897,17 +1907,32 @@ function refreshBGM() {
 
 /* ---------- toast ---------- */
 let toastTimer = null;
-/* v4 P-09：toast 改为队列顺序播放，避免券过期等提示被后一条覆盖 */
-let toastQueue = [], toastBusy = false, toastWarnLast = false;
+/* v5 · P-03：最新消息优先；当前提示最多再占 700–1000ms 就切换，
+   警告类（券过期 / 溢出 / 余额不足）优先展示，避免关键提示被普通提示挤掉 */
+let toastQueue = [], toastBusy = false, toastWarnLast = false, toastShownAt = 0;
 function toast(msg, warn) {
   if (!msg) return;
-  toastQueue.push({ msg: msg, warn: !!warn });
+  const item = { msg: msg, warn: !!warn };
+  toastQueue.push(item);
   if (toastQueue.length > 8) toastQueue.splice(0, toastQueue.length - 8);
-  if (!toastBusy) showNextToast();
+  if (!toastBusy) { showNextToast(); return; }
+  /* 新来的普通提示把更早的普通提示挤掉，警告类保留 */
+  if (!item.warn) toastQueue = toastQueue.filter(q => q.warn || q === item);
+  const elapsed = Date.now() - toastShownAt;
+  const minShow = toastWarnLast ? 1000 : 700;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(showNextToast, Math.max(0, minShow - elapsed));
+}
+function pickToast() {
+  /* 警告类优先（同类取最新），否则取最新一条 */
+  for (let i = toastQueue.length - 1; i >= 0; i--) {
+    if (toastQueue[i].warn) return toastQueue.splice(i, 1)[0];
+  }
+  return toastQueue.pop() || null;
 }
 function showNextToast() {
   const el = $('#toast');
-  const item = toastQueue.shift();
+  const item = pickToast();
   if (!item) {
     toastBusy = false;
     el.className = 'toast' + (toastWarnLast ? ' warn' : '');
@@ -1915,6 +1940,7 @@ function showNextToast() {
   }
   toastBusy = true;
   toastWarnLast = item.warn;
+  toastShownAt = Date.now();
   el.textContent = item.msg;
   el.className = 'toast show' + (item.warn ? ' warn' : '');
   clearTimeout(toastTimer);
@@ -1945,7 +1971,7 @@ function guardPackBusy() {
     return true;
   }
   if (state && state.ended) {
-    toast('本局已结束，点「再来一局」重新开始', true);
+    toast('本局已结算，点「再来一局」重新开始', true);
     sfx('error');
     return true;
   }
@@ -1963,11 +1989,30 @@ function muteIcon() {
 /* ---------- 金额展示 ---------- */
 function fmt(n) { return Math.max(0, Math.round(n)); }
 
-function addMoney(n) {
-  state.money = Math.max(0, state.money + n);
-  /* v5 · P-07：剧情 / 事件收入单独归类 */
-  if (n > 0) { state.stats.income += n; state.stats.incomeEvent += n; }
+/* v5 · P-01：唯一加钱入口。按实际到账记账（封顶 SAVE_CAP），返回 { gained, spilled }。
+   reason: daily 每日生活费 / sell 碎片寄卖 / reward 收集考核 / event 事件剧情 */
+const INCOME_FIELD = { daily: 'incomeDaily', sell: 'incomeSell', reward: 'incomeReward', event: 'incomeEvent' };
+function addMoney(n, reason) {
+  const delta = Math.round(Number(n));
+  if (!Number.isFinite(delta) || delta === 0) return { gained: 0, spilled: 0 };
+  const cap = GAME.SAVE_CAP || 600;
+  const before = Math.max(0, Math.round(Number(state.money) || 0));
+  let after = before + delta;
+  if (delta > 0) {
+    /* 已达上限时只增不减：余额不变，本次全额算溢出 */
+    after = before >= cap ? before : Math.min(after, cap);
+  } else {
+    after = Math.max(0, after);
+  }
+  const gained = after - before;
+  const spilled = delta - gained;
+  state.money = after;
+  if (delta > 0 && reason && INCOME_FIELD[reason]) {
+    state.stats.income += gained;
+    state.stats[INCOME_FIELD[reason]] += gained;
+  }
   save();
+  return { gained: gained, spilled: spilled };
 }
 function gainShards(n) {
   const delta = Math.round(Number(n));
@@ -2026,8 +2071,17 @@ function render() {
   /* v4 P-08：每日首次单抽半价时显示 ¥9 并按半价判定可用 */
   const p1Half = !freeOne && !state.dailyHalfUsed;
   if (p1Price) p1Price.innerHTML = freeOne ? ('免费 ×' + state.freeSingles) : (p1Half ? ('<small>¥</small>' + GAME.PRICE1_FIRST + ' <s>' + GAME.PRICE1 + '</s>') : ('<small>¥</small>' + GAME.PRICE1));
-  $('#pull1Btn').classList.toggle('dim', !(freeOne || canPay(p1Half ? GAME.PRICE1_FIRST : GAME.PRICE1)));
-  $('#pull10Btn').classList.toggle('dim', !(freeTenOK || canPay(GAME.PRICE10)));
+  /* v5 · P-02：结算后抽卡 / 下一天按钮置灰并标 aria-disabled，点击给明确提示 */
+  const ended = !!state.ended;
+  $('#pull1Btn').classList.toggle('dim', ended || !(freeOne || canPay(p1Half ? GAME.PRICE1_FIRST : GAME.PRICE1)));
+  $('#pull10Btn').classList.toggle('dim', ended || !(freeTenOK || canPay(GAME.PRICE10)));
+  $('#pull1Btn').setAttribute('aria-disabled', ended ? 'true' : 'false');
+  $('#pull10Btn').setAttribute('aria-disabled', ended ? 'true' : 'false');
+  const dayBtn = $('.day-btn');
+  if (dayBtn) {
+    dayBtn.classList.toggle('dim', ended);
+    dayBtn.setAttribute('aria-disabled', ended ? 'true' : 'false');
+  }
   applyVol();
   $('#muteBtn').setAttribute('aria-pressed', state.mute ? 'true' : 'false');
   muteIcon();
@@ -2248,7 +2302,7 @@ function applyResults(results) {
 function doPull(n) {
   /* v4 P-07：拆包未收下时禁止再次抽卡，避免翻牌中扣费覆盖结果 */
   if (pendingPull) { guardPackBusy(); return; }
-  if (state.ended) { toast('本局已经结束啦，点「再来一局」重新开始', true); return; }
+  if (state.ended) { toast('本局已结算，点「再来一局」重新开始', true); return; }
   const freeOne = n === 1 && state.freeSingles > 0;
   const freeTen = n === 10 && state.freeTen > 0 && state.freeTenDay === state.day;
   const free = freeOne || freeTen;
@@ -2839,9 +2893,7 @@ function claimReward(key) {
   if (!m || state.claimed[key] || memberOwned(key) !== 8) { closeModal(); return; }
   state.claimed[key] = true;
   state.titles[key] = 1;
-  state.money = Math.max(0, state.money + GAME.COLLECT_REWARD_MONEY);
-  state.stats.income += GAME.COLLECT_REWARD_MONEY;
-  state.stats.incomeReward += GAME.COLLECT_REWARD_MONEY;
+  const got = addMoney(GAME.COLLECT_REWARD_MONEY, 'reward');
   gainShards(GAME.COLLECT_REWARD_SHARD);
   save();
   closeModal();
@@ -2849,7 +2901,8 @@ function claimReward(key) {
   if ($('#screenAlbum').classList.contains('show')) renderAlbum();
   sfx('reward');
   refreshBGM();
-  toast(m.name + ' 收集奖励已到账：¥' + GAME.COLLECT_REWARD_MONEY + ' + ' + GAME.COLLECT_REWARD_SHARD + ' 碎片 · 称号已点亮');
+  toast(m.name + ' 收集奖励已到账：¥' + got.gained + (got.spilled ? '（存款上限溢出 ¥' + got.spilled + ' 未入账）' : '')
+    + ' + ' + GAME.COLLECT_REWARD_SHARD + ' 碎片 · 称号已点亮', got.spilled > 0);
   setTimeout(checkCollectRewards, 300);
 }
 
@@ -2989,15 +3042,14 @@ function confirmSellShards() {
   if (n <= 0) { toast('请先选择要卖出的数量', true); return; }
   const gain = n * GAME.SHARD_SELL_RATE;
   state.shards -= n;
-  state.money = Math.max(0, state.money + gain);
-  state.stats.income += gain;
-  state.stats.incomeSell += gain;
+  const got = addMoney(gain, 'sell');
   save();
   render();
   renderMarket();
   closeModal();
   sfx('reward');
-  toast('已卖出 ' + n + ' 枚碎片，生活费 +¥' + gain);
+  toast('已卖出 ' + n + ' 枚碎片，生活费 +¥' + got.gained
+    + (got.spilled ? '（存款上限溢出 ¥' + got.spilled + ' 未入账）' : ''), got.spilled > 0);
 }
 
 /* ---------- 更多玩法 ---------- */
@@ -3048,9 +3100,35 @@ function openSaveMenu() {
 }
 
 /* 存档码：本机存储不可用（隐私模式 / 配额满）时的兜底备份与迁移 */
+/* v5 · P-05：轻量签名（FNV-1a + 固定盐），拦住手改 JSON 的随手改档；老码无签名仍可导入 */
+const SAVE_SIG_SALT = 'star7:track:v5';
+function saveDigest(json) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < json.length; i++) { h ^= json.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  let k = 0x2545f491;
+  for (let i = 0; i < SAVE_SIG_SALT.length; i++) { k ^= SAVE_SIG_SALT.charCodeAt(i); k = Math.imul(k, 0x01000193) >>> 0; }
+  return (h >>> 0).toString(36) + '-' + ((h ^ k) >>> 0).toString(36);
+}
+function encodeSaveCode(s) {
+  const json = JSON.stringify(s);
+  return btoa(unescape(encodeURIComponent(json))) + '.' + saveDigest(json);
+}
+function decodeSaveCode(txt) {
+  const clean = String(txt || '').replace(/\s+/g, '');
+  const dot = clean.lastIndexOf('.');
+  const body = dot >= 0 ? clean.slice(0, dot) : clean;
+  const sig = dot >= 0 ? clean.slice(dot + 1) : '';
+  try {
+    const json = decodeURIComponent(escape(atob(body)));
+    if (sig && sig !== saveDigest(json)) return { save: null, err: '存档码校验失败（内容可能被修改）' };
+    return { save: JSON.parse(json), err: null };
+  } catch (e) {
+    return { save: null, err: '存档码格式无法识别' };
+  }
+}
 function exportSaveCode() {
   let code = '';
-  try { code = btoa(unescape(encodeURIComponent(JSON.stringify(state)))); } catch (e) { code = ''; }
+  try { code = encodeSaveCode(state); } catch (e) { code = ''; }
   openModal(`<div class="modal-wrap">
     <button class="x" data-act="close-modal">×</button>
     <h3>导出存档码</h3>
@@ -3148,15 +3226,21 @@ function applySaveCode() {
   const box = $('#saveCodeInput');
   const txt = box ? box.value.replace(/\s+/g, '') : '';
   if (!txt) { toast('请先粘贴存档码', true); return; }
-  let p = null;
-  try { p = JSON.parse(decodeURIComponent(escape(atob(txt)))); } catch (e) { p = null; }
-  const reason = validateSavePayload(p);
+  const decoded = decodeSaveCode(txt);
+  if (decoded.err) {
+    toast('存档码无效：' + decoded.err, true);
+    sfx('error');
+    return;
+  }
+  const reason = validateSavePayload(decoded.save);
   if (reason) {
     toast('存档码无效：' + reason, true);
     sfx('error');
     return;
   }
-  pendingImport = normalizeSave(p);
+  pendingImport = normalizeSave(decoded.save);
+  /* 越界值收敛：生活费不得超过存款上限，避免导入档破坏经济边界 */
+  pendingImport.money = Math.min(pendingImport.money, GAME.SAVE_CAP);
   if (hasLocalProgress()) {
     /* 覆盖当前进度前二次确认，避免误触丢档 */
     const incU = importedUnique(pendingImport);
@@ -3333,21 +3417,20 @@ function claimMidterm() {
   const gain = state.midtermPending;
   if (!gain) { closeModal(); return; }
   state.midtermPending = 0;
-  state.money = Math.max(0, state.money + gain);
-  state.stats.income += gain;
-  state.stats.incomeReward += gain;
+  const got = addMoney(gain, 'reward');
   save();
   render();
   closeModal();
   sfx('reward');
-  toast('中期考核奖励到账：生活费 +¥' + gain);
+  toast('中期考核奖励到账：生活费 +¥' + got.gained
+    + (got.spilled ? '（存款已达上限，溢出 ¥' + got.spilled + ' 未入账）' : ''), got.spilled > 0);
 }
 
 /* 第 5 天对话选项：留陪练 → 碎片 +15；放他休息 → 生活费 +¥40；两边都有免费单抽 */
 function chooseStory(key, choice) {
   const stay = choice === 'stay';
   if (stay) gainShards(15);
-  else addMoney(40);
+  else addMoney(40, 'event');
   render();
   openModal(`<div class="modal-wrap story-wrap">
     <button class="x" data-act="close-modal">×</button>
@@ -3395,15 +3478,12 @@ function applySmallEvent(ev) {
   if (state.events.length > 40) state.events.shift();
   state.smallEvents.push({ day: state.day, key: ev.key });
   if (state.smallEvents.length > 30) state.smallEvents.shift();
-  if (ev.money) {
-    state.money = Math.max(0, state.money + ev.money);
-    if (ev.money > 0) { state.stats.income += ev.money; state.stats.incomeEvent += ev.money; }
-  }
+  const got = ev.money ? addMoney(ev.money, ev.money > 0 ? 'event' : null) : null;
   if (ev.shard) gainShards(ev.shard);
   if (ev.free) state.freeSingles += ev.free;
   if (ev.tag) state.tags[ev.tag] = (state.tags[ev.tag] || 0) + 1;
   let eff = '';
-  if (ev.money > 0) eff = '生活费 +¥' + ev.money;
+  if (ev.money > 0) eff = '生活费 +¥' + got.gained + (got.spilled ? '（存款上限溢出 ¥' + got.spilled + ' 未入账）' : '');
   else if (ev.money < 0) eff = '生活费 −¥' + Math.abs(ev.money);
   if (ev.shard) eff += (eff ? ' · ' : '') + '碎片 +' + ev.shard;
   if (ev.free) eff += (eff ? ' · ' : '') + '免费单抽 ×' + ev.free;
@@ -3425,22 +3505,18 @@ function showSmallEvent(ev, eff) {
 
 function nextDay() {
   /* v4 P-09：已结算 → 直接回到结算页；第 30 天 → 先二次确认再结算 */
-  if (state.ended) { openSettlement(); return; }
+  if (state.ended) { toast('本局已结算，可在结算页点「再来一局」或「返回继续」'); openSettlement(); return; }
   if (state.day >= GAME.TOTAL_DAYS) { confirmEndJourney(); return; }
   state.day++;
   state.todayPulls = 0;
   state.dailyHalfUsed = false;
   const inc = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
-  /* v4 P-07：生活费设存款上限，削弱囤到 25 天的收益 */
-  /* v4 P-09：按实际到账金额记账，toast 不再显示未截断的数值 */
+  /* v4 P-07：生活费设存款上限；v5 P-01：统一走 addMoney，只按实际到账记账且绝不让余额下降 */
   const cap = GAME.SAVE_CAP || 600;
-  const before = Math.max(0, state.money);
-  state.money = Math.min(before + inc, cap);
-  const gained = Math.max(0, state.money - before);
-  const spilled = inc - gained;
+  const got = addMoney(inc, 'daily');
+  const gained = got.gained;
+  const spilled = got.spilled;
   state.dayIncome = gained;
-  state.stats.income += gained;
-  state.stats.incomeDaily += gained;
   state.marketDay = 0;
   state.market = null;
   /* v4 · P-04：免费十连券仅当天有效，跨天清理并提示，避免脏数据残留 */
@@ -3507,7 +3583,7 @@ function confirmEndJourney() {
   openModal(`<div class="modal-wrap">
     <button class="x" data-act="close-modal">×</button>
     <h3 style="text-align:center">结束这趟旅程？</h3>
-    <p class="event-desc" style="text-align:center">确认后本局锁定为第 30 天的记录，<b>无法再抽卡、逛集市或兑换碎片</b>；历史最高图鉴与已得称号会保留。<br>当前：第 30 天 · 图鉴 ${u}/${GAME.TOTAL_CARDS} · 剩余 ¥${fmt(state.money)}</p>
+    <p class="event-desc" style="text-align:center">确认后进入结算页，并<b>暂时锁定抽卡、逛集市与碎片兑换</b>；在结算页点「返回继续」可撤销，回到第 ${GAME.TOTAL_DAYS} 天继续操作。历史最高图鉴与已得称号会保留。<br>当前：第 ${state.day} 天 · 图鉴 ${u}/${GAME.TOTAL_CARDS} · 剩余 ¥${fmt(state.money)}</p>
     <div class="actions">
       <button class="btn danger" data-act="confirm-end">确认结算</button>
       <button class="btn ghost" data-act="close-modal">再玩一天</button>
@@ -3523,6 +3599,8 @@ function openSettlement() {
     state.ending = computeEnding();
     save();
   }
+  /* v5 · P-02：结算后立刻刷新主界面按钮为置灰态 */
+  render();
   if (!state.ending) state.ending = computeEnding();
   const t = TITLES[state.ending] || TITLES.normal;
   const u = uniqueCount();
@@ -3536,16 +3614,16 @@ function openSettlement() {
   $('#scTitle').textContent = t.name;
   $('#scDesc').textContent = t.desc;
   $('#scQuote').textContent = t.quote;
-  $('#scLabel').textContent = '第 30 天 · 星轨记录';
+  $('#scLabel').textContent = '第 ' + GAME.TOTAL_DAYS + ' 天 · 星轨记录';
   $('#scAvatars').innerHTML = MEMBERS.map(m => `<span class="aav">${avatarSVG(m)}</span>`).join('<span class="sep"></span>');
   const box = (label, value) => `<div class="sc-stat"><label>${label}</label><b>${value}</b></div>`;
   $('#scStats').innerHTML = [
     box('拆包总数', state.stats.pulls + ' <em>包</em>'),
     box('本局花费', '¥' + fmt(state.stats.spent)),
-    box('本局图鉴', u + '<em>/56</em>'),
-    box('历史最高', bestU + '<em>/56</em>'),
+    box('本局图鉴', u + '<em>/' + GAME.TOTAL_CARDS + '</em>'),
+    box('历史最高', bestU + '<em>/' + GAME.TOTAL_CARDS + '</em>'),
     box('抽到 SSR', state.stats.ssr + ' <em>张</em>'),
-    box('领到的生活费总额', '¥' + fmt(state.stats.income)),
+    box('累计收入', '¥' + fmt(state.stats.income)),
     /* v5 · P-07：收入构成四项，合计 = 上方总收入口径 */
     `<div class="sc-stat wide"><label>收入构成</label><b class="sc-income">${
       [['每日生活费', state.stats.incomeDaily], ['碎片寄卖', state.stats.incomeSell],
@@ -3595,11 +3673,9 @@ function restartGame() {
   state.mute = keepMute;
   if (keepVol) state.vol = keepVol;
   state.guideDone = true;
-  state.dayIncome = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
-  /* v4 P-07：去掉多发的一天生活费，让重开与首局起始资金统一为 ¥500 */
+  /* v5 · P-04：首局与二周目完全一致：¥500 起始、income / dayIncome 均为 0，不记未到账生活费 */
   state.money = GAME.START_MONEY;
-  state.stats.income = state.dayIncome;
-  state.stats.incomeDaily = state.dayIncome;
+  state.dayIncome = 0;
   try { localStorage.removeItem(GAME.SAVE_KEY); } catch (e) {}
   albumMember = 'sy';
   pendingPull = null;
@@ -3615,7 +3691,7 @@ function restartGame() {
   render();
   initPoster();
   sfx('reward');
-  toast('新的一局开始：第 1 天 · 图鉴从 0/56 重新点亮');
+  toast('新的一局开始：第 1 天 · 图鉴从 0/' + GAME.TOTAL_CARDS + ' 重新点亮');
   showCoach('新的三十天，从第一包开始～');
 }
 
@@ -3623,15 +3699,13 @@ function restartGame() {
 function startGame() {
   if (state.guideDone) { hideGuide(); return; }
   state.guideDone = true;
-  state.dayIncome = randRange(GAME.DAILY_MIN, GAME.DAILY_MAX);
-  state.money = Math.max(0, state.money + state.dayIncome);
-  state.stats.income += state.dayIncome;
-  state.stats.incomeDaily += state.dayIncome;
+  /* v5 · P-04：首局不再额外叠加一天生活费，起始 ¥500 与二周目一致 */
+  state.dayIncome = 0;
   save();
   hideGuide();
   render();
   sfx('reward');
-  toast('第 1 天 · 生活费 +¥' + state.dayIncome);
+  toast('第 1 天 · 起始生活费 ¥' + GAME.START_MONEY + ' 已就位');
   showCoach('先拆一包试试运气吧～', 7000);
 }
 
@@ -3651,14 +3725,14 @@ function openRules() {
     </table>
     <div class="rule-list" style="margin-top:12px">
       <div class="rule-item"><div class="ri">十</div><div><b>十连 SR 保底</b><p>十连中若没有 SR / SSR，系统会把最后一张升级为 SR，真实生效。</p></div></div>
-      <div class="rule-item"><div class="ri">60</div><div><b>60 抽 SSR 硬保底</b><p>每抽累加计数，60 抽内必出 SSR；出 SSR 后计数重置为 60。</p></div></div>
+      <div class="rule-item"><div class="ri">${GAME.PITY_MAX}</div><div><b>${GAME.PITY_MAX} 抽 SSR 硬保底</b><p>每抽累加计数，${GAME.PITY_MAX} 抽内必出 SSR；出 SSR 后计数重置为 ${GAME.PITY_MAX}。</p></div></div>
       <div class="rule-item"><div class="ri">UP</div><div><b>限定 UP</b><p>出 SSR 时，有 50% 概率为当天 UP 成员；平时是沈星野「星轨回响」，生日当天换成寿星，其余均分给另外 6 张 SSR。若抽到的 SSR 不是 UP，则下一个 SSR 必定为 UP（大保底，抽出 UP 后重置）。综合下来，连续抽卡时约 2/3 的 SSR 会是 UP 成员。</p></div></div>
-      <div class="rule-item"><div class="ri">生</div><div><b>生日限定池</b><p>第 10 天（3/14）是沈星野生日，第 20 天（3/24）是江予安生日；当天海报与 UP 换成寿星，只开一天，概率与保底完全不变。</p></div></div>
+      <div class="rule-item"><div class="ri">生</div><div><b>生日限定池</b><p>第 10 天（3/14）是沈星野生日，第 20 天（3/24）是江予安生日；当天海报与卡包换成寿星主题。寿星若不是默认 UP（沈星野），SSR UP 也随寿星切换，只开一天，概率与保底完全不变。</p></div></div>
       <div class="rule-item"><div class="ri">日</div><div><b>固定事件日</b><p>第 5 天练习室加练（免费单抽 ×1）、第 10/20 天生日（额外 30 碎片 + 生日语音）、第 15 天中期考核（按进度发 ¥80/120/180）、第 25 天彩排（当天前 20 抽 SSR 2%→3.5%，之后回落 2%，送免费十连券）、第 30 天星轨终章（当天仍可继续抽卡，结束旅程后再结算）。</p></div></div>
-      <div class="rule-item"><div class="ri">随</div><div><b>随机小事件</b><p>每天进入下一天有 30% 概率触发 1 次小事件，事件池 12 个，最近 7 天不重复；雨天限定「雨天共伞」。</p></div></div>
-      <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥19（每日首次半价 ¥9），十连 ¥169；每天点「进入下一天」发放 ¥45–70 生活费，存款上限 ¥600，超过不再累计；第 30 天结束后点「结束旅程 · 去结算」手动结算，余额永不为负。</p></div></div>
-      <div class="rule-item"><div class="ri">概</div><div><b>综合概率说明</b><p>长期来看，综合 SSR 约 2.85%，十连 SR 保底生效后整体 SR 概率约 11.5%（不含 25 天彩排加成）。</p></div></div>
-      <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N 10 / R 25 / SR 80 / SSR 150 枚）。</p></div></div>
+      <div class="rule-item"><div class="ri">随</div><div><b>随机小事件</b><p>每天进入下一天有 30% 概率触发 1 次小事件，事件池 ${SMALL_EVENTS.length} 个，最近 7 天不重复；雨天限定「雨天共伞」。</p></div></div>
+      <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥${GAME.PRICE1}（每日首次半价 ¥${GAME.PRICE1_FIRST}），十连 ¥${GAME.PRICE10}；每天点「进入下一天」发放 ¥${GAME.DAILY_MIN}–${GAME.DAILY_MAX} 生活费，存款上限 ¥${GAME.SAVE_CAP}，超过不再累计；第 ${GAME.TOTAL_DAYS} 天结束后点「结束旅程 · 去结算」手动结算，余额永不为负。免费十连券仅当天有效，跨天自动失效。</p></div></div>
+      <div class="rule-item"><div class="ri">概</div><div><b>综合概率说明</b><p>长期来看，综合 SSR 约 2.85%，十连 SR 保底生效后整体 SR 概率约 11.1%（不含 25 天彩排加成）。</p></div></div>
+      <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N ${RARITY_INFO.N.exchange} / R ${RARITY_INFO.R.exchange} / SR ${RARITY_INFO.SR.exchange} / SSR ${RARITY_INFO.SSR.exchange} 枚）。</p></div></div>
     </div>
     <div class="actions"><button class="btn primary" data-act="close-modal">明白了</button></div>
   </div>`);
@@ -4126,7 +4200,7 @@ function init() {
   save();
 
   window.__game = {
-    version: 'v3.2',
+    version: 'v5.0',
     get state() { return state; },
     get lastPull() { return pendingPull; },
     data: { MEMBERS, CARDS, GAME, RARITY_INFO, TITLES, CARD_BY_ID },
@@ -4145,7 +4219,13 @@ function init() {
       if (!owned(id)) { state.cards[id] = 1; state.fresh[id] = true; unlockLine(CARD_BY_ID[id]); save(); render(); }
       return true;
     },
-    setMoney(n) { state.money = Math.max(0, Math.round(n)); save(); render(); },
+    /* v5 · P-01：测试钩子同样不得突破存款上限 */
+    setMoney(n) {
+      state.money = Math.min(GAME.SAVE_CAP, Math.max(0, Math.round(Number(n) || 0)));
+      save(); render();
+    },
+    addMoney,
+    saveCode: { encode: encodeSaveCode, decode: decodeSaveCode },
     finishAll() {
       CARDS.forEach(c => { if (!owned(c.id)) { state.cards[c.id] = 1; state.fresh[c.id] = true; } });
       syncLineUnlocks(); save(); render();
