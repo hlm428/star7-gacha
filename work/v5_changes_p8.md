@@ -64,10 +64,11 @@
 |---|---|
 | 构建 | `outputs/index.html` 241,908 B，MD5 `138CFD0CD4E25C97851FC18FB49FB1FD`，SHA256 `E5B3B289A7058F9C722A104E4EAA5B2F6F2B2FBA3F630A8FE7575DD6D76F2A0E`（P7 线上为 240,427 B / MD5 `17EDE13D…`） |
 | 本地门禁 | `regression_v5_gate.py` **PASS 80 / FAIL 0**（原有 70 项 A–J 未回退 + 新增 W1–W10） |
-| CI（star7-gate） | 待填 |
-| Pages | 待填 |
-| 线上逐字节 | 待填 |
-| 线上门禁 | 待填 |
+| CI（star7-gate） | run [`42534874310`](https://github.com/hlm428/star7-gacha/actions/runs/42534874310)（commit `9f0b576`）**success**，6m27s |
+| Pages | `pages build and deployment` run `42534874186` **success** |
+| 线上逐字节 | 线上 241,908 B / SHA256 `E5B3B289…76F2A0E`，与本地 **完全一致** |
+| 线上门禁 | `online_gate.py` **PASS 8 / FAIL 0**：console error 0 / pageerror 0 / 4xx-5xx 0 / 28 webp 解码 28 / 42 mp3 MIME 42 / 冷加载 DCL 2,032ms · load 2,673ms · 144.5KB（限 420KB）/ 线上版本 v5.1 |
+| 零回归 | A1–A6 资金记账、B1–B11 存档兼容、C1–C6 抽卡概率保底、D1–D3 流程、E1–E2 性能布局、F1–F2 提示、G1–G3 版本文案、H/I 签名与导入矩阵全部 PASS |
 
 ## 七、其它
 
