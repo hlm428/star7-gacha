@@ -97,8 +97,8 @@
 
 ## 推送与线上
 
-- 远端 main：`4cb6308`（P6 功能与证据提交 `20b902e`，父提交 `767d4c4`）。
+- 远端 main：`710e293`（本轮复核推送，含门禁脚本写盘容错）。历史 P6 提交 `4cb6308` / `20b902e`（父 `767d4c4`）。
 - 本地提交：`923a4d2` / `e47a457`（同一内容的本地副本；线上历史由 Git Trees API 单提交生成）。
-- Pages：`4cb6308` 构建状态 `built`（2026-11-08 22:51–22:52 CST）。
+- Pages：`710e293` 构建状态 `built`（2026-11-08 23:19 CST 触发）。
 - 线上 `https://hlm428.github.io/star7-gacha/` 实测 **238,832 B / MD5 `9C6A8A80636B7C212DDE3E2329D1B70E`**，与本地 `outputs/index.html` **逐字节一致**（`b == a` 为 True）。
 - **CI 工作流未上线**：本机 `gh` 令牌不含 `workflow` scope，写入 `.github/workflows/ci.yml` 固定返回 404；门禁脚本已推送（`work/regression_v5_gate.py`），启用方式见 `work/v5_changes_p6.md` 末节。
