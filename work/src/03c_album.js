@@ -1,6 +1,7 @@
 /* ================= 卡册 / 兑换 / 收集奖励 / 星光集市 ================= */
 let albumMember = 'sy';
 let pendingImport = null;   // v4 P-09：已通过校验、等待覆盖确认的导入存档
+let pendingImportUnsigned = false;  // P7 · BUG-13：本次导入是否为 v<=4 无签名兼容码
 
 function openAlbum() {
   if (guardPackBusy()) return;
@@ -387,7 +388,7 @@ function openMore() {
       <div class="rule-item"><div class="ri">奖</div><div><b>全员收集</b><p>集齐某位成员的 8 张卡，触发完整星轨庆祝，领取 ¥188 + 30 碎片与专属称号。已完成 ${done}/7。</p></div></div>
       <div class="rule-item"><div class="ri">事</div><div><b>旅程事件</b><p>第 5/10/15/20/25/30 天触发固定剧情；每天进入下一天另有 30% 概率遇到小事件。路人缘 ${state.tags.passerby || 0}。</p></div></div>
       <div class="rule-item"><div class="ri">音</div><div><b>声音分层</b><p>BGM、音效、语音三条独立滑条；成员语音为预录配音，无对应音频时静默。进度在状态变化时立即写入本机。</p></div></div>
-      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION}</b><p>v3.2 → v5.0 的完整修订记录在「概率说明 / 规则」页底部可展开查看。</p></div></div>
+      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION}</b><p>v3.2 → v5.1 的完整修订记录在「概率说明 / 规则」页底部可展开查看。</p></div></div>
     </div>
     <div class="vol-set">
       <div class="vol-h">音量分层</div>
@@ -453,7 +454,8 @@ function decodeSaveCode(txt) {
       return { save: null, err: '存档码缺少签名（v5 起必须使用完整导出的存档码）' };
     }
     if (sig && sig !== saveDigest(json)) return { save: null, err: '存档码校验失败（内容可能被修改）' };
-    return { save, err: null };
+    /* P7 · BUG-13：把「无签名」这一事实返回给导入层，供 v<=4 兼容码导入后提示 */
+    return { save, err: null, unsigned: !sig };
   } catch (e) {
     return { save: null, err: '存档码格式无法识别' };
   }
@@ -560,17 +562,21 @@ function applySaveCode() {
   if (!txt) { toast('请先粘贴存档码', true); return; }
   const decoded = decodeSaveCode(txt);
   if (decoded.err) {
+    pendingImportUnsigned = false;
     toast('存档码无效：' + decoded.err, true);
     sfx('error');
     return;
   }
   const reason = validateSavePayload(decoded.save);
   if (reason) {
+    pendingImportUnsigned = false;
     toast('存档码无效：' + reason, true);
     sfx('error');
     return;
   }
   pendingImport = normalizeSave(decoded.save);
+  /* P7 · BUG-13：v<=4 无签名码保留兼容，但导入成功后必须让用户知道这次没走签名校验 */
+  pendingImportUnsigned = !!decoded.unsigned && Number(decoded.save.v) <= 4;
   /* 越界值收敛：生活费不得超过存款上限，避免导入档破坏经济边界 */
   pendingImport.money = Math.min(pendingImport.money, GAME.SAVE_CAP);
   if (hasLocalProgress()) {
@@ -596,7 +602,9 @@ function applySaveCode() {
 function commitImportSave() {
   const incoming = pendingImport;
   if (!incoming) return;
+  const wasUnsigned = pendingImportUnsigned;
   pendingImport = null;
+  pendingImportUnsigned = false;
   const backedUp = backupCurrentSave();
   state = incoming;
   syncLineUnlocks();
@@ -613,11 +621,15 @@ function commitImportSave() {
     <p class="event-desc" style="text-align:center">${backedUp
       ? '导入前的旧档已自动备份，如需反悔可撤销本次导入。'
       : '本机存储不可用，未能备份旧档，本次导入无法撤销。'}</p>
+    ${wasUnsigned ? `<p class="event-desc" style="text-align:center;color:#b23c72"><b>旧版兼容码：未签名，仅建议用于升级</b></p>` : ''}
     <div class="actions">
       ${backedUp ? '<button class="btn ghost" data-act="undo-import-save">撤销导入</button>' : ''}
       <button class="btn gold" data-act="close-modal">完成</button>
     </div>
   </div>`, true);
+  /* P7 · BUG-13：无签名兼容码导入成功后再补一条提示；成功弹层之上 toast 会被遮住，
+     所以可见警告同时写在弹层正文里，这里保留队列提示做二次提醒 */
+  if (wasUnsigned) toast('旧版兼容码：未签名，仅建议用于升级', true);
 }
 function undoImportSave() {
   let raw = null;

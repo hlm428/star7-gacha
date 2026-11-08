@@ -393,7 +393,7 @@ function startGame() {
   hideGuide();
   render();
   sfx('reward');
-  toast('第 1 天 · 起始生活费 ¥' + GAME.START_MONEY + ' 已就位');
+  toast('初始资金 ¥' + GAME.START_MONEY + ' 已就位');
   showCoach('先拆一包试试运气吧～', 7000);
 }
 
@@ -421,13 +421,14 @@ function openRules() {
       <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥${GAME.PRICE1}（每日首次半价 ¥${GAME.PRICE1_FIRST}），十连 ¥${GAME.PRICE10}；每天点「进入下一天」发放 ¥${GAME.DAILY_MIN}–${GAME.DAILY_MAX} 生活费，存款上限 ¥${GAME.SAVE_CAP}，超过不再累计；第 ${GAME.TOTAL_DAYS} 天结束后点「结束旅程 · 去结算」手动结算，余额永不为负。免费十连券仅当天有效，跨天自动失效。</p></div></div>
       <div class="rule-item"><div class="ri">概</div><div><b>综合概率说明</b><p>长期来看，综合 SSR 约 2.85%，十连 SR 保底生效后整体 SR 概率约 11.1%（不含 25 天彩排加成）。</p></div></div>
       <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N ${RARITY_INFO.N.exchange} / R ${RARITY_INFO.R.exchange} / SR ${RARITY_INFO.SR.exchange} / SSR ${RARITY_INFO.SSR.exchange} 枚）。</p></div></div>
-      <div class="rule-item"><div class="ri">存</div><div><b>存档码与防改档边界</b><p>存档码自带轻量签名，能拦住手改 JSON 的随手改档；但签名算法在客户端公开，<b>无法防住有意伪造</b>。若需要真正防作弊，必须接服务端校验。导入前会校验结构 / 版本 / 数值范围，导入生活费最多收敛到 ¥${GAME.SAVE_CAP}。</p></div></div>
-      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION} · 修订记录（v3.2 → v5.0）</b>
+      <div class="rule-item"><div class="ri">存</div><div><b>存档码与防改档边界</b><p>存档码自带轻量签名，能拦住手改 JSON 的随手改档；但签名算法在客户端公开，<b>无法防住有意伪造</b>。若需要真正防作弊，必须接服务端校验。导入前会校验结构 / 版本 / 数值范围，导入生活费最多收敛到 ¥${GAME.SAVE_CAP}。<br>已知边界：<b>把存档码 JSON 里的 v 改成 4 并去掉签名后缀，会被当作旧版兼容码接受</b>——这是为了不破坏 v2 / v4 真实老码导入而保留的妥协，导入成功时会提示「旧版兼容码：未签名，仅建议用于升级」。</p></div></div>
+      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION} · 修订记录（v3.2 → v5.1）</b>
         <details style="margin-top:6px">
           <summary style="cursor:pointer;min-height:36px;display:flex;align-items:center">展开查看</summary>
-          <p style="margin-top:8px"><b>v3.2</b>：首轮 10 项缺陷修复，含存档强校验 / 二次确认 / 备份撤销（BUG-01）、toast 队列防覆盖（BUG-04）、首屏图片 28 张 1.9MB → 1 张 74–81KB（BUG-06）。</p>
+          <p style="margin-top:8px"><b>v3.2</b>：首轮测试基准版本，含 10 项缺陷（BUG-01 存档强校验 / 二次确认 / 备份撤销、BUG-04 toast 队列防覆盖、BUG-06 首屏图片 28 张 1.9MB → 1 张 74–81KB 等）。</p>
           <p><b>v4</b>：第 15 天中期考核阈值 21→20（u=20 落 ¥120）；收入拆分为每日 / 寄卖 / 收集考核 / 事件四项；SR 兑换价 80、SSR 150；碎片卖出率 4；每日首次单抽 ¥9；图片懒加载；抽卡纯函数化。</p>
           <p><b>v5.0</b>：P-01 打通唯一 addMoney 入账并按实际到账记账；P-02 结算后按钮置灰 + 可撤销；P-03 toast 最新 / 警告优先；P-04 首局与二周目统一 ¥500；P-05 存档码签名；P-06 首屏轻量化；P-07 收入四分项与文案常量；存档码升级到 v5 并要求签名。</p>
+          <p><b>v5.1</b>：写清存档码 v4 降级绕过签名的已知边界，并在 v&lt;=4 无签名兼容码导入成功后给出可见警告；首局提示改为「初始资金 ¥500 已就位」（不计入收入统计）；门禁新增签名 / 版本矩阵与导入层校验。</p>
         </details>
       </div></div>
     </div>

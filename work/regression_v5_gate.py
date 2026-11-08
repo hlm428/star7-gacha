@@ -62,6 +62,19 @@ def do_import(p, code):
     if p.locator('#modalBack.show [data-act="confirm-import-save"]').count():
         p.click('#modalBack.show [data-act="confirm-import-save"]'); p.wait_for_timeout(520)
 
+def modal_text(p):
+    return p.evaluate("()=>{const x=document.querySelector('#modalBack.show');return x?x.textContent:''}")
+
+def do_import_full(p, code):
+    """导入并返回 (toast, 弹层文本)：轮询等掉上一條 toast，避免同步读到开局提示。"""
+    p.evaluate("()=>importSaveCode()"); p.wait_for_timeout(220)
+    p.fill('#saveCodeInput', code)
+    p.click('#modalBack.show [data-act="apply-save-code"]'); p.wait_for_timeout(420)
+    if p.locator('#modalBack.show [data-act="confirm-import-save"]').count():
+        p.click('#modalBack.show [data-act="confirm-import-save"]'); p.wait_for_timeout(520)
+    p.wait_for_timeout(260)
+    return toast_text(p), modal_text(p)
+
 def fill_cards(p, n):
     p.evaluate("""(n)=>{const s=__game.state;const ids=__game.data.CARDS.map(c=>c.id).slice(0,n);
       s.cards={};ids.forEach(id=>s.cards[id]=1);s.dupes={};s.fresh={};__game.render();}""", n)
@@ -429,23 +442,125 @@ with sync_playwright() as pw:
     c, p = new_page(browser, errs=errs); start(p)
     ver = p.evaluate("""()=>({hook:__game.version,meta:document.querySelector('meta[name="version"]').content,
       saveVer:__game.data.GAME.SAVE_VER})""")
-    chk("G1", "版本号由单一常量输出", ver["hook"] == "v5.0" and ver["meta"] == "v5.0" and ver["saveVer"] == 5,
-        "__game/meta=v5.0 / SAVE_VER=5", ver)
+    chk("G1", "版本号由单一常量输出", ver["hook"] == "v5.1" and ver["meta"] == "v5.1" and ver["saveVer"] == 5,
+        "__game/meta=v5.1 / SAVE_VER=5", ver)
     p.evaluate("()=>__game.openRules()"); p.wait_for_timeout(400)
     rtxt = p.evaluate("()=>document.querySelector('#modalBack.show').textContent")
-    okchangelog = ("修订记录" in rtxt and "v3.2" in rtxt and "v4" in rtxt and "v5.0" in rtxt
-                   and "21→20" in rtxt and "v5.0" in rtxt)
-    okboundary = "无法防住有意伪造" in rtxt and "服务端校验" in rtxt
+    okchangelog = ("修订记录" in rtxt and "v3.2" in rtxt and "v4" in rtxt and "v5.0" in rtxt and "v5.1" in rtxt
+                   and "21→20" in rtxt and "首轮测试基准版本" in rtxt)
+    okboundary = ("无法防住有意伪造" in rtxt and "服务端校验" in rtxt
+                  and "把存档码 JSON 里的 v 改成 4" in rtxt and "旧版兼容码：未签名，仅建议用于升级" in rtxt)
     okconsts = ("¥19" in rtxt and "¥9" in rtxt and "¥169" in rtxt and "¥600" in rtxt and "¥45–70" in rtxt)
     chk("G2", "规则页 CHANGELOG / 防改档边界 / 常量文案", okchangelog and okboundary and okconsts,
-        "v3.2→v5.0 / 客户端边界 / 价格上限来自 GAME", {"changelog": okchangelog, "boundary": okboundary, "consts": okconsts})
+        "v3.2→v5.1 / v4 降级边界 / 价格上限来自 GAME",
+        {"changelog": okchangelog, "boundary_v4": okboundary, "consts": okconsts})
     p.evaluate("()=>__game.closeModal ? __game.closeModal() : document.querySelector('[data-act=\"close-modal\"]').click()")
     p.wait_for_timeout(250)
     p.evaluate("()=>openMore()"); p.wait_for_timeout(400)
     mtxt2 = p.evaluate("()=>document.querySelector('#modalBack.show').textContent")
-    chk("G3", "更多玩法可看到版本与 CHANGELOG 入口", "版本 v5.0" in mtxt2 and "修订记录" in mtxt2,
-        "含版本 v5.0 + 指向规则页", mtxt2[:80])
+    chk("G3", "更多玩法可看到版本与 CHANGELOG 入口", "版本 v5.1" in mtxt2 and "v3.2 → v5.1" in mtxt2,
+        "含版本 v5.1 + 指向规则页", mtxt2[:80])
     c.close()
+
+    # ================= H 签名 / 版本矩阵（P7 · BUG-13） =================
+    # 先在一页里生成全部测试码；导入断言仍按「每用例独立 context」执行。
+    cg, pg = new_page(browser, errs=[])
+    def mk_code(v, day=6, money=300, cards=3, shards=0, pulls=3, sig="valid", tamper=False, raw=None):
+        return pg.evaluate("""(cfg)=>{
+          if(cfg.raw!==null) return cfg.raw;
+          const ids=__game.data.CARDS.map(c=>c.id).slice(0,cfg.cards);
+          const o={v:cfg.v,day:cfg.day,money:cfg.money,shards:cfg.shards,cards:{},dupes:{},
+            stats:{pulls:cfg.pulls,income:0}};
+          ids.forEach(id=>o.cards[id]=1);
+          const body=()=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+          if(cfg.sig==='none') return body();
+          if(cfg.sig==='empty') return body()+'.';
+          if(cfg.sig==='wrong') return body()+'.deadbeef-wrong';
+          const s=saveDigest(JSON.stringify(o));
+          if(cfg.tamper){o.money=999999;return body()+'.'+s;}
+          return body()+'.'+s;
+        }""", {"v": v, "day": day, "money": money, "cards": cards, "shards": shards,
+              "pulls": pulls, "sig": sig, "tamper": tamper, "raw": raw})
+
+    H = [
+        ("H1", "v5 合法签名", mk_code(5, day=6, money=300, cards=3),
+         {"accept": True, "money": 300, "unique": 3, "warn": False}),
+        ("H2", "v5 去签名", mk_code(5, sig="none"),
+         {"err": "缺少签名"}),
+        ("H3", "v5 篡改内容保留签名", mk_code(5, tamper=True),
+         {"err": "校验失败"}),
+        ("H4", "v5 空签名（尾点）", mk_code(5, sig="empty"),
+         {"err": "缺少签名"}),
+        ("H5", "v4 降级无签名（满卡 / 超上限）", mk_code(4, day=12, money=1000000, cards=56, shards=5000, sig="none"),
+         {"accept": True, "money": 600, "unique": 56, "warn": True}),
+        ("H6", "v4 带错误签名", mk_code(4, sig="wrong"),
+         {"err": "校验失败"}),
+        ("H7", "v3 无签名", mk_code(3, day=4, money=200, cards=2, sig="none"),
+         {"accept": True, "money": 200, "unique": 2, "warn": True}),
+        ("H8", "v2 无签名", mk_code(2, day=3, money=150, cards=1, sig="none"),
+         {"accept": True, "money": 150, "unique": 1, "warn": True}),
+        ("H9", "v6 合法签名（未来版本）", mk_code(6),
+         {"err": "版本 v6 不受支持"}),
+        ("H10", "v0 无签名（越界版本）", mk_code(0),
+         {"err": "版本 v0 不受支持"}),
+    ]
+    cg.close()
+    for cid, desc, code, exp in H:
+        c, p = new_page(browser, errs=errs); start(p)
+        t, modal = do_import_full(p, code)
+        s = st(p)
+        if exp.get("accept"):
+            ok = (not any(k in t for k in ("无效", "缺少签名", "校验失败"))
+                  and s["money"] == exp["money"] and s["unique"] == exp["unique"]
+                  and (("旧版兼容码：未签名，仅建议用于升级" in modal) == exp["warn"]))
+            chk(cid, desc + " → 接受", ok,
+                "接受 / money%d / 图鉴%d / 警告=%s" % (exp["money"], exp["unique"], exp["warn"]),
+                {"state": s, "toast": t, "warn": "旧版兼容码" in modal})
+        else:
+            ok = (exp["err"] in t and s["day"] == 1 and s["unique"] == 0)
+            chk(cid, desc + " → 拒绝", ok, "提示含「%s」且进度不变" % exp["err"],
+                {"toast": t, "state": s})
+        c.close()
+
+    # ================= I validateSavePayload 导入层校验（9 组） =================
+    def mk_signed(obj_js):
+        return pg.evaluate("""(src)=>{const o=eval('('+src+')');
+          return btoa(unescape(encodeURIComponent(JSON.stringify(o))))+'.'+saveDigest(JSON.stringify(o));}""",
+                          obj_js)
+
+    cg, pg = new_page(browser, errs=[])
+    I = [
+        ("I1", "非对象（数组）", "[1,2,3]", "内容不是合法的存档对象"),
+        ("I2", "缺少版本号", "{day:3,money:100,shards:0,cards:{},dupes:{},stats:{pulls:1,income:0}}", "缺少版本号"),
+        ("I3", "版本超出上限", "{v:6,day:3,money:100,shards:0,cards:{},dupes:{},stats:{pulls:1,income:0}}", "版本 v6 不受支持"),
+        ("I4", "缺少卡册数据", "{v:5,day:3,money:100,shards:0,dupes:{},stats:{pulls:1,income:0}}", "缺少卡册数据"),
+        ("I5", "无效卡 ID", "{v:5,day:3,money:100,shards:0,cards:{'no-such':1},dupes:{},stats:{pulls:1,income:0}}", "无效卡 ID"),
+        ("I6", "天数越界", "{v:5,day:99,money:100,shards:0,cards:{},dupes:{},stats:{pulls:1,income:0}}", "天数超出范围"),
+        ("I7", "生活费为负", "{v:5,day:3,money:-5,shards:0,cards:{},dupes:{},stats:{pulls:1,income:0}}", "生活费数值非法"),
+        ("I8", "碎片超上限", "{v:5,day:3,money:100,shards:9999,cards:{},dupes:{},stats:{pulls:1,income:0}}", "碎片数值非法"),
+        ("I9", "空壳无进度", "{v:5,day:1,money:0,shards:0,cards:{},dupes:{},stats:{pulls:0,income:0}}", "没有任何可导入的进度"),
+    ]
+    I_codes = [(cid, desc, mk_signed(src), expect) for cid, desc, src, expect in I]
+    cg.close()
+    for cid, desc, code, expect in I_codes:
+        c, p = new_page(browser, errs=errs); start(p)
+        t, modal = do_import_full(p, code)
+        s = st(p)
+        chk(cid, "validateSavePayload：" + desc, expect in t and s["day"] == 1 and s["unique"] == 0,
+            "提示含「%s」且进度不变" % expect, {"toast": t, "state": s})
+        c.close()
+
+    # ================= J 首局文案（不计入收入） =================
+    c, p = new_page(browser, errs=errs)
+    p.click('#guide [data-act="start-game"]'); p.wait_for_timeout(700)
+    jt = wait_toast(p, "初始资金", timeout=2500)
+    s = st(p)
+    chk("J1", "首局提示「初始资金 ¥500 已就位」且不计入收入",
+        "初始资金 ¥500 已就位" in jt and "起始生活费" not in jt
+        and s["money"] == 500 and s["income"] == 0 and s["dayIncome"] == 0,
+        "toast 初始资金 / money500 / income0 / dayIncome0", {"toast": jt, "state": s})
+    c.close()
+
 
     # ================= E 性能与布局 =================
     loads = []
@@ -477,8 +592,9 @@ with sync_playwright() as pw:
         [{"次": i + 1, "图": l["imgs"], "bytes": l["bytes"], "KB": round(l["bytes"] / 1024, 1),
           "names": l["names"], "海报": l["poster"]} for i, l in enumerate(loads)])
 
-    # E2 320×568 / 390×844 / 360×780 保存按钮首屏可见
-    for w, h, name in [(320, 568, "320x568"), (390, 844, "390x844"), (360, 780, "360x780")]:
+    # E2 六视口保存按钮首屏可见
+    for w, h, name in [(320, 568, "320x568"), (360, 640, "360x640"), (360, 780, "360x780"),
+                       (375, 667, "375x667"), (390, 844, "390x844"), (414, 896, "414x896")]:
         c, p = new_page(browser, w, h, errs=errs); start(p)
         p.evaluate("()=>{__game.state.day=30;__game.render();__game.openSettlement();}")
         p.wait_for_timeout(800)
@@ -508,6 +624,18 @@ with sync_playwright() as pw:
     t = toast_text(p)
     chk("F1", "连发4条 toast 最新≤1s可见", ms is not None and ms <= 1000 and t == "T4",
         "≤1000ms 且显示 T4", {"ms": None if ms is None else round(ms), "toast": t})
+    # F2 警告优先：普通提示占屏时，警告类 ≤1s 内抢到展示
+    p.wait_for_timeout(2400)
+    ms2 = p.evaluate("""()=>new Promise(res=>{
+      const el=document.querySelector('#toast');const t0=performance.now();
+      const mo=new MutationObserver(()=>{if(el.textContent==='WARN'){mo.disconnect();res(performance.now()-t0);}});
+      mo.observe(el,{childList:true,characterData:true,subtree:true});
+      toast('普通提示A');toast('普通提示B');toast('WARN',true);
+      setTimeout(()=>{mo.disconnect();res(null);},1600);
+    })""")
+    t2 = toast_text(p)
+    chk("F2", "警告类 toast 优先且≤1s可见", ms2 is not None and ms2 <= 1000 and t2 == "WARN",
+        "≤1000ms 且显示 WARN", {"ms": None if ms2 is None else round(ms2), "toast": t2})
     c.close()
 
     chk("ALL", "全流程无 pageerror", not errs, "0 error", errs[:5])
