@@ -1,0 +1,63 @@
+name: star7-gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: star7-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright（仅测试依赖，产品仍为零依赖单文件）
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Build single-file index.html
+        run: python work/build.py
+
+      - name: Run release gate（A 资金 / B 存档 / C 抽卡 / D 流程 / E 性能 / F 提示 / G 版本）
+        run: python work/regression_v5_gate.py
+
+      - name: Publish PASS/FAIL to job summary
+        if: always()
+        run: |
+          if [ -f work/v5-gate-report.md ]; then
+            cat work/v5-gate-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "未生成 work/v5-gate-report.md：门禁脚本可能提前失败" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publish PASS/FAIL to PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f work/v5-gate-report.md ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file work/v5-gate-report.md
+          fi
+
+      - name: Upload gate report / screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: star7-gate-report
+          path: |
+            work/v5-gate-report.md
+            work/v5-gate-results.json
+            work/gate-shots/
+          if-no-files-found: warn
