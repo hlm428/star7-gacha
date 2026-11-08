@@ -880,7 +880,7 @@ img,svg{display:block;max-width:100%}
   .rules-wrap h3{font-size:17px;line-height:1.28}
   .rules-wrap .msub{font-size:10px;line-height:1.5}
 }
-@media (max-height:700px){
+@media (max-height:800px){
   .poster{height:clamp(280px,42dvh,340px)}
   .poster-info h1{font-size:32px}
   .settle-cut{padding:11px 12px 10px}
@@ -1529,8 +1529,10 @@ const GAME = {
   /* v4 P-08：碎片寄卖卖出率 2→4，提高重复卡变现能力 */
   SHARD_SELL_RATE: 4,
   SAVE_KEY: 'star7_chai_xiao_v2',
-  /* v4 P-09：存档码版本号（导入时校验）与导入前自动备份键 */
-  SAVE_VER: 4,
+  /* P6-一：存档码版本升级到 5；v>=5 的存档码必须带签名，v<=4 老码才允许无签名 */
+  SAVE_VER: 5,
+  /* P6-二：版本号单一常量，页面 meta 与 __game.version 均由此输出 */
+  VERSION: 'v5.0',
   SAVE_BACKUP_KEY: 'star7_chai_xiao_v2_backup',
   /* v4 P-07：生活费存款上限，削弱囤钱到 25 天的收益 */
   SAVE_CAP: 600,
@@ -3065,6 +3067,7 @@ function openMore() {
       <div class="rule-item"><div class="ri">奖</div><div><b>全员收集</b><p>集齐某位成员的 8 张卡，触发完整星轨庆祝，领取 ¥188 + 30 碎片与专属称号。已完成 ${done}/7。</p></div></div>
       <div class="rule-item"><div class="ri">事</div><div><b>旅程事件</b><p>第 5/10/15/20/25/30 天触发固定剧情；每天进入下一天另有 30% 概率遇到小事件。路人缘 ${state.tags.passerby || 0}。</p></div></div>
       <div class="rule-item"><div class="ri">音</div><div><b>声音分层</b><p>BGM、音效、语音三条独立滑条；成员语音为预录配音，无对应音频时静默。进度在状态变化时立即写入本机。</p></div></div>
+      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION}</b><p>v3.2 → v5.0 的完整修订记录在「概率说明 / 规则」页底部可展开查看。</p></div></div>
     </div>
     <div class="vol-set">
       <div class="vol-h">音量分层</div>
@@ -3101,6 +3104,8 @@ function openSaveMenu() {
 
 /* 存档码：本机存储不可用（隐私模式 / 配额满）时的兜底备份与迁移 */
 /* v5 · P-05：轻量签名（FNV-1a + 固定盐），拦住手改 JSON 的随手改档；老码无签名仍可导入 */
+/* P6-一：签名是可逆的公开算法，只能防「随手改档」，防不住有意伪造；
+   真正的防作弊需要服务端校验。这里不提供虚假的安全承诺。 */
 const SAVE_SIG_SALT = 'star7:track:v5';
 function saveDigest(json) {
   let h = 0x811c9dc5;
@@ -3120,8 +3125,15 @@ function decodeSaveCode(txt) {
   const sig = dot >= 0 ? clean.slice(dot + 1) : '';
   try {
     const json = decodeURIComponent(escape(atob(body)));
+    const save = JSON.parse(json);
+    const ver = Number(save && save.v);
+    /* P6-一：v5 起存档码必须带签名；缺签名直接拒绝，避免剥离后缀绕过。
+       v4 及更早的老码没有签名，保持兼容（产品边界见规则页）。 */
+    if (Number.isFinite(ver) && ver >= 5 && !sig) {
+      return { save: null, err: '存档码缺少签名（v5 起必须使用完整导出的存档码）' };
+    }
     if (sig && sig !== saveDigest(json)) return { save: null, err: '存档码校验失败（内容可能被修改）' };
-    return { save: JSON.parse(json), err: null };
+    return { save, err: null };
   } catch (e) {
     return { save: null, err: '存档码格式无法识别' };
   }
@@ -3733,6 +3745,15 @@ function openRules() {
       <div class="rule-item"><div class="ri">价</div><div><b>价格与生活费</b><p>单抽 ¥${GAME.PRICE1}（每日首次半价 ¥${GAME.PRICE1_FIRST}），十连 ¥${GAME.PRICE10}；每天点「进入下一天」发放 ¥${GAME.DAILY_MIN}–${GAME.DAILY_MAX} 生活费，存款上限 ¥${GAME.SAVE_CAP}，超过不再累计；第 ${GAME.TOTAL_DAYS} 天结束后点「结束旅程 · 去结算」手动结算，余额永不为负。免费十连券仅当天有效，跨天自动失效。</p></div></div>
       <div class="rule-item"><div class="ri">概</div><div><b>综合概率说明</b><p>长期来看，综合 SSR 约 2.85%，十连 SR 保底生效后整体 SR 概率约 11.1%（不含 25 天彩排加成）。</p></div></div>
       <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N ${RARITY_INFO.N.exchange} / R ${RARITY_INFO.R.exchange} / SR ${RARITY_INFO.SR.exchange} / SSR ${RARITY_INFO.SSR.exchange} 枚）。</p></div></div>
+      <div class="rule-item"><div class="ri">存</div><div><b>存档码与防改档边界</b><p>存档码自带轻量签名，能拦住手改 JSON 的随手改档；但签名算法在客户端公开，<b>无法防住有意伪造</b>。若需要真正防作弊，必须接服务端校验。导入前会校验结构 / 版本 / 数值范围，导入生活费最多收敛到 ¥${GAME.SAVE_CAP}。</p></div></div>
+      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION} · 修订记录（v3.2 → v5.0）</b>
+        <details style="margin-top:6px">
+          <summary style="cursor:pointer;min-height:36px;display:flex;align-items:center">展开查看</summary>
+          <p style="margin-top:8px"><b>v3.2</b>：首轮 10 项缺陷修复，含存档强校验 / 二次确认 / 备份撤销（BUG-01）、toast 队列防覆盖（BUG-04）、首屏图片 28 张 1.9MB → 1 张 74–81KB（BUG-06）。</p>
+          <p><b>v4</b>：第 15 天中期考核阈值 21→20（u=20 落 ¥120）；收入拆分为每日 / 寄卖 / 收集考核 / 事件四项；SR 兑换价 80、SSR 150；碎片卖出率 4；每日首次单抽 ¥9；图片懒加载；抽卡纯函数化。</p>
+          <p><b>v5.0</b>：P-01 打通唯一 addMoney 入账并按实际到账记账；P-02 结算后按钮置灰 + 可撤销；P-03 toast 最新 / 警告优先；P-04 首局与二周目统一 ¥500；P-05 存档码签名；P-06 首屏轻量化；P-07 收入四分项与文案常量；存档码升级到 v5 并要求签名。</p>
+        </details>
+      </div></div>
     </div>
     <div class="actions"><button class="btn primary" data-act="close-modal">明白了</button></div>
   </div>`);
@@ -4199,8 +4220,11 @@ function init() {
   if (state.ended) setTimeout(openSettlement, 500);
   save();
 
+  /* P6-二：版本号从 GAME.VERSION 单一常量输出，避免 meta 与钩子再次漂移 */
+  const vm = document.querySelector('meta[name="version"]');
+  if (vm) vm.setAttribute('content', GAME.VERSION);
   window.__game = {
-    version: 'v5.0',
+    version: GAME.VERSION,
     get state() { return state; },
     get lastPull() { return pendingPull; },
     data: { MEMBERS, CARDS, GAME, RARITY_INFO, TITLES, CARD_BY_ID },
