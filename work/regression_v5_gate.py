@@ -1,7 +1,7 @@
 # P2 发布门禁 A~F（v5.0）：资金记账 / 存档 / 抽卡 / 流程 / 性能布局 / 提示
 # 测量纪律：每用例独立 browser context；goto 前经 add_init_script 清 localStorage；
 #          账本断言覆盖 nextDay 之后；同一 page 不二次 goto 统计资源。
-import sys, json, math, os, time
+import sys, json, math, os, time, tempfile
 from pathlib import Path
 from urllib.parse import urlparse, unquote
 from playwright.sync_api import sync_playwright
@@ -526,9 +526,10 @@ def write_robust(path, text):
             return path
         except PermissionError:
             time.sleep(0.5)
-    alt = path.with_name(path.stem + "-new" + path.suffix)
+    alt = Path(tempfile.gettempdir()) / "star7-shots" / path.name
+    alt.parent.mkdir(parents=True, exist_ok=True)
     alt.write_text(text, encoding="utf-8")
-    print("WARN write fallback:", alt)
+    print("WARN write ->", alt)
     return alt
 
 write_robust(BASE / "work" / "v5-gate-results.json", json.dumps(
