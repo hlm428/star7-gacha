@@ -84,8 +84,19 @@
 
 报告输出 `work/online-gate-report.md` 与 `work/online-gate-results.json`。
 
-## 五、其它
+## 五、最终验收
+
+| 项 | 结果 |
+|---|---|
+| 构建 | `outputs/index.html` 240,427 B，MD5 `17EDE13DF7D75967B3FAF578E803D5CE`（v5.0 为 238,832 B / `9C6A8A80…`） |
+| 本地门禁 | `regression_v5_gate.py` **PASS 70 / FAIL 0** |
+| CI（GitHub Actions） | `star7-gate` run `42526388854`（commit `1048825`）**success**；线上门禁脚本修订后 run `42527010409`（commit `00b5296`）**success** |
+| Pages | `pages build and deployment` 两次均 **success** |
+| 线上逐字节 | 线上 240,427 B / MD5 `17EDE13D…`，与本地 **SHA256 完全一致** |
+| 线上门禁 | `online_gate.py` **PASS 8 / FAIL 0**：console error 0 / pageerror 0 / 4xx-5xx 0 / 28 webp 解码 28 / 42 mp3 MIME 42 / 冷加载 DCL 2,968ms · load 3,601ms · 传输 144.2KB（限 420KB）/ 线上版本 v5.1 |
+
+## 六、其它
 
 - 被替换的旧文件已备份：`work/backup/20261109_p7/`（02_data.js / 03c_album.js / 03d_end.js / regression_v5_gate.py / CHANGELOG.md）。
 - 未改 `.github/workflows/ci.yml`：CI 已直接运行 `regression_v5_gate.py`，新增断言自动进 CI；本机 token 无 `workflow` scope，不做 API 硬推。
-- 新增脚本：`work/p7_repro_bug13.py`（BUG-13 复现与回归）、`work/online_gate.py`（线上门禁）、`work/push_v51.py`（Trees API 推送）。
+- 新增脚本：`work/p7_repro_bug13.py`（BUG-13 复现与回归）、`work/online_gate.py`（线上门禁）、`work/push_v51.py` / `work/push_one.py`（Trees API 推送）。
