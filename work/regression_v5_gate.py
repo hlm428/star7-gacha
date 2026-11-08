@@ -449,11 +449,12 @@ with sync_playwright() as pw:
     okchangelog = ("修订记录" in rtxt and "v3.2" in rtxt and "v4" in rtxt and "v5.0" in rtxt and "v5.1" in rtxt
                    and "21→20" in rtxt and "首轮测试基准版本" in rtxt)
     okboundary = ("无法防住有意伪造" in rtxt and "服务端校验" in rtxt
-                  and "把存档码 JSON 里的 v 改成 4" in rtxt and "旧版兼容码：未签名，仅建议用于升级" in rtxt)
+                  and "旧版无签名兼容码不受签名保护" in rtxt and "请仅用于升级自己的老存档" in rtxt
+                  and "去掉签名后缀" not in rtxt and "改成 4" not in rtxt)
     okconsts = ("¥19" in rtxt and "¥9" in rtxt and "¥169" in rtxt and "¥600" in rtxt and "¥45–70" in rtxt)
     chk("G2", "规则页 CHANGELOG / 防改档边界 / 常量文案", okchangelog and okboundary and okconsts,
-        "v3.2→v5.1 / v4 降级边界 / 价格上限来自 GAME",
-        {"changelog": okchangelog, "boundary_v4": okboundary, "consts": okconsts})
+        "v3.2→v5.1 / 5 项边界声明 / 无改档步骤 / 价格上限来自 GAME",
+        {"changelog": okchangelog, "boundary_5": okboundary, "consts": okconsts})
     p.evaluate("()=>__game.closeModal ? __game.closeModal() : document.querySelector('[data-act=\"close-modal\"]').click()")
     p.wait_for_timeout(250)
     p.evaluate("()=>openMore()"); p.wait_for_timeout(400)
@@ -550,7 +551,134 @@ with sync_playwright() as pw:
             "提示含「%s」且进度不变" % expect, {"toast": t, "state": s})
         c.close()
 
+    # ================= K 未签名警告矩阵 W1–W10（P8 · BUG-14 验收） =================
+    WARN_TXT = "这是未签名的旧版兼容码"
+    WARN_MODAL = "旧版兼容码：未签名"
+    # I 段末尾已关闭签名页；K 段续开一页专供 mk_code() 生成测试码，导入断言仍用独立 context
+    cg, pg = new_page(browser, errs=[])
+
+    def import_chain(p, code):
+        """走真实链路，返回 dict(first=决策弹层文本, success=成功弹层文本, toast, confirmed, warnInConfirm, warnInSuccess)"""
+        p.evaluate("()=>importSaveCode()"); p.wait_for_timeout(220)
+        p.fill('#saveCodeInput', code)
+        p.click('#modalBack.show [data-act="apply-save-code"]'); p.wait_for_timeout(400)
+        first = modal_text(p)
+        confirmed = False
+        if p.locator('#modalBack.show [data-act="confirm-import-save"]').count():
+            confirmed = True
+            p.click('#modalBack.show [data-act="confirm-import-save"]'); p.wait_for_timeout(520)
+        success = modal_text(p)
+        t = toast_text(p)
+        if p.locator('#modalBack.show').count():
+            p.click('#modalBack.show [data-act="close-modal"]'); p.wait_for_timeout(220)
+        return {"first": first, "success": success, "toast": t, "confirmed": confirmed,
+                "warnInConfirm": WARN_TXT in first, "warnInSuccess": WARN_MODAL in success}
+
+    def fresh(name):
+        return new_page(browser, errs=errs)
+
+    K_RES = []
+    def kchk(cid, desc, ok, measured):
+        K_RES.append((cid, ok))
+        chk(cid, desc, ok, "见实测", measured)
+
+    # W1 v5 合法签名：接受 / 不警告
+    c, p = fresh("W1"); start(p)
+    w1 = import_chain(p, mk_code(5, day=12, money=300, cards=3))
+    s = st(p)
+    kchk("W1", "v5 合法签名接受且不警告", s["day"] == 12 and s["unique"] == 3
+         and not w1["warnInConfirm"] and not w1["warnInSuccess"], {"state": s, **w1})
+    c.close()
+
+    # W2 v4 降级无签名（满卡 / ¥1e6）：接受 / 警告（决策点 + 成功弹层）
+    c, p = fresh("W2"); start(p)
+    w2 = import_chain(p, mk_code(4, day=12, money=1000000, cards=56, shards=5000, sig="none"))
+    s = st(p)
+    kchk("W2", "v4 降级无签名：接受 / 决策点与成功弹层均警告 / 收敛 ¥600", s["money"] == 600 and s["unique"] == 56
+         and w2["warnInConfirm"] and w2["warnInSuccess"], {"state": s, **w2})
+    c.close()
+
+    # W3 v2 真实老码无签名：接受 / 警告
+    c, p = fresh("W3"); start(p)
+    w3 = import_chain(p, mk_code(2, day=12, money=150, cards=3, sig="none"))
+    s = st(p)
+    kchk("W3", "v2 真实老码接受且警告", s["day"] == 12 and s["unique"] == 3
+         and w3["warnInConfirm"] and w3["warnInSuccess"], {"state": s, **w3})
+    c.close()
+
+    # W4 v3 无签名：接受 / 警告
+    c, p = fresh("W4"); start(p)
+    w4 = import_chain(p, mk_code(3, day=11, money=180, cards=2, sig="none"))
+    s = st(p)
+    kchk("W4", "v3 无签名接受且警告", s["day"] == 11 and s["unique"] == 2
+         and w4["warnInConfirm"] and w4["warnInSuccess"], {"state": s, **w4})
+    c.close()
+
+    # W5 v4 带错误签名：拒绝
+    c, p = fresh("W5"); start(p)
+    w5 = import_chain(p, mk_code(4, sig="wrong"))
+    s = st(p)
+    kchk("W5", "v4 错误签名被拒且进度不变", "校验失败" in w5["toast"] and s["day"] == 1 and s["unique"] == 0,
+         {"state": s, **w5})
+    c.close()
+
+    # W6 v5 剥离签名：拒绝
+    c, p = fresh("W6"); start(p)
+    w6 = import_chain(p, mk_code(5, sig="none"))
+    s = st(p)
+    kchk("W6", "v5 剥离签名被拒且进度不变", "缺少签名" in w6["toast"] and s["day"] == 1 and s["unique"] == 0,
+         {"state": s, **w6})
+    c.close()
+
+    # W9 v4 带合法签名：接受 / 不警告（判定依据是「无签名」而非版本号）
+    c, p = fresh("W9"); start(p)
+    w9 = import_chain(p, mk_code(4, day=8, money=260, cards=4, sig="valid"))
+    s = st(p)
+    kchk("W9", "v4 合法签名接受且不警告", s["day"] == 8 and s["unique"] == 4
+         and not w9["warnInConfirm"] and not w9["warnInSuccess"], {"state": s, **w9})
+    c.close()
+
+    # W10 有本地进度 → 覆盖确认 → v4 无签名：警告出现在覆盖确认弹层内
+    c, p = fresh("W10"); start(p)
+    p.evaluate("""()=>{const s=__game.state;s.day=7;s.money=111;s.cards={};s.dupes={};
+      __game.data.CARDS.slice(0,2).forEach(c=>s.cards[c.id]=1);__game.render();}""")
+    before = st(p)
+    w10 = import_chain(p, mk_code(4, day=12, money=1000, cards=3, sig="none"))
+    s = st(p)
+    kchk("W10", "覆盖确认弹层含未签名提示（BUG-14）", before["day"] == 7 and w10["confirmed"]
+         and "覆盖当前进度" in w10["first"] and w10["warnInConfirm"]
+         and not (before["day"] == s["day"] and before["unique"] == s["unique"]),
+         {"before": before, "after": s, **w10})
+    c.close()
+
+    # W7 同一页：先 v4 警告 → 再合法 v5，第二次不得残留警告
+    c, p = fresh("W7"); start(p)
+    a = import_chain(p, mk_code(4, day=9, money=1000, cards=3, sig="none"))
+    b = import_chain(p, mk_code(5, day=10, money=400, cards=4, sig="valid"))
+    s = st(p)
+    kchk("W7", "连续导入：第一次警告 / 第二次不残留 / 第二次生效",
+         a["warnInSuccess"] and not b["warnInConfirm"] and not b["warnInSuccess"]
+         and s["day"] == 10 and s["unique"] == 4, {"state": s, "first": a, "second": b})
+    c.close()
+
+    # W8 取消覆盖确认 → 再合法 v5：两次都不得误报
+    c, p = fresh("W8"); start(p)
+    p.evaluate("""()=>{const s=__game.state;s.day=6;s.money=300;s.cards={};s.dupes={};
+      __game.data.CARDS.slice(0,1).forEach(c=>s.cards[c.id]=1);__game.render();}""")
+    p.evaluate("()=>importSaveCode()"); p.wait_for_timeout(200)
+    p.fill('#saveCodeInput', mk_code(4, day=9, money=1000, cards=3, sig="none"))
+    p.click('#modalBack.show [data-act="apply-save-code"]'); p.wait_for_timeout(380)
+    firstWarn = WARN_TXT in modal_text(p)
+    p.click('#modalBack.show [data-act="close-modal"]'); p.wait_for_timeout(260)
+    b = import_chain(p, mk_code(5, day=7, money=320, cards=2, sig="valid"))
+    s = st(p)
+    kchk("W8", "取消确认后不误报、下次合法码正常导入", firstWarn and not b["warnInConfirm"]
+         and not b["warnInSuccess"] and s["day"] == 7 and s["unique"] == 2,
+         {"firstWarn": firstWarn, "second": b, "state": s})
+    c.close()
+
     # ================= J 首局文案（不计入收入） =================
+    cg.close()
     c, p = new_page(browser, errs=errs)
     p.click('#guide [data-act="start-game"]'); p.wait_for_timeout(700)
     jt = wait_toast(p, "初始资金", timeout=2500)

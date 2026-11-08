@@ -387,6 +387,8 @@ function openModal(html, center) {
 }
 function closeModal() {
   if (typeof stopCollectType === 'function') stopCollectType();
+  /* P8 · O-15：关闭弹层即清理待导入状态，避免取消后残留（撤销导入走独立备份键，不受影响） */
+  if (typeof clearPendingImport === 'function') clearPendingImport();
   $('#modalBack').className = 'modal-back';
   $('#modalBox').innerHTML = '';
   if (typeof refreshBGM === 'function') refreshBGM();

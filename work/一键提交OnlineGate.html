@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>一键提交 STAR7 线上门禁 workflow</title>
+<style>
+  :root { --ink:#1b1230; --muted:#5d5473; --accent:#7b3ff2; --accent2:#ff7ac6; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body { min-height:100vh; background:linear-gradient(160deg,#f7f2ff,#fff6ec); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+    font-size:19px; line-height:1.65; padding:calc(20px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+    display:flex; justify-content:center; }
+  main { width:100%; max-width:720px; background:rgba(255,255,255,.86); border:1px solid rgba(123,63,242,.14);
+    border-radius:22px; box-shadow:0 18px 50px rgba(60,32,120,.12); padding:26px 20px 24px; }
+  h1 { font-size:1.45em; line-height:1.3; margin:0 0 8px; }
+  .sub { margin:0 0 22px; color:var(--muted); font-size:.95em; }
+  code { background:#f0e9ff; border-radius:6px; padding:2px 6px; font-size:.92em; word-break:break-all; }
+  .primary { display:flex; align-items:center; justify-content:center; width:100%; min-height:68px; padding:18px 16px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-size:1.22em; font-weight:800;
+    text-align:center; text-decoration:none; border-radius:16px; box-shadow:0 10px 24px rgba(123,63,242,.32); }
+  .steps { margin:24px 0 20px; display:grid; gap:14px; }
+  .step { display:flex; gap:12px; align-items:flex-start; background:#faf7ff; border-radius:14px; padding:14px; }
+  .n { flex:0 0 34px; width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff;
+    font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .step b { display:block; font-size:1.02em; }
+  .step p { margin:2px 0 0; color:var(--muted); font-size:.92em; }
+  .secondary { width:100%; min-height:58px; padding:14px 16px; background:#fff; color:var(--accent);
+    border:2px solid rgba(123,63,242,.38); border-radius:14px; font-size:1.08em; font-weight:700; cursor:pointer; }
+  .msg { min-height:26px; margin:10px 0 0; color:#1f8a5b; font-size:.95em; }
+  details { margin-top:18px; border-top:1px dashed rgba(91,72,140,.28); padding-top:14px; }
+  summary { cursor:pointer; color:var(--muted); font-size:.95em; }
+  textarea { width:100%; height:130px; margin-top:10px; padding:10px; border:1px solid rgba(91,72,140,.24);
+    border-radius:10px; font-family:ui-monospace,Consolas,monospace; font-size:13px; line-height:1.5;
+    color:var(--ink); background:#fff; resize:vertical; }
+  @media (min-width:560px) { body { padding-left:28px; padding-right:28px; font-size:20px; } main { padding:34px 32px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>提交 star7-online-gate workflow</h1>
+  <p class="sub">本机 gh 令牌没有 workflow scope，所以这个文件需要你在网页上点一下提交。链接里文件名与全文已填好。</p>
+
+  <a id="openBtn" class="primary" href="https://github.com/hlm428/star7-gacha/new/main?filename=.github%2Fworkflows%2Fonline-gate.yml&amp;value=name%3A%20star7-online-gate%0A%0A%23%20P8%20%C2%B7%20O-14%EF%BC%9A%E9%83%A8%E7%BD%B2%E5%90%8E%E7%8E%AF%E5%A2%83%E9%97%A8%E7%A6%81%EF%BC%88%E5%8F%AA%E6%89%93%E7%9C%9F%E5%AE%9E%E7%BA%BF%E4%B8%8A%20URL%EF%BC%8C%E4%B8%8D%E6%94%B9%E5%8A%A8%20regression_v5_gate.py%20%E7%9A%84%E4%BB%BB%E4%BD%95%E6%96%AD%E8%A8%80%EF%BC%89%0Aon%3A%0A%20%20workflow_run%3A%0A%20%20%20%20workflows%3A%20%5B%22pages%20build%20and%20deployment%22%5D%0A%20%20%20%20types%3A%20%5Bcompleted%5D%0A%20%20workflow_dispatch%3A%0A%0Aconcurrency%3A%0A%20%20group%3A%20star7-online-gate-%24%7B%7B%20github.event.workflow_run.head_branch%20%7C%7C%20github.ref%20%7D%7D%0A%20%20cancel-in-progress%3A%20true%0A%0Apermissions%3A%0A%20%20contents%3A%20read%0A%0Ajobs%3A%0A%20%20online-gate%3A%0A%20%20%20%20%23%20%E5%8F%AA%E5%9C%A8%20Pages%20%E9%83%A8%E7%BD%B2%E6%88%90%E5%8A%9F%E5%90%8E%E8%B7%91%EF%BC%9B%E6%89%8B%E5%8A%A8%E8%A7%A6%E5%8F%91%E4%B8%8D%E5%8F%97%E6%AD%A4%E9%99%90%E5%88%B6%0A%20%20%20%20if%3A%20github.event_name%20%3D%3D%20%27workflow_dispatch%27%20%7C%7C%20github.event.workflow_run.conclusion%20%3D%3D%20%27success%27%0A%20%20%20%20runs-on%3A%20ubuntu-latest%0A%20%20%20%20timeout-minutes%3A%2020%0A%20%20%20%20steps%3A%0A%20%20%20%20%20%20-%20uses%3A%20actions%2Fcheckout%40v4%0A%0A%20%20%20%20%20%20-%20uses%3A%20actions%2Fsetup-python%40v5%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20python-version%3A%20%223.11%22%0A%0A%20%20%20%20%20%20-%20name%3A%20Install%20Playwright%EF%BC%88%E4%BB%85%E6%B5%8B%E8%AF%95%E4%BE%9D%E8%B5%96%EF%BC%8C%E4%BA%A7%E5%93%81%E4%BB%8D%E4%B8%BA%E9%9B%B6%E4%BE%9D%E8%B5%96%E5%8D%95%E6%96%87%E4%BB%B6%EF%BC%89%0A%20%20%20%20%20%20%20%20run%3A%20%7C%0A%20%20%20%20%20%20%20%20%20%20python%20-m%20pip%20install%20--upgrade%20pip%0A%20%20%20%20%20%20%20%20%20%20pip%20install%20playwright%0A%20%20%20%20%20%20%20%20%20%20python%20-m%20playwright%20install%20--with-deps%20chromium%0A%0A%20%20%20%20%20%20-%20name%3A%20Run%20online%20gate%EF%BC%88O1%20console%20%2F%20O2%20pageerror%20%2F%20O3%204xx-5xx%20%2F%20O4%2028%20webp%20%2F%20O5%2042%20mp3%20%2F%20O6%20%E5%86%B7%E5%8A%A0%E8%BD%BD%20%2F%20O7%20%E7%89%88%E6%9C%AC%EF%BC%89%0A%20%20%20%20%20%20%20%20run%3A%20python%20work%2Fonline_gate.py%0A%0A%20%20%20%20%20%20-%20name%3A%20Publish%20PASS%2FFAIL%20to%20job%20summary%0A%20%20%20%20%20%20%20%20if%3A%20always%28%29%0A%20%20%20%20%20%20%20%20run%3A%20%7C%0A%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20echo%20%22%23%23%20star7%20online%20gate%EF%BC%88%E9%83%A8%E7%BD%B2%E5%90%8E%E7%8E%AF%E5%A2%83%E9%97%A8%E7%A6%81%EF%BC%89%22%0A%20%20%20%20%20%20%20%20%20%20%20%20echo%20%22%22%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%5B%20-f%20work%2Fonline-gate-report.md%20%5D%3B%20then%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20cat%20work%2Fonline-gate-report.md%0A%20%20%20%20%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20echo%20%22%E2%9D%8C%20%E6%9C%AA%E7%94%9F%E6%88%90%20work%2Fonline-gate-report.md%EF%BC%9A%E7%BA%BF%E4%B8%8A%E9%97%A8%E7%A6%81%E8%84%9A%E6%9C%AC%E5%8F%AF%E8%83%BD%E6%8F%90%E5%89%8D%E5%A4%B1%E8%B4%A5%EF%BC%8C%E8%AF%B7%E6%9F%A5%E7%9C%8B%E4%B8%8A%E6%96%B9%E6%AD%A5%E9%AA%A4%E6%97%A5%E5%BF%97%E3%80%82%22%0A%20%20%20%20%20%20%20%20%20%20%20%20fi%0A%20%20%20%20%20%20%20%20%20%20%7D%20%3E%3E%20%22%24GITHUB_STEP_SUMMARY%22%0A%0A%20%20%20%20%20%20-%20name%3A%20Fail%20run%20visibly%20when%20gate%20failed%0A%20%20%20%20%20%20%20%20if%3A%20failure%28%29%0A%20%20%20%20%20%20%20%20run%3A%20%7C%0A%20%20%20%20%20%20%20%20%20%20echo%20%22%E2%9D%8C%20%E7%BA%BF%E4%B8%8A%E9%97%A8%E7%A6%81%20FAIL%EF%BC%9A%E8%AF%A6%E8%A7%81%E6%9C%AC%20run%20%E7%9A%84%20Summary%20%E4%B8%8E%20online_gate.py%20%E6%97%A5%E5%BF%97%E3%80%82%22%20%3E%3E%20%22%24GITHUB_STEP_SUMMARY%22%0A%20%20%20%20%20%20%20%20%20%20exit%201%0A%0A%20%20%20%20%20%20-%20name%3A%20Upload%20online%20gate%20report%0A%20%20%20%20%20%20%20%20if%3A%20always%28%29%0A%20%20%20%20%20%20%20%20uses%3A%20actions%2Fupload-artifact%40v4%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20name%3A%20star7-online-gate-report%0A%20%20%20%20%20%20%20%20%20%20path%3A%20%7C%0A%20%20%20%20%20%20%20%20%20%20%20%20work%2Fonline-gate-report.md%0A%20%20%20%20%20%20%20%20%20%20%20%20work%2Fonline-gate-results.json%0A%20%20%20%20%20%20%20%20%20%20if-no-files-found%3A%20warn%0A" target="_blank" rel="noopener noreferrer">打开 GitHub 新建 online-gate.yml</a>
+
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div><b>确认账号是 hlm428</b><p>页面右上角账号名应为 hlm428。</p></div></div>
+    <div class="step"><span class="n">2</span><div><b>确认文件名与内容已自动填好</b><p>文件名 <code>.github/workflows/online-gate.yml</code>，内容是 star7-online-gate 工作流全文（workflow_run 触发）。</p></div></div>
+    <div class="step"><span class="n">3</span><div><b>点绿色 Commit changes</b><p>提交到 main。下次 Pages 部署成功后会自动跑线上门禁；也可在 Actions 里手动 Run workflow。</p></div></div>
+  </div>
+
+  <button id="copyBtn" class="secondary" type="button">复制链接</button>
+  <p id="copyMsg" class="msg" role="status" aria-live="polite"></p>
+
+  <details>
+    <summary>链接长度与原文（兜底复制）</summary>
+    <p>预填链接长度：<b id="lenBox">计算中</b> 字符</p>
+    <textarea id="urlBox" readonly spellcheck="false"></textarea>
+  </details>
+</main>
+<script>
+  var URL_TEXT = "https://github.com/hlm428/star7-gacha/new/main?filename=.github%2Fworkflows%2Fonline-gate.yml&value=name%3A%20star7-online-gate%0A%0A%23%20P8%20%C2%B7%20O-14%EF%BC%9A%E9%83%A8%E7%BD%B2%E5%90%8E%E7%8E%AF%E5%A2%83%E9%97%A8%E7%A6%81%EF%BC%88%E5%8F%AA%E6%89%93%E7%9C%9F%E5%AE%9E%E7%BA%BF%E4%B8%8A%20URL%EF%BC%8C%E4%B8%8D%E6%94%B9%E5%8A%A8%20regression_v5_gate.py%20%E7%9A%84%E4%BB%BB%E4%BD%95%E6%96%AD%E8%A8%80%EF%BC%89%0Aon%3A%0A%20%20workflow_run%3A%0A%20%20%20%20workflows%3A%20%5B%22pages%20build%20and%20deployment%22%5D%0A%20%20%20%20types%3A%20%5Bcompleted%5D%0A%20%20workflow_dispatch%3A%0A%0Aconcurrency%3A%0A%20%20group%3A%20star7-online-gate-%24%7B%7B%20github.event.workflow_run.head_branch%20%7C%7C%20github.ref%20%7D%7D%0A%20%20cancel-in-progress%3A%20true%0A%0Apermissions%3A%0A%20%20contents%3A%20read%0A%0Ajobs%3A%0A%20%20online-gate%3A%0A%20%20%20%20%23%20%E5%8F%AA%E5%9C%A8%20Pages%20%E9%83%A8%E7%BD%B2%E6%88%90%E5%8A%9F%E5%90%8E%E8%B7%91%EF%BC%9B%E6%89%8B%E5%8A%A8%E8%A7%A6%E5%8F%91%E4%B8%8D%E5%8F%97%E6%AD%A4%E9%99%90%E5%88%B6%0A%20%20%20%20if%3A%20github.event_name%20%3D%3D%20%27workflow_dispatch%27%20%7C%7C%20github.event.workflow_run.conclusion%20%3D%3D%20%27success%27%0A%20%20%20%20runs-on%3A%20ubuntu-latest%0A%20%20%20%20timeout-minutes%3A%2020%0A%20%20%20%20steps%3A%0A%20%20%20%20%20%20-%20uses%3A%20actions%2Fcheckout%40v4%0A%0A%20%20%20%20%20%20-%20uses%3A%20actions%2Fsetup-python%40v5%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20python-version%3A%20%223.11%22%0A%0A%20%20%20%20%20%20-%20name%3A%20Install%20Playwright%EF%BC%88%E4%BB%85%E6%B5%8B%E8%AF%95%E4%BE%9D%E8%B5%96%EF%BC%8C%E4%BA%A7%E5%93%81%E4%BB%8D%E4%B8%BA%E9%9B%B6%E4%BE%9D%E8%B5%96%E5%8D%95%E6%96%87%E4%BB%B6%EF%BC%89%0A%20%20%20%20%20%20%20%20run%3A%20%7C%0A%20%20%20%20%20%20%20%20%20%20python%20-m%20pip%20install%20--upgrade%20pip%0A%20%20%20%20%20%20%20%20%20%20pip%20install%20playwright%0A%20%20%20%20%20%20%20%20%20%20python%20-m%20playwright%20install%20--with-deps%20chromium%0A%0A%20%20%20%20%20%20-%20name%3A%20Run%20online%20gate%EF%BC%88O1%20console%20%2F%20O2%20pageerror%20%2F%20O3%204xx-5xx%20%2F%20O4%2028%20webp%20%2F%20O5%2042%20mp3%20%2F%20O6%20%E5%86%B7%E5%8A%A0%E8%BD%BD%20%2F%20O7%20%E7%89%88%E6%9C%AC%EF%BC%89%0A%20%20%20%20%20%20%20%20run%3A%20python%20work%2Fonline_gate.py%0A%0A%20%20%20%20%20%20-%20name%3A%20Publish%20PASS%2FFAIL%20to%20job%20summary%0A%20%20%20%20%20%20%20%20if%3A%20always%28%29%0A%20%20%20%20%20%20%20%20run%3A%20%7C%0A%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20echo%20%22%23%23%20star7%20online%20gate%EF%BC%88%E9%83%A8%E7%BD%B2%E5%90%8E%E7%8E%AF%E5%A2%83%E9%97%A8%E7%A6%81%EF%BC%89%22%0A%20%20%20%20%20%20%20%20%20%20%20%20echo%20%22%22%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%5B%20-f%20work%2Fonline-gate-report.md%20%5D%3B%20then%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20cat%20work%2Fonline-gate-report.md%0A%20%20%20%20%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20echo%20%22%E2%9D%8C%20%E6%9C%AA%E7%94%9F%E6%88%90%20work%2Fonline-gate-report.md%EF%BC%9A%E7%BA%BF%E4%B8%8A%E9%97%A8%E7%A6%81%E8%84%9A%E6%9C%AC%E5%8F%AF%E8%83%BD%E6%8F%90%E5%89%8D%E5%A4%B1%E8%B4%A5%EF%BC%8C%E8%AF%B7%E6%9F%A5%E7%9C%8B%E4%B8%8A%E6%96%B9%E6%AD%A5%E9%AA%A4%E6%97%A5%E5%BF%97%E3%80%82%22%0A%20%20%20%20%20%20%20%20%20%20%20%20fi%0A%20%20%20%20%20%20%20%20%20%20%7D%20%3E%3E%20%22%24GITHUB_STEP_SUMMARY%22%0A%0A%20%20%20%20%20%20-%20name%3A%20Fail%20run%20visibly%20when%20gate%20failed%0A%20%20%20%20%20%20%20%20if%3A%20failure%28%29%0A%20%20%20%20%20%20%20%20run%3A%20%7C%0A%20%20%20%20%20%20%20%20%20%20echo%20%22%E2%9D%8C%20%E7%BA%BF%E4%B8%8A%E9%97%A8%E7%A6%81%20FAIL%EF%BC%9A%E8%AF%A6%E8%A7%81%E6%9C%AC%20run%20%E7%9A%84%20Summary%20%E4%B8%8E%20online_gate.py%20%E6%97%A5%E5%BF%97%E3%80%82%22%20%3E%3E%20%22%24GITHUB_STEP_SUMMARY%22%0A%20%20%20%20%20%20%20%20%20%20exit%201%0A%0A%20%20%20%20%20%20-%20name%3A%20Upload%20online%20gate%20report%0A%20%20%20%20%20%20%20%20if%3A%20always%28%29%0A%20%20%20%20%20%20%20%20uses%3A%20actions%2Fupload-artifact%40v4%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20name%3A%20star7-online-gate-report%0A%20%20%20%20%20%20%20%20%20%20path%3A%20%7C%0A%20%20%20%20%20%20%20%20%20%20%20%20work%2Fonline-gate-report.md%0A%20%20%20%20%20%20%20%20%20%20%20%20work%2Fonline-gate-results.json%0A%20%20%20%20%20%20%20%20%20%20if-no-files-found%3A%20warn%0A";
+  var box = document.getElementById('urlBox');
+  var msg = document.getElementById('copyMsg');
+  document.getElementById('lenBox').textContent = String(URL_TEXT.length);
+  box.value = URL_TEXT;
+  function done(t) { msg.textContent = t; }
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    function fallback() {
+      try { box.focus(); box.select(); box.setSelectionRange(0, URL_TEXT.length);
+        var ok = document.execCommand('copy');
+        done(ok ? '已复制（兼容模式）' : '链接已选中，请按 Ctrl+C 或长按复制');
+      } catch (e) { box.focus(); box.select(); done('链接已选中，请按 Ctrl+C 或长按复制'); }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(URL_TEXT).then(function () { done('已复制到剪贴板'); }).catch(fallback);
+    } else { fallback(); }
+  });
+</script>
+</body>
+</html>

@@ -2,6 +2,7 @@
 let albumMember = 'sy';
 let pendingImport = null;   // v4 P-09：已通过校验、等待覆盖确认的导入存档
 let pendingImportUnsigned = false;  // P7 · BUG-13：本次导入是否为 v<=4 无签名兼容码
+function clearPendingImport() { pendingImport = null; pendingImportUnsigned = false; }  // P8 · O-15
 
 function openAlbum() {
   if (guardPackBusy()) return;
@@ -589,9 +590,26 @@ function applySaveCode() {
         当前：第 ${state.day} 天 · 图鉴 ${uniqueCount()}/${GAME.TOTAL_CARDS} · ¥${fmt(state.money)} · 碎片 ${state.shards}<br>
         导入：第 ${pendingImport.day} 天 · 图鉴 ${incU}/${GAME.TOTAL_CARDS} · ¥${fmt(pendingImport.money)} · 碎片 ${pendingImport.shards}
       </p>
+      ${pendingImportUnsigned ? `<p class="event-desc" style="text-align:center;color:#b23c72"><b>⚠️ 这是未签名的旧版兼容码，请确认来源可信</b></p>` : ''}
       <p class="event-desc" style="text-align:center">确认后当前进度会被覆盖；导入前会自动备份旧档，可在导入成功后撤销。</p>
       <div class="actions">
         <button class="btn danger" data-act="confirm-import-save">确认覆盖导入</button>
+        <button class="btn ghost" data-act="close-modal">取消</button>
+      </div>
+    </div>`, true);
+    return;
+  }
+  /* P8 · BUG-14：无本地进度也不弹覆盖确认时，未签名码必须在写入前给出一次可见提示 */
+  if (pendingImportUnsigned) {
+    const incU = importedUnique(pendingImport);
+    openModal(`<div class="modal-wrap">
+      <button class="x" data-act="close-modal">×</button>
+      <h3 style="text-align:center">导入未签名兼容码？</h3>
+      <p class="event-desc" style="text-align:center">导入：第 ${pendingImport.day} 天 · 图鉴 ${incU}/${GAME.TOTAL_CARDS} · ¥${fmt(pendingImport.money)} · 碎片 ${pendingImport.shards}</p>
+      <p class="event-desc" style="text-align:center;color:#b23c72"><b>⚠️ 这是未签名的旧版兼容码，请确认来源可信</b></p>
+      <p class="event-desc" style="text-align:center">未签名码无法验证来源与完整性；确认后将立即写入本机存档。</p>
+      <div class="actions">
+        <button class="btn danger" data-act="confirm-import-save">仍要导入</button>
         <button class="btn ghost" data-act="close-modal">取消</button>
       </div>
     </div>`, true);
@@ -627,9 +645,7 @@ function commitImportSave() {
       <button class="btn gold" data-act="close-modal">完成</button>
     </div>
   </div>`, true);
-  /* P7 · BUG-13：无签名兼容码导入成功后再补一条提示；成功弹层之上 toast 会被遮住，
-     所以可见警告同时写在弹层正文里，这里保留队列提示做二次提醒 */
-  if (wasUnsigned) toast('旧版兼容码：未签名，仅建议用于升级', true);
+  /* P8 · O-17：成功弹层正文已有可见警告，不再重复排队 warn toast（避免关掉弹层后仍被重复提示 2.6s） */
 }
 function undoImportSave() {
   let raw = null;
