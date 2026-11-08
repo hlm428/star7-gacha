@@ -1,8 +1,9 @@
 # v5.0 P6 改动清单（2026-11-08）
 
 本轮只做"存档签名版本门禁 / CHANGELOG / 单测与 CI"三项，不重做已完成的 P0/P1，不重构已修好的代码。
-构建：`python work/build.py` → `outputs/index.html` 238,847 B（CRLF）/ 4,268 行（LF 等价 234,579 B）。
-构建产物 MD5：`A9AF6032D04A04D96B89DF3072716D11`（连续两次构建一致，确定性）。
+构建：`python work/build.py` → `outputs/index.html` 238,832 B（CRLF）/ 4,268 行（LF 等价 234,564 B）。
+构建产物 MD5：`9C6A8A80636B7C212DDE3E2329D1B70E`（连续两次构建一致，确定性）；
+原始 git blob：`a58bf1bbc3d8da2f82b9019010d389ea0e8c942a`。
 基线：线上 main `767d4c4ff77ec39343425890761bec78d45492aa`（v5.0）。
 
 ## 一、存档签名可被剥离后缀绕过
@@ -94,9 +95,16 @@ toast 用 `wait_for_function` 异步轮询；导入遇本地进度时点 `[data-
 
 ## 推送与线上
 
-- 推送方式沿用既定 `gh api` Git Trees 单提交（不写密钥）。
-- 待填：推送后的远端 commit、Pages 构建结果、线上与本地 MD5 对比。
+- 推送方式沿用既定 `gh api` Git Trees 单提交（令牌只由 `gh` 读取，不写入任何文件）。
+- 远端 main：`20b902eab1a88c30942ab1ff208f036399040829`（父提交 `767d4c4…`）。
+- Pages 构建：`built`，commit `20b902e`。
+- 线上 `https://hlm428.github.io/star7-gacha/` 下载实测 238,832 B / MD5 `9C6A8A80636B7C212DDE3E2329D1B70E`，与本地 `outputs/index.html` **逐字节一致**；远端 `index.html` blob `a58bf1b…` 与本地原始字节 blob 相同。
 
 ## 未完成 / 环境限制
 
-- 无。
+- **CI 工作流文件未能推送到远端**：本机 `gh` 令牌 scope 为 `gist, read:org, repo`，不含 `workflow`。
+  创建含 `.github/workflows/ci.yml` 的 Git Tree 时返回原文：`gh: Not Found (HTTP 404)`（GitHub 对缺 scope 的
+  workflow 写入固定返回 404）。`work/push_v31.py` 已改为检测该情形：跳过工作流文件并照常推送其余 16 个文件。
+  其余三项改动与全部测试均已落盘、提交并上线；只是「CI 作为合并门禁」尚未在 GitHub 上生效。
+  解除方式（需用户本人授权）：`gh auth refresh -s workflow` 后重跑 `python work/push_v31.py`，
+  或直接在网页端添加 `.github/workflows/ci.yml`（文件已在本地提交 `923a4d2`）。
