@@ -1,6 +1,6 @@
 # P7 · 线上环境门禁：只在部署后运行，直接打真实 URL（file:// 本地资源缺失不参与）
 # 断言：console error=0 / pageerror=0 / 0 个 4xx-5xx / 28 张 webp 真实解码 / 42 个 mp3 可达且 MIME 正确 / 冷加载不超基线
-import json, sys
+import json, sys, time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -17,6 +17,16 @@ RES = []
 def chk(cid, desc, ok, expected, measured):
     RES.append((cid, desc, str(expected), measured, bool(ok)))
     print(("PASS " if ok else "FAIL ") + cid + " " + desc + " | 实测=" + json.dumps(measured, ensure_ascii=False))
+
+def get_retry(ctx, url, attempts=3):
+    """GitHub Pages CDN 偶发 503：同一 URL 重试，最多 3 次。"""
+    r = None
+    for i in range(attempts):
+        r = ctx.request.get(url)
+        if r.status < 500:
+            return r
+        time.sleep(1.2 * (i + 1))
+    return r
 
 
 with sync_playwright() as pw:
@@ -57,7 +67,7 @@ with sync_playwright() as pw:
     webp_ok, webp_bad = 0, []
     for f in webps:
         u = URL + "assets/" + f.name
-        r = ctx.request.get(u)
+        r = get_retry(ctx, u)
         dec = 0
         if r.ok:
             dec = p.evaluate("""(u)=>new Promise(res=>{const im=new Image();
@@ -71,14 +81,16 @@ with sync_playwright() as pw:
         {"ok": webp_ok, "bad": webp_bad[:3]})
 
     mp3_ok, mp3_bad = 0, []
+    # GitHub Pages 对 .mp3 返回 audio/mp3；audio/mpeg 同为合法 MIME，两者都算「正确」
+    OK_MP3_TYPES = ("audio/mpeg", "audio/mp3", "audio/mpeg3", "audio/x-mpeg-3")
     for f in mp3s:
-        r = ctx.request.get(URL + "assets/voice/" + f.name)
+        r = get_retry(ctx, URL + "assets/voice/" + f.name)
         ctype = (r.headers.get("content-type") or "").lower()
-        if r.ok and "audio/mpeg" in ctype:
+        if r.ok and any(t in ctype for t in OK_MP3_TYPES):
             mp3_ok += 1
         else:
             mp3_bad.append({"file": f.name, "status": r.status, "type": ctype})
-    chk("O5", "42 个 mp3 可达且 MIME 正确", mp3_ok == 42 and not mp3_bad, "42/42 audio/mpeg",
+    chk("O5", "42 个 mp3 可达且 MIME 正确", mp3_ok == 42 and not mp3_bad, "42/42 audio/mpeg|audio/mp3",
         {"ok": mp3_ok, "bad": mp3_bad[:3]})
 
     chk("O7", "线上版本与 meta 一致为 v5.1", perf["version"] == "v5.1" and perf["meta"] == "v5.1",
