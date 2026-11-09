@@ -1,0 +1,19 @@
+# 中间产物：原始美术、截图、线上备份与缓存（不进入版本库）
+work/art/
+work/art-review/
+work/backup/
+work/backup_pre_4fix/
+work/backup_v3_pre/
+work/downloads/
+work/online/
+work/online-bu/
+work/online-recheck/
+work/push-status/
+work/savecode-audit/
+work/probability-audit/
+work/shots/
+work/voice_seed/
+work/voice_seed_v2/
+work/voice_seed_v3/
+work/__pycache__/
+*.pyc
