@@ -25,8 +25,8 @@
   "desc": "冷加载不超过基线",
   "expected": "DCL≤6000ms / load≤8000ms / ≤420KB",
   "measured": {
-   "dcl": 166,
-   "load": 280,
+   "dcl": 172,
+   "load": 214,
    "bytes": 148281,
    "res": 1,
    "version": "v5.2",
