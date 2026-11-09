@@ -75,3 +75,6 @@
 - 备份：`work/backup/20261109_p8/`（03a_core.js / 03c_album.js / 03d_end.js / regression_v5_gate.py / CHANGELOG.md / 本轮的 index.html 快照；P7 原产物可从推送前的 main commit 取回）。
 - 新增脚本：`work/p8_bug14_repro.py`（BUG-14 独立复现与回归，11 项）、`work/make_online_gate_page.py`（一键提交页生成）。
 - 未改 `.github/workflows/ci.yml`：它已直接运行 `regression_v5_gate.py`，新断言自动进 CI。
+
+- online-gate 已接入，等待首次触发验证。
+
