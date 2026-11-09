@@ -1,0 +1,2 @@
+# 仅 CI 门禁用的测试依赖；产品本身仍是零依赖单文件（outputs/index.html / index.html）
+playwright

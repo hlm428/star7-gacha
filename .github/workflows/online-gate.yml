@@ -31,11 +31,13 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: work/requirements-ci.txt
 
       - name: Install Playwright（仅测试依赖，产品仍为零依赖单文件）
         run: |
           python -m pip install --upgrade pip
-          pip install playwright
+          pip install -r work/requirements-ci.txt
           python -m playwright install --with-deps chromium
 
       - name: Run online gate（O1 console / O2 pageerror / O3 4xx-5xx / O4 28 webp / O5 42 mp3 / O6 冷加载 / O7 版本）
