@@ -65,10 +65,10 @@ jobs:
             --results work/v5-gate-results.json \
             --out v5-gate.md \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          if ! git diff --quiet -- docs/gates/; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add docs/gates/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/gates/
+          if ! git diff --cached --quiet; then
             git commit -m "docs(gates): sync v5 release gate report [skip ci]"
             git push
           else
