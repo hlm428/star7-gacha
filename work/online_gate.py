@@ -93,8 +93,8 @@ with sync_playwright() as pw:
     chk("O5", "42 个 mp3 可达且 MIME 正确", mp3_ok == 42 and not mp3_bad, "42/42 audio/mpeg|audio/mp3",
         {"ok": mp3_ok, "bad": mp3_bad[:3]})
 
-    chk("O7", "线上版本与 meta 一致为 v5.1", perf["version"] == "v5.1" and perf["meta"] == "v5.1",
-        "v5.1 / v5.1", {"hook": perf["version"], "meta": perf["meta"]})
+    chk("O7", "线上版本与 meta 一致为 v5.2", perf["version"] == "v5.2" and perf["meta"] == "v5.2",
+        "v5.2 / v5.2", {"hook": perf["version"], "meta": perf["meta"]})
 
     ctx.close()
     browser.close()
@@ -104,7 +104,7 @@ print("\n==== ONLINE PASS %d / FAIL %d ====" % (len(RES) - len(fail), len(fail))
 for r in fail:
     print("FAIL:", r[0], r[1], "|", r[3])
 
-lines = ["# v5.1 线上环境门禁报告", "", f"**URL**：{URL}", "",
+lines = ["# v5.2 线上环境门禁报告", "", f"**URL**：{URL}", "",
          f"**PASS {len(RES) - len(fail)} / FAIL {len(fail)}**", "",
          "| 编号 | 用例 | 期望 | 实测 | 结果 |", "|---|---|---|---|---|"]
 for cid, desc, exp, mea, ok in RES:

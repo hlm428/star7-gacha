@@ -213,8 +213,8 @@ const GAME = {
   SAVE_KEY: 'star7_chai_xiao_v2',
   /* P6-一：存档码版本升级到 5；v>=5 的存档码必须带签名，v<=4 老码才允许无签名 */
   SAVE_VER: 5,
-  /* P6-二：版本号单一常量，页面 meta 与 __game.version 均由此输出 */
-  VERSION: 'v5.1',
+  /* P6-二：版本号单一常量，页面 meta 与 __game.version 均由此输出（P9 · O-18：构建期同时写入产物 meta） */
+  VERSION: 'v5.2',
   SAVE_BACKUP_KEY: 'star7_chai_xiao_v2_backup',
   /* v4 P-07：生活费存款上限，削弱囤钱到 25 天的收益 */
   SAVE_CAP: 600,

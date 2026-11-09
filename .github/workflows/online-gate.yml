@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write  # P9 · O-20：把线上门禁摘要写回 docs/gates/ 需要 contents 写权限
 
 jobs:
   online-gate:
@@ -61,6 +61,29 @@ jobs:
         run: |
           echo "❌ 线上门禁 FAIL：详见本 run 的 Summary 与 online_gate.py 日志。" >> "$GITHUB_STEP_SUMMARY"
           exit 1
+
+      # P9 · O-20：PASS/FAIL 摘要同步写回仓库公开文档 docs/gates/online-gate.md（保留 job summary）
+      # 报告含 run URL 页脚但无时间戳，结果不变时内容一致 → diff 为空不提交；concurrency 已按 sha 去重
+      - name: Sync gate report to docs/gates/
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python work/sync_gate_docs.py \
+            --report work/online-gate-report.md \
+            --results work/online-gate-results.json \
+            --out online-gate.md \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if ! git diff --quiet -- docs/gates/; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/gates/
+            git commit -m "docs(gates): sync online gate report [skip ci]"
+            git push
+          else
+            echo "docs/gates/ 无变化，跳过提交"
+          fi
 
       - name: Upload online gate report
         if: always()

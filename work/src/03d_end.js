@@ -422,13 +422,14 @@ function openRules() {
       <div class="rule-item"><div class="ri">概</div><div><b>综合概率说明</b><p>长期来看，综合 SSR 约 2.85%，十连 SR 保底生效后整体 SR 概率约 11.1%（不含 25 天彩排加成）。</p></div></div>
       <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N ${RARITY_INFO.N.exchange} / R ${RARITY_INFO.R.exchange} / SR ${RARITY_INFO.SR.exchange} / SSR ${RARITY_INFO.SSR.exchange} 枚）。</p></div></div>
       <div class="rule-item"><div class="ri">存</div><div><b>存档码与防改档边界</b><p>存档码自带轻量签名，能拦住手改 JSON 的随手改档；但签名算法在客户端公开，<b>无法防住有意伪造</b>。若需要真正防作弊，必须接服务端校验。导入前会校验结构 / 版本 / 数值范围，导入生活费最多收敛到 ¥${GAME.SAVE_CAP}。<br><b>旧版无签名兼容码不受签名保护，请仅用于升级自己的老存档</b>；导入前会明确提示未签名，导入成功后也会再次提示。</p></div></div>
-      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION} · 修订记录（v3.2 → v5.1）</b>
+      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION} · 修订记录（v3.2 → v5.2）</b>
         <details style="margin-top:6px">
           <summary style="cursor:pointer;min-height:36px;display:flex;align-items:center">展开查看</summary>
           <p style="margin-top:8px"><b>v3.2</b>：首轮测试基准版本，含 10 项缺陷（BUG-01 存档强校验 / 二次确认 / 备份撤销、BUG-04 toast 队列防覆盖、BUG-06 首屏图片 28 张 1.9MB → 1 张 74–81KB 等）。</p>
           <p><b>v4</b>：第 15 天中期考核阈值 21→20（u=20 落 ¥120）；收入拆分为每日 / 寄卖 / 收集考核 / 事件四项；SR 兑换价 80、SSR 150；碎片卖出率 4；每日首次单抽 ¥9；图片懒加载；抽卡纯函数化。</p>
           <p><b>v5.0</b>：P-01 打通唯一 addMoney 入账并按实际到账记账；P-02 结算后按钮置灰 + 可撤销；P-03 toast 最新 / 警告优先；P-04 首局与二周目统一 ¥500；P-05 存档码签名；P-06 首屏轻量化；P-07 收入四分项与文案常量；存档码升级到 v5 并要求签名。</p>
-          <p><b>v5.1</b>：写清存档码 v4 降级绕过签名的已知边界，并在 v&lt;=4 无签名兼容码导入成功后给出可见警告；首局提示改为「初始资金 ¥500 已就位」（不计入收入统计）；门禁新增签名 / 版本矩阵与导入层校验。收尾：未签名警告前移到覆盖确认 / 导入前，规则页改为风险声明（不再给操作步骤），弹层已警告时不再重复 toast。</p>
+          <p><b>v5.1</b>：写清存档码 v4 降级绕过签名的已知边界（BUG-13）；首局提示改为「初始资金 ¥500 已就位」（不计入收入统计）；门禁新增签名 / 版本矩阵与导入层校验（W / H 系列断言）。</p>
+          <p><b>v5.2</b>：未签名警告前移到覆盖确认 / 导入决策点（BUG-14），规则页改为风险声明、不再给出改档操作步骤，弹层已警告时不再重复 toast；closeModal 清理待导入状态；部署后线上门禁接入 CI（Pages 部署成功自动触发）。构建期把版本号直接写入产物 meta，与 GAME.VERSION / __game.version 同源；CI 的 PASS/FAIL 摘要同步写回仓库公开文档 docs/gates/。</p>
         </details>
       </div></div>
     </div>

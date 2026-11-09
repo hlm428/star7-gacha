@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1a0f26">
-<meta name="version" content="v5.0">
+<meta name="version" content="v5.2"><!-- 构建时由 build.py 按 GAME.VERSION 重写（P9 · O-18），此值仅为兜底 -->
 <meta name="description" content="三十天星轨旅程，拆开 56 张 STAR7 限定小卡，集齐七位成员的完整星轨。">
 <meta property="og:type" content="website">
 <meta property="og:title" content="拆小卡模拟器 · STAR7 星轨回响">
@@ -1531,8 +1531,8 @@ const GAME = {
   SAVE_KEY: 'star7_chai_xiao_v2',
   /* P6-一：存档码版本升级到 5；v>=5 的存档码必须带签名，v<=4 老码才允许无签名 */
   SAVE_VER: 5,
-  /* P6-二：版本号单一常量，页面 meta 与 __game.version 均由此输出 */
-  VERSION: 'v5.1',
+  /* P6-二：版本号单一常量，页面 meta 与 __game.version 均由此输出（P9 · O-18：构建期同时写入产物 meta） */
+  VERSION: 'v5.2',
   SAVE_BACKUP_KEY: 'star7_chai_xiao_v2_backup',
   /* v4 P-07：生活费存款上限，削弱囤钱到 25 天的收益 */
   SAVE_CAP: 600,
@@ -3071,7 +3071,7 @@ function openMore() {
       <div class="rule-item"><div class="ri">奖</div><div><b>全员收集</b><p>集齐某位成员的 8 张卡，触发完整星轨庆祝，领取 ¥188 + 30 碎片与专属称号。已完成 ${done}/7。</p></div></div>
       <div class="rule-item"><div class="ri">事</div><div><b>旅程事件</b><p>第 5/10/15/20/25/30 天触发固定剧情；每天进入下一天另有 30% 概率遇到小事件。路人缘 ${state.tags.passerby || 0}。</p></div></div>
       <div class="rule-item"><div class="ri">音</div><div><b>声音分层</b><p>BGM、音效、语音三条独立滑条；成员语音为预录配音，无对应音频时静默。进度在状态变化时立即写入本机。</p></div></div>
-      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION}</b><p>v3.2 → v5.1 的完整修订记录在「概率说明 / 规则」页底部可展开查看。</p></div></div>
+      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION}</b><p>v3.2 → v5.2 的完整修订记录在「概率说明 / 规则」页底部可展开查看。</p></div></div>
     </div>
     <div class="vol-set">
       <div class="vol-h">音量分层</div>
@@ -3776,13 +3776,14 @@ function openRules() {
       <div class="rule-item"><div class="ri">概</div><div><b>综合概率说明</b><p>长期来看，综合 SSR 约 2.85%，十连 SR 保底生效后整体 SR 概率约 11.1%（不含 25 天彩排加成）。</p></div></div>
       <div class="rule-item"><div class="ri">重</div><div><b>重复卡处理</b><p>抽到已拥有的卡会标记「重复」，并自动折算成碎片，不会凭空消失；碎片可在卡册兑换指定卡（N ${RARITY_INFO.N.exchange} / R ${RARITY_INFO.R.exchange} / SR ${RARITY_INFO.SR.exchange} / SSR ${RARITY_INFO.SSR.exchange} 枚）。</p></div></div>
       <div class="rule-item"><div class="ri">存</div><div><b>存档码与防改档边界</b><p>存档码自带轻量签名，能拦住手改 JSON 的随手改档；但签名算法在客户端公开，<b>无法防住有意伪造</b>。若需要真正防作弊，必须接服务端校验。导入前会校验结构 / 版本 / 数值范围，导入生活费最多收敛到 ¥${GAME.SAVE_CAP}。<br><b>旧版无签名兼容码不受签名保护，请仅用于升级自己的老存档</b>；导入前会明确提示未签名，导入成功后也会再次提示。</p></div></div>
-      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION} · 修订记录（v3.2 → v5.1）</b>
+      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION} · 修订记录（v3.2 → v5.2）</b>
         <details style="margin-top:6px">
           <summary style="cursor:pointer;min-height:36px;display:flex;align-items:center">展开查看</summary>
           <p style="margin-top:8px"><b>v3.2</b>：首轮测试基准版本，含 10 项缺陷（BUG-01 存档强校验 / 二次确认 / 备份撤销、BUG-04 toast 队列防覆盖、BUG-06 首屏图片 28 张 1.9MB → 1 张 74–81KB 等）。</p>
           <p><b>v4</b>：第 15 天中期考核阈值 21→20（u=20 落 ¥120）；收入拆分为每日 / 寄卖 / 收集考核 / 事件四项；SR 兑换价 80、SSR 150；碎片卖出率 4；每日首次单抽 ¥9；图片懒加载；抽卡纯函数化。</p>
           <p><b>v5.0</b>：P-01 打通唯一 addMoney 入账并按实际到账记账；P-02 结算后按钮置灰 + 可撤销；P-03 toast 最新 / 警告优先；P-04 首局与二周目统一 ¥500；P-05 存档码签名；P-06 首屏轻量化；P-07 收入四分项与文案常量；存档码升级到 v5 并要求签名。</p>
-          <p><b>v5.1</b>：写清存档码 v4 降级绕过签名的已知边界，并在 v&lt;=4 无签名兼容码导入成功后给出可见警告；首局提示改为「初始资金 ¥500 已就位」（不计入收入统计）；门禁新增签名 / 版本矩阵与导入层校验。收尾：未签名警告前移到覆盖确认 / 导入前，规则页改为风险声明（不再给操作步骤），弹层已警告时不再重复 toast。</p>
+          <p><b>v5.1</b>：写清存档码 v4 降级绕过签名的已知边界（BUG-13）；首局提示改为「初始资金 ¥500 已就位」（不计入收入统计）；门禁新增签名 / 版本矩阵与导入层校验（W / H 系列断言）。</p>
+          <p><b>v5.2</b>：未签名警告前移到覆盖确认 / 导入决策点（BUG-14），规则页改为风险声明、不再给出改档操作步骤，弹层已警告时不再重复 toast；closeModal 清理待导入状态；部署后线上门禁接入 CI（Pages 部署成功自动触发）。构建期把版本号直接写入产物 meta，与 GAME.VERSION / __game.version 同源；CI 的 PASS/FAIL 摘要同步写回仓库公开文档 docs/gates/。</p>
         </details>
       </div></div>
     </div>

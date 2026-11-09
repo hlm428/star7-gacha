@@ -17,3 +17,14 @@ work/voice_seed_v2/
 work/voice_seed_v3/
 work/__pycache__/
 *.pyc
+
+# 门禁与构建的本地中间产物（CI 会重新生成）
+outputs/
+work/gate-shots/
+work/v5-gate-report.md
+work/v5-gate-results.json
+work/online-gate-report.md
+work/online-gate-results.json
+
+# 本地清理备份
+_backup_cleanup_*/
