@@ -9,6 +9,9 @@ concurrency:
   group: star7-gate-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write  # P9 · O-20：把门禁摘要写回 docs/gates/ 需要 contents 写权限
+
 jobs:
   gate:
     runs-on: ubuntu-24.04
