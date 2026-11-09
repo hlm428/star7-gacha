@@ -442,25 +442,26 @@ with sync_playwright() as pw:
     c, p = new_page(browser, errs=errs); start(p)
     ver = p.evaluate("""()=>({hook:__game.version,meta:document.querySelector('meta[name="version"]').content,
       saveVer:__game.data.GAME.SAVE_VER})""")
-    chk("G1", "版本号由单一常量输出", ver["hook"] == "v5.1" and ver["meta"] == "v5.1" and ver["saveVer"] == 5,
-        "__game/meta=v5.1 / SAVE_VER=5", ver)
+    chk("G1", "版本号由单一常量输出", ver["hook"] == "v5.2" and ver["meta"] == "v5.2" and ver["saveVer"] == 5,
+        "__game/meta=v5.2 / SAVE_VER=5", ver)
     p.evaluate("()=>__game.openRules()"); p.wait_for_timeout(400)
     rtxt = p.evaluate("()=>document.querySelector('#modalBack.show').textContent")
-    okchangelog = ("修订记录" in rtxt and "v3.2" in rtxt and "v4" in rtxt and "v5.0" in rtxt and "v5.1" in rtxt
+    okchangelog = ("修订记录" in rtxt and "v3.2" in rtxt and "v4" in rtxt and "v5.0" in rtxt
+                   and "v5.1" in rtxt and "v5.2" in rtxt
                    and "21→20" in rtxt and "首轮测试基准版本" in rtxt)
     okboundary = ("无法防住有意伪造" in rtxt and "服务端校验" in rtxt
                   and "旧版无签名兼容码不受签名保护" in rtxt and "请仅用于升级自己的老存档" in rtxt
                   and "去掉签名后缀" not in rtxt and "改成 4" not in rtxt)
     okconsts = ("¥19" in rtxt and "¥9" in rtxt and "¥169" in rtxt and "¥600" in rtxt and "¥45–70" in rtxt)
     chk("G2", "规则页 CHANGELOG / 防改档边界 / 常量文案", okchangelog and okboundary and okconsts,
-        "v3.2→v5.1 / 5 项边界声明 / 无改档步骤 / 价格上限来自 GAME",
+        "v3.2→v5.2 / 5 项边界声明 / 无改档步骤 / 价格上限来自 GAME",
         {"changelog": okchangelog, "boundary_5": okboundary, "consts": okconsts})
     p.evaluate("()=>__game.closeModal ? __game.closeModal() : document.querySelector('[data-act=\"close-modal\"]').click()")
     p.wait_for_timeout(250)
     p.evaluate("()=>openMore()"); p.wait_for_timeout(400)
     mtxt2 = p.evaluate("()=>document.querySelector('#modalBack.show').textContent")
-    chk("G3", "更多玩法可看到版本与 CHANGELOG 入口", "版本 v5.1" in mtxt2 and "v3.2 → v5.1" in mtxt2,
-        "含版本 v5.1 + 指向规则页", mtxt2[:80])
+    chk("G3", "更多玩法可看到版本与 CHANGELOG 入口", "版本 v5.2" in mtxt2 and "v3.2 → v5.2" in mtxt2,
+        "含版本 v5.2 + 指向规则页", mtxt2[:80])
     c.close()
 
     # ================= H 签名 / 版本矩阵（P7 · BUG-13） =================

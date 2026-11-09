@@ -53,6 +53,28 @@ jobs:
             gh pr comment "${{ github.event.pull_request.number }}" --body-file work/v5-gate-report.md
           fi
 
+      # P9 · O-20：PASS/FAIL 摘要同步写回仓库公开文档 docs/gates/v5-gate.md（保留 summary 与 PR 评论）
+      - name: Sync gate report to docs/gates/
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python work/sync_gate_docs.py \
+            --report work/v5-gate-report.md \
+            --results work/v5-gate-results.json \
+            --out v5-gate.md \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if ! git diff --quiet -- docs/gates/; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/gates/
+            git commit -m "docs(gates): sync v5 release gate report [skip ci]"
+            git push
+          else
+            echo "docs/gates/ 无变化，跳过提交"
+          fi
+
       - name: Upload gate report / screenshots
         if: always()
         uses: actions/upload-artifact@v7

@@ -389,7 +389,7 @@ function openMore() {
       <div class="rule-item"><div class="ri">奖</div><div><b>全员收集</b><p>集齐某位成员的 8 张卡，触发完整星轨庆祝，领取 ¥188 + 30 碎片与专属称号。已完成 ${done}/7。</p></div></div>
       <div class="rule-item"><div class="ri">事</div><div><b>旅程事件</b><p>第 5/10/15/20/25/30 天触发固定剧情；每天进入下一天另有 30% 概率遇到小事件。路人缘 ${state.tags.passerby || 0}。</p></div></div>
       <div class="rule-item"><div class="ri">音</div><div><b>声音分层</b><p>BGM、音效、语音三条独立滑条；成员语音为预录配音，无对应音频时静默。进度在状态变化时立即写入本机。</p></div></div>
-      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION}</b><p>v3.2 → v5.1 的完整修订记录在「概率说明 / 规则」页底部可展开查看。</p></div></div>
+      <div class="rule-item"><div class="ri">版</div><div><b>版本 ${GAME.VERSION}</b><p>v3.2 → v5.2 的完整修订记录在「概率说明 / 规则」页底部可展开查看。</p></div></div>
     </div>
     <div class="vol-set">
       <div class="vol-h">音量分层</div>

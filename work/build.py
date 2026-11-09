@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -17,7 +18,22 @@ scripts = []
 for name in js:
     scripts.append("/* ===== " + name + " ===== */\n" + (src / name).read_text(encoding="utf-8"))
 
+# P9 · O-18：版本号单一常量在 GAME.VERSION（work/src/02_data.js），
+# 构建时直接写进产物 <meta name="version">，与 __game.version 同源；
+# 运行时 setAttribute 覆盖保留为兜底（03f_init.js）。
+m = re.search(r"VERSION:\s*'(v\d+(?:\.\d+)*)'", scripts[0])
+if not m:
+    raise SystemExit("未在 work/src/02_data.js 中找到 VERSION 常量，构建中止")
+version = m.group(1)
+
 html = head + body + "\n<script>\n" + "\n".join(scripts) + "\n</script>\n</body>\n</html>\n"
+html, n = re.subn(
+    r'<meta name="version" content="[^"]*">',
+    '<meta name="version" content="' + version + '">',
+    html, count=1)
+if n != 1:
+    raise SystemExit("产物中未找到 <meta name=\"version\">，构建中止")
+
 out = outs / "index.html"
 out.write_text(html, encoding="utf-8")
 
