@@ -38,7 +38,19 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r work/requirements-ci.txt
-          python -m playwright install --with-deps chromium
+
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(python -m playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install Chromium（缓存命中则跳过下载，仅补系统依赖）
+        run: python -m playwright install --with-deps chromium
 
       - name: Run online gate（O1 console / O2 pageerror / O3 4xx-5xx / O4 28 webp / O5 42 mp3 / O6 冷加载 / O7 版本）
         run: python work/online_gate.py
