@@ -28,12 +28,14 @@
 
 | 文件 | 位置 | 行为变化 |
 |---|---|---|
-| `work/sync_gate_docs.py` | 新增 | 把 `work/*-gate-report.md` + results JSON 同步到 `docs/gates/`；页脚写「最近更新：CI 自动同步 · run {url}」；报告无时间戳，结果不变时内容逐字节一致 |
-| `.github/workflows/ci.yml` | 「Sync gate report to docs/gates/」步骤 | main 分支 push 且 `always()` 时执行；`git diff --quiet` 为空则跳过提交（幂等），有变化才以 bot 身份提交 `docs(gates): sync v5 release gate report [skip ci]` |
+| `work/sync_gate_docs.py` | 新增 | 从 results JSON 重建**稳定摘要**写入 `docs/gates/<name>.md`（仅「编号 / 用例 / 期望 / 结果」），并输出 `*-summary.json` 结论索引；剔除逐次波动的实测值（如 O6 冷加载耗时）与 run URL |
+| `.github/workflows/ci.yml` | 「Sync gate report to docs/gates/」步骤 + `permissions` | main 分支 push 且 `always()` 时执行；先 `git add` 再 `git diff --cached --quiet` 判定，无变化即跳过（幂等），有变化才以 bot 身份提交 `docs(gates): sync v5 release gate report [skip ci]`；补 `contents: write`（原默认只读导致 403） |
 | `.github/workflows/online-gate.yml` | 同名步骤 + `permissions` | 步骤同上（产物 `online-gate.md`）；`contents: read → write`（写回需要） |
 | `docs/gates/README.md` | 新增 | 目录说明：两个报告的来源、同步时机、幂等约定 |
 
 保留：job summary 与 PR 评论步骤原样未动；未放宽或删改任何现有断言。
+
+**踩坑记录（两轮修复后定型）**：① 未 `git add` 就 `git diff`，untracked 文件恒判为无变化 → 改为先 add 再 `diff --cached`；② 原设计把 `run {url}` 与实测耗时写进公开文档，导致每次内容都变 → 提交即触发 Pages 部署 → 再触发线上门禁 → 再提交，形成自激循环（曾累积 91 个 bot 提交）。改为只保留判定结果后，连续两次同步 MD5 完全一致，归一化提交后的下一次门禁输出「docs/gates/ 无变化，跳过提交」，循环终止。
 
 ## 四、杂项
 
@@ -44,5 +46,7 @@
 
 - 本地 `python work/build.py`：built 238,027 B / 4,300 行，产物 meta = v5.2。
 - 本地 `python work/regression_v5_gate.py`：**PASS 80 / FAIL 0**（含 G1 `hook/meta=v5.2 / SAVE_VER=5`、G2 CHANGELOG、G3 入口、H1–H10 签名矩阵、W1–W10 兼容警告、B6/B7 老码）。
-- `sync_gate_docs.py` 本地冒烟：报告同步 + 页脚生成正常（冒烟产物已还原，由 CI 首次写回）。
-- CI / 线上门禁结果见提交后 run 链接（补充于提交信息）。
+- `sync_gate_docs.py`：本地连续两次同步 MD5 均为 `EC129453B57F76769059019F48768287`（确定性）；CI 第二次运行输出「docs/gates/ 无变化，跳过提交」，确认不会自激。
+- CI（`da7a86c`）：`star7-gate` success；Pages 部署 success；`star7-online-gate` success，**PASS 8 / FAIL 0**（O1–O7 全绿，O7 线上版本 = meta = v5.2）。
+- 线上站点 `https://hlm428.github.io/star7-gacha/` 已服务 `<meta name="version" content="v5.2">`。
+- 发布后公开文档：`docs/gates/v5-gate.md`（PASS 80 / FAIL 0）、`docs/gates/online-gate.md`（PASS 8 / FAIL 0）及两个 `*-summary.json`。
