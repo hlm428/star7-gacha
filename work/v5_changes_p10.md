@@ -10,6 +10,8 @@
   的内容做 sha256，取前 12 位作为「源码指纹」。不读 git 历史，因此 shallow clone 与 bot 的
   docs 提交都不会改变它 —— 这是「加新鲜度元数据但不重新引入自激循环」的关键。
 - 新增 `product_version()`：从 `02_data.js` 提取 `VERSION`，文档头与产物口径一致。
+- 指纹与输出统一按 LF：本地 Windows 检出是 CRLF，若直接哈希字节会与 CI（LF）得到不同指纹，
+  导致「同一份代码两个指纹」。现读写都做 LF 归一化（读时替换 `\r\n`，写时 `newline="\n"`）。
 - 文档头新增两行：`**PASS n / FAIL m**` 之后是 `**产品版本**` + `**源码指纹**`，并注明
   「指纹不变即说明判定针对同一份代码」。不写 run id、时间戳、实测耗时。
 - 新增 `write_stale()`：报告或结果 JSON 缺失 / 非法 / 为空时，**用 STALE 正文覆盖旧文档**
@@ -26,12 +28,16 @@
 ## O-22：线上门禁运行列表降噪
 
 `.github/workflows/online-gate.yml`
-- 删除 `workflow_run: pages build and deployment (completed)` 触发，只保留
-  `deployment_status` + `workflow_dispatch`。原先是同一次部署的两个事件源互相取消，
-  每个 commit 产生「1 次实跑 + 1 次 cancelled」，累计 500+ 次运行。
-- `concurrency.group` 去掉 `github.event.workflow_run.head_sha` 分支，改为
+- 删除 `workflow_run: pages build and deployment (completed)` 触发。实测该动态工作流**从不**产生
+  workflow_run 事件（最近 30+ 次运行的 event 全为 `deployment_status`），它只是和
+  `deployment_status` 抢同一个 concurrency 分组，多制造一次 cancelled。
+- 只保留 `deployment_status` + `workflow_dispatch`；`concurrency.group` 简化为
   `deployment.sha || run_id`；job 的 `if` 同步移除 workflow_run 条件。
-- 预期：一次 Pages 部署 → 1 次执行、0 次 cancelled。
+- `cancel-in-progress: true → false`：Pages 偶发对同一 commit 连发两次 `success`
+  （近 100 次运行里出现 2 次 cancelled），取消在跑的那次只会留下 cancelled 噪声；
+  改为顺序跑完，后者覆盖同一份幂等文档。
+- 平台限制：`deployment_status` 不支持按状态过滤，队列/进行中等状态仍会创建 run 记录，
+  由 job 级 `if` 跳过（显示为 skipped，不占执行时间）。
 
 ## O-23：产物 meta 恢复纯标签
 
@@ -51,7 +57,8 @@
 | O-23 版本可比 | `meta == __game.version == GAME.VERSION == 'v5.2'` | PASS（G1 断言，见回归报告） |
 | O-21 幂等 | 连续两次同步后 `/docs/gates/v5-gate.md` 逐字节一致 | PASS（`5E056110678F00FC2952E5D9C82F0CFA` 两次相同） |
 | O-21 陈旧防护 | 人为移除 results JSON 时文档不再显示旧 PASS，且步骤失败 | PASS（写入 `STALE · 未取得本次门禁结果`，`exit 1`） |
-| O-22 单次部署单次执行 | 一次 Pages 部署只触发 1 次执行、0 次 cancelled | 待 CI 验证（见提交后 run 列表） |
+| O-22 单次部署单次执行 | 一次 Pages 部署只触发 1 次执行、0 次 cancelled | 部分达成：执行 1 次、cancelled 0 次；但每个部署仍有 4 条 skipped 记录（`deployment_status` 无状态级过滤，属平台限制） |
+| O-21 跨平台指纹一致 | Windows（CRLF 检出）与 CI（LF）算出同一指纹 | PASS（本地与 CI 均为 `f6ccf98c8465`；已按 LF 归一化） |
 | 回归 | A~H/W 全量断言零回归 | PASS 80 / FAIL 0 |
 
 产物：`outputs/index.html` = 根目录 `index.html`，242,236 B，MD5 `829DF3B72DA3A446D8DF8117673E98AC`

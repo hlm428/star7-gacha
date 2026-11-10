@@ -32,14 +32,15 @@ clean = lambda s: str(s).replace("|", "\\|").replace("\n", " ").strip()
 
 
 def source_fingerprint():
-    """work/src + 两个门禁脚本的内容指纹；与 git 历史、bot docs 提交无关。"""
+    """work/src + 两个门禁脚本的内容指纹；与 git 历史、bot docs 提交无关。
+    按 LF 归一化后再哈希：本地 Windows（CRLF 检出）与 CI Linux（LF）必须得到同一个指纹。"""
     h = hashlib.sha256()
     files = sorted((BASE / "work" / "src").glob("*"))
     files += [BASE / "work" / "regression_v5_gate.py", BASE / "work" / "online_gate.py"]
     for f in files:
         if f.is_file() and f.name != "__pycache__":
             h.update(f.name.encode("utf-8"))
-            h.update(f.read_bytes())
+            h.update(f.read_bytes().replace(b"\r\n", b"\n"))
     return h.hexdigest()[:12]
 
 
@@ -58,10 +59,10 @@ def write_stale(reason):
         "为避免把上一次的 PASS 误当成当前版本通过，本文件已清除旧结论。",
         "", "请以本次 Actions run 的日志与 artifact 为准。", "",
         "**产品版本**：`" + product_version() + "`　**源码指纹**：`" + source_fingerprint() + "`", ""])
-    outdoc.write_text(text, encoding="utf-8")
+    outdoc.write_text(text, encoding="utf-8", newline="\n")
     outsum.write_text(json.dumps({"status": "STALE", "total": 0, "pass": 0, "fail": 0,
                                   "failed_ids": []}, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
-                      encoding="utf-8")
+                      encoding="utf-8", newline="\n")
     print("STALE：%s 未产出结果，已写入 docs/gates/%s 并标记陈旧" % (reason, a.out), file=sys.stderr)
     sys.exit(1)
 
@@ -92,12 +93,12 @@ for r in rows:
         "PASS" if r["pass"] else "FAIL"))
 text = "\n".join(lines) + "\n"
 
-outdoc.write_text(text, encoding="utf-8")
+outdoc.write_text(text, encoding="utf-8", newline="\n")
 
 # 结论索引：同样剔除实测值，只留失败清单，保证稳定
 summary = {"total": len(rows), "pass": passed, "fail": len(failed),
            "failed_ids": [r["id"] for r in failed]}
 outsum.write_text(
-    json.dumps(summary, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    json.dumps(summary, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
 
 print("synced %s -> docs/gates/%s（PASS %d / FAIL %d）" % (a.report, a.out, passed, len(failed)))
