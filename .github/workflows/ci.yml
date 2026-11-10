@@ -57,9 +57,9 @@ jobs:
           fi
 
       # P9 · O-20：PASS/FAIL 摘要同步写回仓库公开文档 docs/gates/v5-gate.md（保留 summary 与 PR 评论）
+      # P10 · O-21：不做 continue-on-error —— 拿不到结果时脚本写 STALE 并非 0 退出，让该步骤可见失败
       - name: Sync gate report to docs/gates/
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

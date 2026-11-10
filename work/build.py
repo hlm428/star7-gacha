@@ -27,12 +27,18 @@ if not m:
 version = m.group(1)
 
 html = head + body + "\n<script>\n" + "\n".join(scripts) + "\n</script>\n</body>\n</html>\n"
+# P10 · O-23：产物中的 meta 保持纯标签，构建说明只留在本文件里。
+# 连同行尾注释一起替换，避免产物残留「此值仅为兜底」这类构建期说明。
 html, n = re.subn(
-    r'<meta name="version" content="[^"]*">',
+    r'<meta name="version" content="[^"]*">(?:<!--.*?-->)?',
     '<meta name="version" content="' + version + '">',
     html, count=1)
 if n != 1:
     raise SystemExit("产物中未找到 <meta name=\"version\">，构建中止")
+meta_line = next(l for l in html.splitlines() if 'name="version"' in l)
+expected_meta = '<meta name="version" content="' + version + '">'
+if meta_line != expected_meta:
+    raise SystemExit("产物 meta 不是纯标签：" + meta_line)
 
 out = outs / "index.html"
 out.write_text(html, encoding="utf-8")

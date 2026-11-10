@@ -1,19 +1,17 @@
 name: star7-online-gate
 
 # P8 · O-14：部署后环境门禁（只打真实线上 URL，不改动 regression_v5_gate.py 的任何断言）
-# 触发：Pages 部署产生 deployment_status（github-pages / success）+ pages-build-deployment 工作流完成 + 手动
+# P10 · O-22：只保留 deployment_status（github-pages / success）+ 手动触发。
+# 原 workflow_run（pages build and deployment completed）与 deployment_status 是同一次部署的
+# 两个事件源，靠 concurrency 取消其中一个，结果是每个 commit 产生一次实跑 + 一次 cancelled，
+# 累计 500+ 次运行把真实失败淹没。去掉 workflow_run 后单次部署只产生 1 次执行。
 on:
-  workflow_run:
-    workflows: ["pages build and deployment"]
-    types: [completed]
   deployment_status:
   workflow_dispatch:
 
-# 去重：同一次部署的两个触发器按 commit sha 归并到同一 concurrency group，
-# 后到的运行会取消仍在进行的前一个，最终每个 commit 只保留一次门禁执行；
-# 手动触发按 run_id 独占分组，不会被部署事件取消。
+# 去重：同一 commit 若被重复部署，后到的运行接管同一分组；手动触发按 run_id 独占分组。
 concurrency:
-  group: star7-online-gate-${{ github.event.workflow_run.head_sha || github.event.deployment.sha || github.run_id }}
+  group: star7-online-gate-${{ github.event.deployment.sha || github.run_id }}
   cancel-in-progress: true
 
 permissions:
@@ -22,7 +20,7 @@ permissions:
 jobs:
   online-gate:
     # Pages 部署成功才跑；deployment_status 只接受 github-pages 环境 + success；手动触发不受此限制
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'github-pages') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'github-pages') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -63,10 +61,9 @@ jobs:
           exit 1
 
       # P9 · O-20：PASS/FAIL 摘要同步写回仓库公开文档 docs/gates/online-gate.md（保留 job summary）
-      # 公开文档只保留判定结果（剔除波动实测值与 run URL），结论不变时 diff 为空 → 不提交，避免自激循环
+      # P10 · O-21：不做 continue-on-error —— 拿不到结果时脚本写 STALE 并非 0 退出，让该步骤可见失败
       - name: Sync gate report to docs/gates/
         if: always()
-        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
