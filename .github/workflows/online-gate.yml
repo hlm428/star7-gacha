@@ -79,6 +79,13 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "docs(gates): sync online gate report [skip ci]" \
               -m "run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            # 与 star7-gate 并发写 docs/gates/ 时，后到者会被拒；rebase 后重试，避免误报失败。
+            for i in 1 2 3; do
+              git push && break
+              echo "push 被拒，rebase 后重试 $i/3"
+              git pull --rebase origin main
+              sleep 3
+            done
             git push
           else
             echo "docs/gates/ 无变化，跳过提交"

@@ -39,6 +39,15 @@
 - 平台限制：`deployment_status` 不支持按状态过滤，队列/进行中等状态仍会创建 run 记录，
   由 job 级 `if` 跳过（显示为 skipped，不占执行时间）。
 
+## 附带修复：两个门禁并发写回时的 push 竞态
+
+`.github/workflows/ci.yml`、`.github/workflows/online-gate.yml`
+- 现象：`star7-gate` 与 `star7-online-gate` 会同时提交 `docs/gates/`，后到者 `git push` 被拒
+  （`! [rejected] main -> main (fetch first)`），去掉 `continue-on-error` 后直接表现为步骤失败。
+  首次出现于 `7e63580` 的 run（门禁本身 PASS 80 / FAIL 0）。
+- 修复：push 改为「失败 → `git pull --rebase origin main` → 重试」，最多 3 次，最终仍失败才让步骤红。
+  两个 job 写的是不同文件，rebase 不会冲突。
+
 ## O-23：产物 meta 恢复纯标签
 
 `work/src/00_head.html`
@@ -57,7 +66,9 @@
 | O-23 版本可比 | `meta == __game.version == GAME.VERSION == 'v5.2'` | PASS（G1 断言，见回归报告） |
 | O-21 幂等 | 连续两次同步后 `/docs/gates/v5-gate.md` 逐字节一致 | PASS（`5E056110678F00FC2952E5D9C82F0CFA` 两次相同） |
 | O-21 陈旧防护 | 人为移除 results JSON 时文档不再显示旧 PASS，且步骤失败 | PASS（写入 `STALE · 未取得本次门禁结果`，`exit 1`） |
-| O-22 单次部署单次执行 | 一次 Pages 部署只触发 1 次执行、0 次 cancelled | 部分达成：执行 1 次、cancelled 0 次；但每个部署仍有 4 条 skipped 记录（`deployment_status` 无状态级过滤，属平台限制） |
+| O-22 单次部署单次执行 | 一次 Pages 部署只触发 1 次执行、0 次 cancelled | PASS（`f271f3a`：1 success + 4 skipped + 0 cancelled） |
+| O-21 结论不变不产生提交 | 门禁结论未变时 CI 不产生新 bot 提交 | PASS（`f271f3a` 跑完远端 head 未变，日志「docs/gates/ 无变化」） |
+| 并发写回 | 两个门禁同时提交时不误报失败 | 待 CI 验证（push 重试已加） |
 | O-21 跨平台指纹一致 | Windows（CRLF 检出）与 CI（LF）算出同一指纹 | PASS（本地与 CI 均为 `f6ccf98c8465`；已按 LF 归一化） |
 | 回归 | A~H/W 全量断言零回归 | PASS 80 / FAIL 0 |
 
