@@ -66,13 +66,13 @@ jobs:
           python work/sync_gate_docs.py \
             --report work/v5-gate-report.md \
             --results work/v5-gate-results.json \
-            --out v5-gate.md \
-            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            --out v5-gate.md
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/gates/
           if ! git diff --cached --quiet; then
-            git commit -m "docs(gates): sync v5 release gate report [skip ci]"
+            git commit -m "docs(gates): sync v5 release gate report [skip ci]" \
+              -m "run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             git push
           else
             echo "docs/gates/ 无变化，跳过提交"
